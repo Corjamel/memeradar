@@ -460,6 +460,17 @@ button.trade-buy:hover, button.trade-sell:hover { filter: brightness(1.3); }
 
 /* ---------- bot-dashboard: beloningen & stats ---------- */
 
+.demo-banner {
+  background: #1a2740;
+  border: 1px solid var(--accent);
+  color: #b9d4ff;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
 .reward-hero {
   border-radius: 18px;
   padding: 24px 26px;

@@ -837,22 +837,32 @@ function setTab(tab) {
 async function renderBotPanel() {
   const panel = $('botPanel');
   let s;
+  let isDemo = false;
   try {
     const res = await fetch('bot/status.json', { cache: 'no-store' });
     if (!res.ok) throw new Error();
     s = await res.json();
   } catch {
-    panel.innerHTML = `<div class="bot-card">
-      <h3>🤖 Geen verbinding met de bot</h3>
-      <p>De bot draait op je eigen computer. Dit dashboard werkt daarom alleen als je
-      de app opent via je thuisnetwerk (localhost of het wifi-adres van je Mac) én de
-      bot daar draait. Starten op je Mac:</p>
-      <pre>cd ~/Claude/memecoin-tracker/bot\npython3 bot.py</pre>
-      <p>De bot start in <strong>oefenmodus</strong> (nepgeld, echte prijzen).
-      Instellingen staan in <code>bot/config.json</code> — zie de README voor uitleg
-      en de stappen om (pas na testen!) live te gaan.</p>
-    </div>`;
-    return;
+    // geen bot verbonden (bv. online versie): toon het dashboard met VOORBEELD-data,
+    // met een duidelijke banner, zodat het ontwerp overal zichtbaar is.
+    isDemo = true;
+    s = {
+      watching: [{ symbol: 'BONK', change24h: 6.2 }, { symbol: 'WIF', change24h: -2.1 }],
+      mode: 'paper', wallet: 'voorbeeld', sol_balance: 1.184, day_spent_sol: 0.15,
+      stats: { realized_sol: 0.142, unrealized_sol: 0.042, total_sol: 0.184, wins: 4, losses: 1, closed_trades: 5, win_rate: 80, best_pct: 31.4, worst_pct: -9.8 },
+      positions: [
+        { symbol: 'POPCAT', entry_price: 0.82, current_price: 0.95, sol_spent: 0.05, pnl_pct: 15.9, opened_at: '' },
+        { symbol: 'MEW', entry_price: 0.0071, current_price: 0.0068, sol_spent: 0.05, pnl_pct: -4.2, opened_at: '' },
+      ],
+      trades: [
+        { time: '2026-01-01 11:10:00', side: 'KOOP', symbol: 'BONK', sol: 0.05, reason: '24u +12,0% ≥ +10%', profit_sol: null },
+        { time: '2026-01-01 11:55:00', side: 'VERKOOP', symbol: 'BONK', sol: 0.0657, reason: 'take-profit +31,4%', pnl_pct: 31.4, profit_sol: 0.0157 },
+        { time: '2026-01-01 12:48:00', side: 'VERKOOP', symbol: 'WIF', sol: 0.0549, reason: 'resultaat +9,8%', pnl_pct: 9.8, profit_sol: 0.0049 },
+        { time: '2026-01-01 13:15:00', side: 'VERKOOP', symbol: 'SLERF', sol: 0.0451, reason: 'stop-loss −9,8%', pnl_pct: -9.8, profit_sol: -0.0049 },
+      ],
+      settings: { koop_drempel_pct: 10, verkoop_drempel_pct: 10, stop_loss_pct: 10, take_profit_pct: 25, per_trade_sol: 0.05, max_posities: 3, max_dag_budget_sol: 0.25 },
+      error: null, updated_at: '',
+    };
   }
 
   const updated = new Date(String(s.updated_at).replace(' ', 'T'));
@@ -916,8 +926,9 @@ async function renderBotPanel() {
   }).join('');
 
   panel.innerHTML = `
+    ${isDemo ? `<div class="demo-banner">👁️ <strong>Voorbeeldweergave</strong> — dit is hoe je dashboard eruitziet. Je échte beloningen en trades verschijnen hier zodra je de bot op je eigen computer start (zie de uitleg onderaan).</div>` : ''}
     <div class="reward-hero ${totCls}">
-      <div class="reward-label">💰 Totale beloning ${live ? '(echt geld)' : '(oefenen)'}</div>
+      <div class="reward-label">💰 Totale beloning ${isDemo ? '(voorbeeld)' : live ? '(echt geld)' : '(oefenen)'}</div>
       <div class="reward-big">${sign}${Number(total).toFixed(4).replace('.', ',')} <span class="reward-unit">SOL</span></div>
       <div class="reward-split">
         <span>Gerealiseerd: <strong class="${(st2.realized_sol ?? 0) >= 0 ? 'pct-up' : 'pct-down'}">${fmtSol(st2.realized_sol)} SOL</strong></span>
@@ -991,6 +1002,12 @@ async function renderBotPanel() {
         <h3>🧾 Trade-geschiedenis</h3>
         ${tradeCards ? `<div class="trade-list">${tradeCards}</div>` : '<p class="token-sub">Nog geen trades.</p>'}
       </div>
+      ${isDemo ? `<div class="bot-card">
+        <h3>🤖 Start je eigen bot voor échte data</h3>
+        <p>Bovenstaande cijfers zijn een voorbeeld. De bot draait op je eigen computer (veilig, met je eigen aparte wallet). Starten op je Mac:</p>
+        <pre>cd ~/Claude/memecoin-tracker/bot\npython3 bot.py</pre>
+        <p>Hij start in <strong>oefenmodus</strong> (nepgeld, echte prijzen). Open daarna de app via <code>localhost:8790</code> en dit dashboard vult zich met je échte beloningen.</p>
+      </div>` : ''}
     </div>`;
 }
 
@@ -1004,9 +1021,9 @@ function init() {
       sessionStorage.setItem('mr_healed', '1');
       Promise.allSettled([
         fetch(location.pathname, { cache: 'reload' }),
-        fetch('app.js?v=13', { cache: 'reload' }),
-        fetch('swap.js?v=13', { cache: 'reload' }),
-        fetch('style.css?v=13', { cache: 'reload' }),
+        fetch('app.js?v=14', { cache: 'reload' }),
+        fetch('swap.js?v=14', { cache: 'reload' }),
+        fetch('style.css?v=14', { cache: 'reload' }),
       ]).then(() => location.reload());
       return;
     }
