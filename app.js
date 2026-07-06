@@ -1021,9 +1021,9 @@ function init() {
       sessionStorage.setItem('mr_healed', '1');
       Promise.allSettled([
         fetch(location.pathname, { cache: 'reload' }),
-        fetch('app.js?v=14', { cache: 'reload' }),
-        fetch('swap.js?v=14', { cache: 'reload' }),
-        fetch('style.css?v=14', { cache: 'reload' }),
+        fetch('app.js?v=15', { cache: 'reload' }),
+        fetch('swap.js?v=15', { cache: 'reload' }),
+        fetch('style.css?v=15', { cache: 'reload' }),
       ]).then(() => location.reload());
       return;
     }
