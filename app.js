@@ -881,41 +881,115 @@ async function renderBotPanel() {
     <td>${t.tx ? `<a class="chart-link" href="https://solscan.io/tx/${encodeURIComponent(t.tx)}" target="_blank" rel="noopener noreferrer">tx</a>` : '—'}</td>
   </tr>`).join('');
 
+  const st2 = s.stats || {};
+  const total = st2.total_sol ?? 0;
+  const totCls = total > 0.0000001 ? 'reward-up' : total < -0.0000001 ? 'reward-down' : 'reward-flat';
+  const sign = total > 0 ? '+' : '';
+  const fmtSol = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${Number(v).toFixed(4).replace('.', ',')}`);
+  const winRate = st2.win_rate;
+  const closed = st2.closed_trades ?? 0;
+  const posCards = (s.positions || []).map((p) => {
+    const pnl = p.pnl_pct;
+    const up = pnl != null && pnl >= 0;
+    const cls = pnl == null ? 'pct-flat' : up ? 'pct-up' : 'pct-down';
+    const barW = pnl == null ? 0 : Math.min(100, Math.abs(pnl));
+    return `<div class="pos-card ${up ? 'pos-up' : (pnl != null ? 'pos-down' : '')}">
+      <div class="pos-top"><span class="pos-sym">${escapeHtml(p.symbol)}</span>
+        <span class="${cls} pos-pnl">${pnl == null ? '—' : (up ? '+' : '') + pnl.toFixed(1).replace('.', ',') + '%'}</span></div>
+      <div class="pos-bar"><div class="pos-bar-fill ${up ? 'up' : 'down'}" style="width:${barW}%"></div></div>
+      <div class="pos-meta">instap ${fmtPrice(p.entry_price)} → nu ${p.current_price ? fmtPrice(p.current_price) : '—'}</div>
+    </div>`;
+  }).join('');
+
+  const tradeCards = (s.trades || []).slice().reverse().map((t) => {
+    const isSell = t.side === 'VERKOOP';
+    const profit = t.profit_sol;
+    const pcls = profit == null ? '' : profit >= 0 ? 'pct-up' : 'pct-down';
+    return `<div class="trade-row">
+      <span class="trade-badge ${isSell ? 'tb-sell' : 'tb-buy'}">${isSell ? '↓ verkoop' : '↑ koop'}</span>
+      <span class="trade-sym">${escapeHtml(t.symbol)}</span>
+      <span class="trade-reason">${escapeHtml(t.reason)}</span>
+      ${profit != null ? `<span class="${pcls} trade-profit">${fmtSol(profit)} SOL</span>` : '<span class="trade-profit token-sub"></span>'}
+      <span class="trade-time token-sub">${escapeHtml((t.time || '').slice(11, 16))}</span>
+      ${t.tx ? `<a class="chart-link" href="https://solscan.io/tx/${encodeURIComponent(t.tx)}" target="_blank" rel="noopener noreferrer">tx</a>` : ''}
+    </div>`;
+  }).join('');
+
   panel.innerHTML = `
-    <div class="bot-grid">
-      <div class="bot-card">
-        <h3>Status
-          <span class="signal ${live ? 'signal-sell' : 'signal-buy'}">${live ? '🔴 LIVE — echt geld' : '🟢 PAPER — oefenen'}</span>
-          ${stale ? '<span class="signal signal-hold">⏸ gestopt?</span>' : '<span class="signal signal-hold">▶ actief</span>'}
-        </h3>
-        <p>Bot-wallet: <code>${escapeHtml(s.wallet)}</code></p>
-        <p>Saldo: <strong>${s.sol_balance == null ? '?' : Number(s.sol_balance).toFixed(4).replace('.', ',')} SOL</strong>${live ? '' : ' (nepgeld)'}
-           · Vandaag besteed: ${Number(s.day_spent_sol || 0).toFixed(4).replace('.', ',')} / ${cfg.max_dag_budget_sol ?? '?'} SOL</p>
-        <p class="token-sub">Regels: koop ≥ +${cfg.koop_drempel_pct}% · verkoop ≤ −${cfg.verkoop_drempel_pct}% ·
-           stop-loss ${cfg.stop_loss_pct}% · take-profit ${cfg.take_profit_pct}% ·
-           max ${cfg.max_posities} posities · ${cfg.per_trade_sol} SOL per trade</p>
-        ${s.error ? `<p class="pct-down">Laatste fout: ${escapeHtml(s.error)}</p>` : ''}
-        <p class="token-sub">Laatste update: ${escapeHtml(s.updated_at)}</p>
+    <div class="reward-hero ${totCls}">
+      <div class="reward-label">💰 Totale beloning ${live ? '(echt geld)' : '(oefenen)'}</div>
+      <div class="reward-big">${sign}${Number(total).toFixed(4).replace('.', ',')} <span class="reward-unit">SOL</span></div>
+      <div class="reward-split">
+        <span>Gerealiseerd: <strong class="${(st2.realized_sol ?? 0) >= 0 ? 'pct-up' : 'pct-down'}">${fmtSol(st2.realized_sol)} SOL</strong></span>
+        <span>Open posities: <strong class="${(st2.unrealized_sol ?? 0) >= 0 ? 'pct-up' : 'pct-down'}">${fmtSol(st2.unrealized_sol)} SOL</strong></span>
       </div>
+    </div>
+
+    <div class="stat-tiles">
+      <div class="stat-tile">
+        <div class="stat-num">${winRate == null ? '—' : Math.round(winRate) + '%'}</div>
+        <div class="stat-lbl">Win-rate</div>
+        <div class="stat-ring" style="--pct:${winRate ?? 0}"></div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-num pct-up">${st2.wins ?? 0}</div>
+        <div class="stat-lbl">Winst-trades</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-num pct-down">${st2.losses ?? 0}</div>
+        <div class="stat-lbl">Verlies-trades</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-num pct-up">${st2.best_pct == null ? '—' : '+' + Math.round(st2.best_pct) + '%'}</div>
+        <div class="stat-lbl">Beste trade</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-num">${closed}</div>
+        <div class="stat-lbl">Afgerond</div>
+      </div>
+    </div>
+
+    <div class="bot-grid">
+      <div class="bot-card status-card">
+        <div class="status-head">
+          <span class="mode-pill ${live ? 'mode-live' : 'mode-paper'}">${live ? '🔴 LIVE' : '🟢 OEFENEN'}</span>
+          <span class="run-pill ${stale ? 'run-stopped' : 'run-active'}">${stale ? '⏸ gestopt?' : '▶ actief'}</span>
+          <span class="status-bal">${s.sol_balance == null ? '?' : Number(s.sol_balance).toFixed(3).replace('.', ',')} SOL${live ? '' : ' nepgeld'}</span>
+        </div>
+        <div class="rules-row">
+          <span class="rule-chip">koop ≥ +${cfg.koop_drempel_pct}%</span>
+          <span class="rule-chip">verkoop ≤ −${cfg.verkoop_drempel_pct}%</span>
+          <span class="rule-chip">stop-loss ${cfg.stop_loss_pct}%</span>
+          <span class="rule-chip">take-profit ${cfg.take_profit_pct}%</span>
+          <span class="rule-chip">max ${cfg.max_posities} posities</span>
+          <span class="rule-chip">${cfg.per_trade_sol} SOL/trade</span>
+        </div>
+        <div class="budget-line">Vandaag besteed: ${Number(s.day_spent_sol || 0).toFixed(3).replace('.', ',')} / ${cfg.max_dag_budget_sol ?? '?'} SOL
+          <div class="budget-bar"><div class="budget-fill" style="width:${Math.min(100, (s.day_spent_sol || 0) / (cfg.max_dag_budget_sol || 1) * 100)}%"></div></div>
+        </div>
+        ${s.error ? `<p class="pct-down status-err">${escapeHtml(s.error)}</p>` : ''}
+        <p class="token-sub">Wallet ${escapeHtml((s.wallet || '').slice(0, 6))}…${escapeHtml((s.wallet || '').slice(-4))} · bijgewerkt ${escapeHtml((s.updated_at || '').slice(11, 19))}</p>
+      </div>
+
       <div class="bot-card">
-        <h3>Wat de bot nu volgt</h3>
-        ${(s.watching || []).length ? `<p>${(s.watching || []).map((w) => {
+        <h3>👀 Bot volgt nu</h3>
+        ${(s.watching || []).length ? `<div class="watch-chips">${(s.watching || []).map((w) => {
           const ch = w.change24h;
           const cls = ch == null ? 'pct-flat' : ch >= 0 ? 'pct-up' : 'pct-down';
           const chTxt = ch == null ? '?' : (ch >= 0 ? '+' : '') + ch.toFixed(1).replace('.', ',') + '%';
-          return `<strong>${escapeHtml(w.symbol)}</strong> <span class="${cls}">${chTxt}</span>`;
-        }).join(' &nbsp;·&nbsp; ')}</p>
-        <p class="token-sub">De bot koopt pas als een token boven +${cfg.koop_drempel_pct}% komt —
-        zolang alles daaronder blijft, wacht hij bewust en gebeurt er niets. Dat is geen storing,
-        dat is de strategie.</p>` : '<p class="token-sub">Nog geen marktdata ontvangen (eerste ronde loopt, of de bot is gestopt).</p>'}
+          return `<span class="watch-chip">${escapeHtml(w.symbol)} <span class="${cls}">${chTxt}</span></span>`;
+        }).join('')}</div>
+        <p class="token-sub">De bot koopt pas boven +${cfg.koop_drempel_pct}%. Blijft alles daaronder, dan wacht hij bewust — dat is de strategie, geen storing.</p>` : '<p class="token-sub">Nog geen marktdata (eerste ronde loopt of bot gestopt).</p>'}
       </div>
+
       <div class="bot-card">
-        <h3>Open posities (${(s.positions || []).length})</h3>
-        ${posRows ? `<table><thead><tr><th>Token</th><th class="num">Instap</th><th class="num">Nu</th><th class="num">Resultaat</th><th>Geopend</th></tr></thead><tbody>${posRows}</tbody></table>` : '<p class="token-sub">Geen open posities.</p>'}
+        <h3>📊 Open posities (${(s.positions || []).length})</h3>
+        ${posCards ? `<div class="pos-grid">${posCards}</div>` : '<p class="token-sub">Geen open posities — de bot wacht op een koopsignaal.</p>'}
       </div>
+
       <div class="bot-card">
-        <h3>Laatste trades</h3>
-        ${tradeRows ? `<table><thead><tr><th>Tijd</th><th>Actie</th><th>Token</th><th class="num">SOL</th><th>Reden</th><th>Tx</th></tr></thead><tbody>${tradeRows}</tbody></table>` : '<p class="token-sub">Nog geen trades.</p>'}
+        <h3>🧾 Trade-geschiedenis</h3>
+        ${tradeCards ? `<div class="trade-list">${tradeCards}</div>` : '<p class="token-sub">Nog geen trades.</p>'}
       </div>
     </div>`;
 }
@@ -930,9 +1004,9 @@ function init() {
       sessionStorage.setItem('mr_healed', '1');
       Promise.allSettled([
         fetch(location.pathname, { cache: 'reload' }),
-        fetch('app.js?v=12', { cache: 'reload' }),
-        fetch('swap.js?v=12', { cache: 'reload' }),
-        fetch('style.css?v=12', { cache: 'reload' }),
+        fetch('app.js?v=13', { cache: 'reload' }),
+        fetch('swap.js?v=13', { cache: 'reload' }),
+        fetch('style.css?v=13', { cache: 'reload' }),
       ]).then(() => location.reload());
       return;
     }

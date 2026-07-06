@@ -289,6 +289,27 @@ def write_status(cfg, st, kp, market, balance, error=None):
         positions.append({**pos, "mint": mint, "current_price": cur, "pnl_pct": pnl})
     watching = [{"symbol": d["symbol"], "change24h": d["change24h"], "price": d["price"]}
                 for d in market.values()]
+
+    # beloningen: gerealiseerde winst en prestaties uit alle afgeronde verkopen
+    sells = [t for t in st["trades"] if t["side"] == "VERKOOP" and t.get("profit_sol") is not None]
+    realized_sol = sum(t["profit_sol"] for t in sells)
+    wins = sum(1 for t in sells if t["profit_sol"] > 0)
+    losses = sum(1 for t in sells if t["profit_sol"] <= 0)
+    win_rate = (wins / len(sells) * 100) if sells else None
+    best = max((t["pnl_pct"] for t in sells if t.get("pnl_pct") is not None), default=None)
+    worst = min((t["pnl_pct"] for t in sells if t.get("pnl_pct") is not None), default=None)
+    unrealized_sol = sum((p["current_price"] / p["entry_price"] - 1) * p["sol_spent"]
+                         for p in positions
+                         if p.get("current_price") and p.get("entry_price"))
+    stats = {
+        "realized_sol": round(realized_sol, 6),
+        "unrealized_sol": round(unrealized_sol, 6),
+        "total_sol": round(realized_sol + unrealized_sol, 6),
+        "wins": wins, "losses": losses, "closed_trades": len(sells),
+        "win_rate": round(win_rate, 0) if win_rate is not None else None,
+        "best_pct": best, "worst_pct": worst,
+    }
+
     with open(STATUS_PATH, "w") as f:
         json.dump({
             "watching": watching,
@@ -296,6 +317,7 @@ def write_status(cfg, st, kp, market, balance, error=None):
             "wallet": str(kp.pubkey()),
             "sol_balance": balance,
             "day_spent_sol": st["day_spent_sol"],
+            "stats": stats,
             "positions": positions,
             "trades": st["trades"][-20:],
             "settings": {k: cfg[k] for k in (
@@ -307,11 +329,14 @@ def write_status(cfg, st, kp, market, balance, error=None):
         }, f, indent=1)
 
 
-def record_trade(st, side, mint, symbol, sol_amount, price, reason, sig=None):
+def record_trade(st, side, mint, symbol, sol_amount, price, reason, sig=None,
+                 pnl_pct=None, profit_sol=None):
     st["trades"].append({
         "time": time.strftime("%Y-%m-%d %H:%M:%S"), "side": side, "mint": mint,
         "symbol": symbol, "sol": round(sol_amount, 6), "price": price,
         "reason": reason, "tx": sig,
+        "pnl_pct": round(pnl_pct, 1) if pnl_pct is not None else None,
+        "profit_sol": round(profit_sol, 6) if profit_sol is not None else None,
     })
     log(f"{side} {symbol}: {sol_amount:.4f} SOL @ ${price:.10g} — {reason}"
         + (f" (tx {sig[:16]}…)" if sig else ""))
@@ -360,10 +385,12 @@ def try_sell(cfg, st, kp, mint, pos, d, reason, live):
         got_sol = pos["sol_spent"] * (price / pos["entry_price"]) if pos["entry_price"] else 0
         st["paper_sol"] += got_sol
     pnl = ((price / pos["entry_price"]) - 1) * 100 if pos["entry_price"] else 0
+    profit_sol = got_sol - pos["sol_spent"]  # netto beloning van deze trade
     del st["positions"][mint]
     st["cooldown"][mint] = time.time()
     record_trade(st, "VERKOOP", mint, pos["symbol"], got_sol, price,
-                 f"{reason} (resultaat {pnl:+.1f}%)", sig)
+                 f"{reason} (resultaat {pnl:+.1f}%)", sig,
+                 pnl_pct=pnl, profit_sol=profit_sol)
 
 
 def tick(cfg, st, kp, live):
