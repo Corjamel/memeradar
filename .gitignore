@@ -1,0 +1,9 @@
+# lokale bot-runtime: nooit publiceren
+bot/state.json
+bot/status.json
+bot/bot.pid
+bot/*.log
+bot/wallet.json
+
+# systeem
+.DS_Store

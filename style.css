@@ -1,0 +1,459 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-hover: #1c2330;
+  --border: #2d333b;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --green: #3fb950;
+  --red: #f85149;
+  --amber: #d29922;
+  --accent: #58a6ff;
+  --accent-dim: #1f3a5f;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 { font-size: 1.4rem; }
+.tagline { color: var(--text-dim); font-size: 0.85rem; margin-left: 10px; }
+
+.wallet-area { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wallet-status { font-size: 0.8rem; color: var(--green); font-family: monospace; }
+
+.btn {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--bg-hover); }
+.btn.primary { background: var(--accent-dim); border-color: var(--accent); }
+.btn.small { padding: 4px 8px; font-size: 0.75rem; }
+
+.safety-banner {
+  background: #10281a;
+  border: 1px solid #1f5c33;
+  color: #a7d9b4;
+  padding: 10px 24px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.badge-count {
+  background: var(--accent-dim);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+.control input[type="number"] {
+  width: 60px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.control select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.hint { font-size: 0.75rem; }
+.last-update { font-size: 0.75rem; }
+
+.search-bar { display: flex; gap: 8px; padding: 0 24px 12px; }
+.search-bar input {
+  flex: 1;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.9rem;
+}
+
+.alert-box {
+  margin: 0 24px 12px;
+  background: #2d2308;
+  border: 1px solid var(--amber);
+  color: #e8c96a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.error-box {
+  margin: 0 24px 12px;
+  background: #2d1215;
+  border: 1px solid var(--red);
+  color: #f0a8a8;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.loading { padding: 30px 24px; color: var(--text-dim); }
+.empty-state { padding: 40px 24px; color: var(--text-dim); text-align: center; }
+
+main { padding: 0 24px 24px; overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+th {
+  text-align: left;
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+th.num, td.num { text-align: right; }
+td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+tbody tr:hover { background: var(--bg-hover); }
+tr.row-buy { background: rgba(63, 185, 80, 0.07); }
+tr.row-sell { background: rgba(248, 81, 73, 0.07); }
+tr.row-buy:hover { background: rgba(63, 185, 80, 0.14); }
+tr.row-sell:hover { background: rgba(248, 81, 73, 0.14); }
+
+.token-cell { display: flex; align-items: center; gap: 10px; }
+.token-cell img { width: 26px; height: 26px; border-radius: 50%; background: var(--bg-card); }
+.token-name { font-weight: 600; }
+.token-sub { color: var(--text-dim); font-size: 0.75rem; }
+
+.pct-up { color: var(--green); }
+.pct-down { color: var(--red); }
+.pct-flat { color: var(--text-dim); }
+
+.signal {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+.signal-buy { background: #12351c; color: var(--green); border: 1px solid var(--green); }
+.signal-sell { background: #3a1214; color: var(--red); border: 1px solid var(--red); }
+.signal-hold { background: var(--bg-card); color: var(--text-dim); border: 1px solid var(--border); }
+.signal-strong { box-shadow: 0 0 8px rgba(63, 185, 80, 0.35); }
+.signal-strong.signal-sell { box-shadow: 0 0 8px rgba(248, 81, 73, 0.35); }
+
+.risk {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.risk-low { color: var(--green); }
+.risk-mid { color: var(--amber); }
+.risk-high { color: var(--red); font-weight: 600; }
+
+.actions { display: flex; gap: 6px; }
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  opacity: 0.35;
+  transition: opacity 0.15s;
+}
+.star-btn:hover { opacity: 0.8; }
+.star-btn.active { opacity: 1; }
+
+a.buy-link {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 4px 10px;
+  text-decoration: none;
+  font-size: 0.78rem;
+}
+a.chart-link {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 6px;
+  padding: 4px 10px;
+  text-decoration: none;
+  font-size: 0.78rem;
+}
+a.buy-link:hover, a.chart-link:hover { filter: brightness(1.25); }
+
+footer {
+  padding: 16px 24px 32px;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+footer a { color: var(--accent); }
+.disclaimer { margin-top: 8px; }
+
+.hidden { display: none !important; }
+
+/* ---------- swap-modal ---------- */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+.modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.modal-head h2 { font-size: 1.15rem; }
+.buy-title { color: var(--green); }
+.sell-title { color: var(--red); }
+
+.swap-token-info { color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; }
+.swap-risk { color: var(--red); font-size: 0.8rem; margin-bottom: 8px; }
+.swap-warn {
+  background: #2d2308;
+  border: 1px solid var(--amber);
+  color: #e8c96a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+}
+.swap-warn .btn { margin-left: 6px; }
+
+.swap-fields { display: flex; gap: 12px; margin: 12px 0; }
+.swap-field { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; color: var(--text-dim); }
+.amount-wrap { display: flex; align-items: center; gap: 8px; }
+.amount-wrap input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 1.05rem;
+}
+.amount-wrap .unit { font-weight: 700; color: var(--text); }
+.swap-field select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 8px;
+}
+
+.swap-quote { margin: 10px 0; }
+.q-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 0.85rem;
+}
+.q-row span { color: var(--text-dim); }
+
+.confirm-btn { width: 100%; padding: 12px; font-size: 1rem; margin-top: 8px; }
+.confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.swap-status { margin-top: 10px; font-size: 0.85rem; min-height: 1.2em; }
+.swap-status.err { color: var(--red); }
+.swap-status.ok { color: var(--green); }
+.swap-status a { color: var(--accent); }
+
+.swap-note { margin-top: 12px; color: var(--text-dim); font-size: 0.74rem; line-height: 1.5; }
+
+button.trade-buy {
+  background: #12351c;
+  border: 1px solid var(--green);
+  color: var(--green);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+button.trade-sell {
+  background: #3a1214;
+  border: 1px solid var(--red);
+  color: var(--red);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+button.trade-buy:hover, button.trade-sell:hover { filter: brightness(1.3); }
+
+/* ---------- koop/verkoop-druk ---------- */
+
+.pressure { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
+.pressure-bar {
+  width: 64px;
+  height: 7px;
+  border-radius: 4px;
+  background: #5a2226; /* verkoopdeel */
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.pressure-buy { height: 100%; background: var(--green); }
+
+/* ---------- bot-dashboard ---------- */
+
+.bot-panel { padding-top: 8px; }
+.bot-grid { display: flex; flex-direction: column; gap: 14px; }
+.bot-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.bot-card h3 { font-size: 1rem; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bot-card p { font-size: 0.85rem; margin: 6px 0; line-height: 1.5; }
+.bot-card code { background: var(--bg); padding: 2px 6px; border-radius: 5px; font-size: 0.8rem; }
+.bot-card pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+.bot-card table { margin-top: 4px; }
+
+@media (max-width: 720px) {
+  header, .controls, .tabs, main, footer { padding-left: 12px; padding-right: 12px; }
+  .tagline { display: none; }
+  header { padding-top: 12px; padding-bottom: 12px; }
+  h1 { font-size: 1.2rem; }
+  .safety-banner { font-size: 0.75rem; padding: 10px 12px; }
+
+  /* tabbladen: horizontaal scrollbaar in plaats van afgekapt */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { white-space: nowrap; flex-shrink: 0; padding: 10px 12px; }
+
+  /* bedieningsknoppen netjes onder elkaar/verspreid */
+  .controls { gap: 10px 14px; }
+  .control select, .control input[type="number"] { min-height: 34px; }
+}
+
+/* ---------- telefoon: tabel wordt kaartjes ---------- */
+@media (max-width: 640px) {
+  #coinTable thead { display: none; }
+  #coinTable, #coinTable tbody, #coinTable tr, #coinTable td { display: block; width: 100%; }
+
+  #coinTable tr {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px 10px;
+    margin-bottom: 12px;
+  }
+  #coinTable tr.row-buy { border-color: var(--green); }
+  #coinTable tr.row-sell { border-color: var(--red); }
+  #coinTable td { border: none; padding: 0; white-space: normal; }
+
+  /* naam linksboven, ster rechtsboven, prijs eronder */
+  .c-token { margin-right: 40px; }
+  .token-name { font-size: 1rem; }
+  .c-star { position: absolute; top: 10px; right: 10px; }
+  .c-price { font-size: 1.15rem; font-weight: 700; margin: 6px 0 10px; text-align: left; }
+
+  /* de gelabelde cijfers in een net rooster met kop erboven */
+  #coinTable td[data-label] {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 33.33%;
+    text-align: left;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+  }
+  #coinTable td[data-label]::before {
+    content: attr(data-label);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  #coinTable td[data-label] .pressure { flex-wrap: wrap; }
+
+  .c-signal { margin: 4px 0 10px; }
+  .c-signal .signal { font-size: 0.9rem; padding: 6px 12px; }
+
+  /* grote, goed aantikbare handelsknoppen onderaan de kaart */
+  .c-actions .actions { display: flex; gap: 8px; }
+  .c-actions .actions > * {
+    flex: 1;
+    text-align: center;
+    padding: 11px 8px;
+    font-size: 0.9rem;
+  }
+}
