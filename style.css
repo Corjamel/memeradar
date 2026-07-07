@@ -448,10 +448,10 @@ button.trade-buy:active, button.trade-sell:active { transform: translateY(1px); 
 .bot-panel { padding-top: 8px; }
 .bot-grid { display: flex; flex-direction: column; gap: 14px; }
 .bot-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 18px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 18px 20px;
 }
 .bot-card h3 { font-size: 1rem; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .bot-card p { font-size: 0.85rem; margin: 6px 0; line-height: 1.5; }
@@ -551,23 +551,26 @@ button.trade-buy:active, button.trade-sell:active { transform: translateY(1px); 
 }
 
 .reward-hero {
-  border-radius: 18px;
-  padding: 24px 26px;
-  margin-bottom: 16px;
+  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  margin-bottom: var(--s4);
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(46,230,160,0.25);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
   background:
-    radial-gradient(120% 120% at 100% 0%, rgba(88,166,255,0.10), transparent 60%),
-    linear-gradient(135deg, #14351f 0%, #0d1117 55%);
+    radial-gradient(120% 130% at 100% 0%, rgba(168,121,255,0.12), transparent 55%),
+    linear-gradient(135deg, rgba(46,230,160,0.13) 0%, var(--bg-elev) 55%);
 }
 .reward-hero.reward-down {
+  border-color: rgba(255,92,108,0.3);
   background:
-    radial-gradient(120% 120% at 100% 0%, rgba(248,81,73,0.12), transparent 60%),
-    linear-gradient(135deg, #351416 0%, #0d1117 55%);
+    radial-gradient(120% 130% at 100% 0%, rgba(168,121,255,0.1), transparent 55%),
+    linear-gradient(135deg, rgba(255,92,108,0.14) 0%, var(--bg-elev) 55%);
 }
 .reward-hero.reward-flat {
-  background: linear-gradient(135deg, #1a2130 0%, #0d1117 60%);
+  border-color: var(--border);
+  background: linear-gradient(135deg, var(--bg-card-2) 0%, var(--bg-elev) 60%);
 }
 .reward-label { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.02em; }
 .reward-big {
@@ -577,8 +580,8 @@ button.trade-buy:active, button.trade-sell:active { transform: translateY(1px); 
   margin: 6px 0 10px;
   letter-spacing: -0.02em;
 }
-.reward-up .reward-big { color: var(--green); text-shadow: 0 0 24px rgba(63,185,80,0.35); }
-.reward-down .reward-big { color: var(--red); text-shadow: 0 0 24px rgba(248,81,73,0.3); }
+.reward-up .reward-big { color: var(--green); text-shadow: 0 0 28px rgba(46,230,160,0.45); }
+.reward-down .reward-big { color: var(--red); text-shadow: 0 0 28px rgba(255,92,108,0.4); }
 .reward-flat .reward-big { color: var(--text); }
 .reward-unit { font-size: 1.2rem; font-weight: 600; color: var(--text-dim); }
 .reward-split { display: flex; gap: 22px; flex-wrap: wrap; font-size: 0.86rem; color: var(--text-dim); }
@@ -590,12 +593,13 @@ button.trade-buy:active, button.trade-sell:active { transform: translateY(1px); 
   margin-bottom: 16px;
 }
 .stat-tile {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 10px;
+  background: linear-gradient(180deg, var(--bg-card-2), var(--bg-card));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 15px 10px;
   text-align: center;
   position: relative;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 .stat-num { font-size: 1.5rem; font-weight: 700; }
 .stat-lbl { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-top: 2px; letter-spacing: 0.03em; }
