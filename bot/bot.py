@@ -268,12 +268,27 @@ def execute_swap(kp, quote):
 
 # ---------- staat ----------
 
-def load_state():
+def new_portfolio(cfg):
+    return {"positions": {}, "trades": [], "day_spent_sol": 0.0,
+            "paper_sol": cfg.get("paper_start_sol", 1.0), "cooldown": {}}
+
+
+def load_state(cfg):
     if os.path.exists(STATE_PATH):
         with open(STATE_PATH) as f:
-            return json.load(f)
-    return {"positions": {}, "trades": [], "day": "", "day_spent_sol": 0.0,
-            "paper_sol": None, "cooldown": {}}
+            st = json.load(f)
+        if "variants" in st:
+            # nieuwe varianten uit de config toevoegen zonder bestaande voortgang te wissen
+            for v in cfg.get("training", {}).get("varianten", []):
+                st["variants"].setdefault(v["naam"], new_portfolio(cfg))
+            return st
+    # vers begin (of oud formaat): elke strategievariant krijgt een eigen
+    # nepgeld-portefeuille zodat ze eerlijk vergeleken kunnen worden
+    variants = {v["naam"]: new_portfolio(cfg)
+                for v in cfg.get("training", {}).get("varianten", [])} \
+        or {"standaard": new_portfolio(cfg)}
+    return {"day": "", "training_start": time.strftime("%Y-%m-%d"),
+            "variants": variants}
 
 
 def save_state(st):
@@ -281,45 +296,97 @@ def save_state(st):
         json.dump(st, f, indent=1)
 
 
-def write_status(cfg, st, kp, market, balance, error=None):
+def portfolio_stats(port, market):
+    """Prestaties van één portefeuille: posities, beloning, win-rate."""
     positions = []
-    for mint, pos in st["positions"].items():
+    for mint, pos in port["positions"].items():
         cur = market.get(mint, {}).get("price")
         pnl = ((cur / pos["entry_price"]) - 1) * 100 if cur and pos["entry_price"] else None
         positions.append({**pos, "mint": mint, "current_price": cur, "pnl_pct": pnl})
+    sells = [t for t in port["trades"] if t["side"] == "VERKOOP" and t.get("profit_sol") is not None]
+    realized = sum(t["profit_sol"] for t in sells)
+    wins = sum(1 for t in sells if t["profit_sol"] > 0)
+    losses = sum(1 for t in sells if t["profit_sol"] <= 0)
+    unrealized = sum((p["current_price"] / p["entry_price"] - 1) * p["sol_spent"]
+                     for p in positions
+                     if p.get("current_price") and p.get("entry_price"))
+    return positions, {
+        "realized_sol": round(realized, 6),
+        "unrealized_sol": round(unrealized, 6),
+        "total_sol": round(realized + unrealized, 6),
+        "wins": wins, "losses": losses, "closed_trades": len(sells),
+        "win_rate": round(wins / len(sells) * 100) if sells else None,
+        "best_pct": max((t["pnl_pct"] for t in sells if t.get("pnl_pct") is not None), default=None),
+        "worst_pct": min((t["pnl_pct"] for t in sells if t.get("pnl_pct") is not None), default=None),
+    }
+
+
+def training_report(cfg, st, market):
+    """Ranglijst van alle varianten + toets aan de slagingseisen."""
+    eisen = cfg.get("training", {}).get("slagingseisen", {})
+    rows = []
+    for naam, port in st["variants"].items():
+        _, s = portfolio_stats(port, market)
+        rules = next((v for v in cfg.get("training", {}).get("varianten", [])
+                      if v["naam"] == naam), {})
+        rows.append({"naam": naam, "regels": {k: v for k, v in rules.items() if k != "naam"},
+                     **s, "open_posities": len(port["positions"])})
+    rows.sort(key=lambda r: r["total_sol"], reverse=True)
+    champion = rows[0] if rows else None
+
+    dagen = 0
+    if st.get("training_start"):
+        try:
+            dagen = (date.today() - date.fromisoformat(st["training_start"])).days
+        except ValueError:
+            pass
+
+    checks = {}
+    geslaagd = False
+    if champion:
+        checks = {
+            "genoeg_trades": {"nodig": eisen.get("min_trades", 20),
+                              "nu": champion["closed_trades"],
+                              "ok": champion["closed_trades"] >= eisen.get("min_trades", 20)},
+            "genoeg_dagen": {"nodig": eisen.get("min_dagen", 7), "nu": dagen,
+                             "ok": dagen >= eisen.get("min_dagen", 7)},
+            "winst": {"nodig": 0, "nu": champion["total_sol"],
+                      "ok": champion["total_sol"] > 0},
+            "win_rate": {"nodig": eisen.get("min_winrate_pct", 50),
+                         "nu": champion["win_rate"],
+                         "ok": (champion["win_rate"] or 0) >= eisen.get("min_winrate_pct", 50)},
+        }
+        geslaagd = all(c["ok"] for c in checks.values())
+    return {"ranglijst": rows, "kampioen": champion["naam"] if champion else None,
+            "dagen_bezig": dagen, "eisen": checks, "geslaagd": geslaagd}
+
+
+def write_status(cfg, st, kp, market, balance, error=None):
     watching = [{"symbol": d["symbol"], "change24h": d["change24h"], "price": d["price"]}
                 for d in market.values()]
 
-    # beloningen: gerealiseerde winst en prestaties uit alle afgeronde verkopen
-    sells = [t for t in st["trades"] if t["side"] == "VERKOOP" and t.get("profit_sol") is not None]
-    realized_sol = sum(t["profit_sol"] for t in sells)
-    wins = sum(1 for t in sells if t["profit_sol"] > 0)
-    losses = sum(1 for t in sells if t["profit_sol"] <= 0)
-    win_rate = (wins / len(sells) * 100) if sells else None
-    best = max((t["pnl_pct"] for t in sells if t.get("pnl_pct") is not None), default=None)
-    worst = min((t["pnl_pct"] for t in sells if t.get("pnl_pct") is not None), default=None)
-    unrealized_sol = sum((p["current_price"] / p["entry_price"] - 1) * p["sol_spent"]
-                         for p in positions
-                         if p.get("current_price") and p.get("entry_price"))
-    stats = {
-        "realized_sol": round(realized_sol, 6),
-        "unrealized_sol": round(unrealized_sol, 6),
-        "total_sol": round(realized_sol + unrealized_sol, 6),
-        "wins": wins, "losses": losses, "closed_trades": len(sells),
-        "win_rate": round(win_rate, 0) if win_rate is not None else None,
-        "best_pct": best, "worst_pct": worst,
-    }
+    training = None
+    variants = cfg.get("training", {}).get("varianten", [])
+    if cfg["mode"] != "live" and variants:
+        training = training_report(cfg, st, market)
+        lead_name = training["kampioen"]
+    else:
+        lead_name = next(iter(st["variants"]))
+    # het hoofddashboard (beloningskaart) toont de best presterende strategie
+    lead = st["variants"].get(lead_name) or next(iter(st["variants"].values()))
+    positions, stats = portfolio_stats(lead, market)
 
     with open(STATUS_PATH, "w") as f:
         json.dump({
             "watching": watching,
             "mode": cfg["mode"],
             "wallet": str(kp.pubkey()),
-            "sol_balance": balance,
-            "day_spent_sol": st["day_spent_sol"],
+            "sol_balance": balance if cfg["mode"] == "live" else lead.get("paper_sol"),
+            "day_spent_sol": lead.get("day_spent_sol", 0),
             "stats": stats,
             "positions": positions,
-            "trades": st["trades"][-20:],
+            "trades": lead["trades"][-20:],
+            "training": training,
             "settings": {k: cfg[k] for k in (
                 "koop_drempel_pct", "verkoop_drempel_pct", "stop_loss_pct",
                 "take_profit_pct", "per_trade_sol", "max_posities",
@@ -327,10 +394,12 @@ def write_status(cfg, st, kp, market, balance, error=None):
             "error": error,
             "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         }, f, indent=1)
+    if training and training["geslaagd"]:
+        log(f"🎓 TRAINING GESLAAGD — beste strategie: {training['kampioen']}")
 
 
 def record_trade(st, side, mint, symbol, sol_amount, price, reason, sig=None,
-                 pnl_pct=None, profit_sol=None):
+                 pnl_pct=None, profit_sol=None, tag=""):
     st["trades"].append({
         "time": time.strftime("%Y-%m-%d %H:%M:%S"), "side": side, "mint": mint,
         "symbol": symbol, "sol": round(sol_amount, 6), "price": price,
@@ -338,7 +407,8 @@ def record_trade(st, side, mint, symbol, sol_amount, price, reason, sig=None,
         "pnl_pct": round(pnl_pct, 1) if pnl_pct is not None else None,
         "profit_sol": round(profit_sol, 6) if profit_sol is not None else None,
     })
-    log(f"{side} {symbol}: {sol_amount:.4f} SOL @ ${price:.10g} — {reason}"
+    pre = f"[{tag}] " if tag else ""
+    log(f"{pre}{side} {symbol}: {sol_amount:.4f} SOL @ ${price:.10g} — {reason}"
         + (f" (tx {sig[:16]}…)" if sig else ""))
 
 
@@ -366,7 +436,8 @@ def try_buy(cfg, st, kp, mint, d, live):
     }
     st["day_spent_sol"] += per_trade
     st["cooldown"][mint] = time.time()
-    record_trade(st, "KOOP", mint, d["symbol"], per_trade, price, reason, sig)
+    record_trade(st, "KOOP", mint, d["symbol"], per_trade, price, reason, sig,
+                 tag=cfg.get("_variant", ""))
 
 
 def try_sell(cfg, st, kp, mint, pos, d, reason, live):
@@ -390,13 +461,73 @@ def try_sell(cfg, st, kp, mint, pos, d, reason, live):
     st["cooldown"][mint] = time.time()
     record_trade(st, "VERKOOP", mint, pos["symbol"], got_sol, price,
                  f"{reason} (resultaat {pnl:+.1f}%)", sig,
-                 pnl_pct=pnl, profit_sol=profit_sol)
+                 pnl_pct=pnl, profit_sol=profit_sol, tag=cfg.get("_variant", ""))
+
+
+def effective_cfg(cfg, variant):
+    """Basisconfig + de regels van één strategievariant."""
+    eff = dict(cfg)
+    eff.update({k: v for k, v in variant.items() if k != "naam"})
+    eff["_variant"] = variant.get("naam", "")
+    return eff
+
+
+def run_rules(eff, port, kp, market, live):
+    """Voer de koop/verkoop-regels van één strategie uit op één portefeuille."""
+    # 1) verkopen: trailing / stop-loss / take-profit / drempel
+    for mint, pos in list(port["positions"].items()):
+        d = market.get(mint)
+        if not d or not d["price"]:
+            continue
+        price = d["price"]
+        pnl = ((price / pos["entry_price"]) - 1) * 100 if pos["entry_price"] else 0
+        ch = d["change24h"]
+        # piek bijhouden voor de trailing stop
+        pos["peak_price"] = max(pos.get("peak_price", pos["entry_price"]), price)
+        trail = eff.get("trailing_pct")
+        drop_from_peak = ((price / pos["peak_price"]) - 1) * 100 if pos["peak_price"] else 0
+        if trail and drop_from_peak <= -trail and pnl > 0:
+            try_sell(eff, port, kp, mint, pos, d,
+                     f"trailing-stop {drop_from_peak:+.1f}% vanaf piek", live)
+        elif pnl <= -eff["stop_loss_pct"]:
+            try_sell(eff, port, kp, mint, pos, d, f"stop-loss {pnl:+.1f}%", live)
+        elif not trail and pnl >= eff["take_profit_pct"]:
+            try_sell(eff, port, kp, mint, pos, d, f"take-profit {pnl:+.1f}%", live)
+        elif ch is not None and ch <= -eff["verkoop_drempel_pct"]:
+            try_sell(eff, port, kp, mint, pos, d,
+                     f"24u {ch:+.1f}% ≤ −{eff['verkoop_drempel_pct']}%", live)
+
+    # 2) kopen: drempel + alle risicofilters
+    for mint, d in market.items():
+        if mint in port["positions"] or not d["price"]:
+            continue
+        ch = d["change24h"]
+        if ch is None or ch < eff["koop_drempel_pct"]:
+            continue
+        if not passes_filters(d, eff):
+            continue
+        if len(port["positions"]) >= eff["max_posities"]:
+            continue
+        if port["day_spent_sol"] + eff["per_trade_sol"] > eff["max_dag_budget_sol"]:
+            break
+        if time.time() - port["cooldown"].get(mint, 0) < eff["cooldown_minuten"] * 60:
+            continue
+        if live:
+            bal = sol_balance(kp.pubkey())
+            if bal < eff["per_trade_sol"] + 0.01:  # reserve voor transactiekosten
+                log(f"te weinig SOL ({bal:.4f}) voor een trade van {eff['per_trade_sol']}")
+                break
+        elif port["paper_sol"] < eff["per_trade_sol"]:
+            break
+        try_buy(eff, port, kp, mint, d, live)
 
 
 def tick(cfg, st, kp, live):
     today = str(date.today())
     if st["day"] != today:
-        st["day"], st["day_spent_sol"] = today, 0.0
+        st["day"] = today
+        for port in st["variants"].values():
+            port["day_spent_sol"] = 0.0
 
     mints = list(dict.fromkeys(cfg["tokens"]))
     if cfg.get("auto_scan"):
@@ -404,55 +535,26 @@ def tick(cfg, st, kp, live):
             mints += [m for m in auto_scan_mints(cfg) if m not in mints]
         except Exception as e:  # noqa: BLE001
             log(f"auto-scan mislukt: {e}")
-    mints += [m for m in st["positions"] if m not in mints]  # posities altijd volgen
+    for port in st["variants"].values():
+        mints += [m for m in port["positions"] if m not in mints]  # posities altijd volgen
     if not mints:
         log("geen tokens geconfigureerd — vul 'tokens' in config.json")
         return {}
 
     market = fetch_market(mints)
 
-    # 1) verkopen: drempel / stop-loss / take-profit
-    for mint, pos in list(st["positions"].items()):
-        d = market.get(mint)
-        if not d or not d["price"]:
-            continue
-        pnl = ((d["price"] / pos["entry_price"]) - 1) * 100 if pos["entry_price"] else 0
-        ch = d["change24h"]
-        if pnl <= -cfg["stop_loss_pct"]:
-            try_sell(cfg, st, kp, mint, pos, d, f"stop-loss {pnl:+.1f}%", live)
-        elif pnl >= cfg["take_profit_pct"]:
-            try_sell(cfg, st, kp, mint, pos, d, f"take-profit {pnl:+.1f}%", live)
-        elif ch is not None and ch <= -cfg["verkoop_drempel_pct"]:
-            try_sell(cfg, st, kp, mint, pos, d,
-                     f"24u {ch:+.1f}% ≤ −{cfg['verkoop_drempel_pct']}%", live)
-
-    # 2) kopen: 10%-regel + alle risicofilters
-    for mint in mints:
-        d = market.get(mint)
-        if not d or mint in st["positions"] or not d["price"]:
-            continue
-        ch = d["change24h"]
-        if ch is None or ch < cfg["koop_drempel_pct"]:
-            continue
-        if not passes_filters(d, cfg):
-            continue
-        if len(st["positions"]) >= cfg["max_posities"]:
-            continue
-        if st["day_spent_sol"] + cfg["per_trade_sol"] > cfg["max_dag_budget_sol"]:
-            log("dagbudget bereikt — geen nieuwe aankopen vandaag")
-            break
-        cd = st["cooldown"].get(mint, 0)
-        if time.time() - cd < cfg["cooldown_minuten"] * 60:
-            continue
-        if live:
-            bal = sol_balance(kp.pubkey())
-            if bal < cfg["per_trade_sol"] + 0.01:  # reserve voor transactiekosten
-                log(f"te weinig SOL ({bal:.4f}) voor een trade van {cfg['per_trade_sol']}")
-                break
-        elif st["paper_sol"] < cfg["per_trade_sol"]:
-            log("papiersaldo op")
-            break
-        try_buy(cfg, st, kp, mint, d, live)
+    variants = cfg.get("training", {}).get("varianten", [])
+    if live or not variants:
+        # live (of zonder training): alleen de basisregels, op de eerste portefeuille
+        name = next(iter(st["variants"]))
+        base = dict(cfg)
+        base["_variant"] = ""
+        run_rules(base, st["variants"][name], kp, market, live)
+    else:
+        # training: elke variant handelt met eigen nepgeld op dezelfde marktdata
+        for v in variants:
+            port = st["variants"].setdefault(v["naam"], new_portfolio(cfg))
+            run_rules(effective_cfg(cfg, v), port, kp, market, live=False)
 
     return market
 
@@ -488,25 +590,32 @@ def main():
         sys.exit(1)
 
     kp, created = load_or_create_wallet()
-    st = load_state()
-    if st["paper_sol"] is None:
-        st["paper_sol"] = cfg.get("paper_start_sol", 1.0)
+    st = load_state(cfg)
 
+    variants = cfg.get("training", {}).get("varianten", [])
     print("=" * 64)
     print(f"  MemeRadar-bot — modus: {'🔴 LIVE (echt geld!)' if live else '🟢 PAPER (oefenen, nepgeld)'}")
     print(f"  Bot-wallet: {kp.pubkey()}")
     if created:
-        print("  ➜ NIEUWE wallet aangemaakt (bot/wallet.json — maak hier een backup van).")
+        print("  ➜ NIEUWE wallet aangemaakt — maak een backup van ~/.memeradar/wallet.json")
     if live:
         bal = sol_balance(kp.pubkey())
         print(f"  Saldo: {bal:.4f} SOL")
         if bal == 0:
             print("  ➜ Stort een KLEIN bedrag SOL op het adres hierboven om te handelen.")
         print("  ⚠️  Alleen geld gebruiken dat je volledig kunt missen.")
-    else:
-        print(f"  Papiersaldo: {st['paper_sol']:.4f} SOL (nepgeld)")
-    print(f"  Regels: koop ≥ +{cfg['koop_drempel_pct']}% | verkoop ≤ −{cfg['verkoop_drempel_pct']}% "
-          f"| SL {cfg['stop_loss_pct']}% | TP {cfg['take_profit_pct']}%")
+        print(f"  Regels: koop ≥ +{cfg['koop_drempel_pct']}% | verkoop ≤ −{cfg['verkoop_drempel_pct']}% "
+              f"| SL {cfg['stop_loss_pct']}% | TP {cfg['take_profit_pct']}%")
+    elif variants:
+        print(f"  🎓 TRAINING: {len(variants)} strategieën strijden met elk "
+              f"{cfg.get('paper_start_sol', 1.0)} SOL nepgeld:")
+        for v in variants:
+            trail = f"trailing {v['trailing_pct']}%" if v.get("trailing_pct") else f"TP {v.get('take_profit_pct', cfg['take_profit_pct'])}%"
+            print(f"     • {v['naam']}: koop +{v.get('koop_drempel_pct', cfg['koop_drempel_pct'])}% | "
+                  f"SL {v.get('stop_loss_pct', cfg['stop_loss_pct'])}% | {trail}")
+        e = cfg.get("training", {}).get("slagingseisen", {})
+        print(f"  Geslaagd bij: ≥{e.get('min_trades', 20)} trades, ≥{e.get('min_dagen', 7)} dagen, "
+              f"winst, win-rate ≥{e.get('min_winrate_pct', 50)}%")
     print(f"  Limieten: {cfg['per_trade_sol']} SOL/trade | {cfg['max_dag_budget_sol']} SOL/dag "
           f"| max {cfg['max_posities']} posities")
     print("  Stoppen: Ctrl+C")
@@ -528,18 +637,19 @@ def main():
             err = str(e)
             log(f"⚠️ ronde mislukt: {e}")
         try:
-            bal = sol_balance(kp.pubkey()) if live else st["paper_sol"]
+            bal = sol_balance(kp.pubkey()) if live else None
         except Exception:  # noqa: BLE001
             bal = None
         save_state(st)
         write_status(cfg, st, kp, market, bal, err)
         if market and not err:
+            top = sorted(market.values(), key=lambda d: -(d.get("change24h") or -999))[:4]
             summary = " · ".join(
-                f"{d['symbol']} {d['change24h']:+.1f}%" for d in market.values()
+                f"{d['symbol']} {d['change24h']:+.1f}%" for d in top
                 if d.get("change24h") is not None)
-            log(f"volgt: {summary}  (koop ≥ +{cfg['koop_drempel_pct']}%, "
-                f"verkoop ≤ −{cfg['verkoop_drempel_pct']}%) — "
-                f"{len(st['positions'])} positie(s) open")
+            open_tot = sum(len(p["positions"]) for p in st["variants"].values())
+            log(f"volgt {len(market)} tokens (top: {summary}) — "
+                f"{open_tot} positie(s) open over {len(st['variants'])} strategieën")
         for _ in range(cfg.get("interval_seconden", 60)):
             if not running:
                 break

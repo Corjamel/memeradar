@@ -834,6 +834,52 @@ function setTab(tab) {
 
 /* ---------- bot-dashboard (leest bot/status.json die de Python-bot schrijft) ---------- */
 
+/* Trainingskaart: ranglijst van strategieën + voortgang naar het diploma */
+function renderTraining(t) {
+  if (!t || !t.ranglijst || !t.ranglijst.length) return '';
+  const fmtSol = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${Number(v).toFixed(4).replace('.', ',')}`);
+
+  const eisLabels = {
+    genoeg_trades: 'Afgeronde trades',
+    genoeg_dagen: 'Trainingsdagen',
+    winst: 'Winstgevend',
+    win_rate: 'Win-rate',
+  };
+  const eisen = Object.entries(t.eisen || {}).map(([k, e]) => {
+    const nu = k === 'winst' ? fmtSol(e.nu) + ' SOL' : (e.nu ?? 0) + (k === 'win_rate' ? '%' : '');
+    const doel = k === 'winst' ? '> 0' : '≥ ' + e.nodig + (k === 'win_rate' ? '%' : '');
+    return `<div class="eis ${e.ok ? 'eis-ok' : ''}">
+      <span class="eis-check">${e.ok ? '✓' : '·'}</span>
+      <span class="eis-naam">${eisLabels[k] || k}</span>
+      <span class="eis-waarde">${escapeHtml(String(nu))} <span class="token-sub">/ ${escapeHtml(doel)}</span></span>
+    </div>`;
+  }).join('');
+
+  const rows = t.ranglijst.map((r, i) => {
+    const cls = r.total_sol > 0 ? 'pct-up' : r.total_sol < 0 ? 'pct-down' : 'pct-flat';
+    const regels = Object.entries(r.regels || {}).map(([k, v]) => {
+      const kort = { koop_drempel_pct: 'koop +', stop_loss_pct: 'SL ', take_profit_pct: 'TP ', trailing_pct: 'trail ' }[k];
+      return kort ? kort + v + '%' : '';
+    }).filter(Boolean).join(' · ');
+    return `<div class="train-row ${i === 0 ? 'train-champ' : ''}">
+      <span class="train-rank">${i === 0 ? '🏆' : i + 1}</span>
+      <span class="train-name">${escapeHtml(r.naam)}<span class="token-sub"> ${escapeHtml(regels)}</span></span>
+      <span class="train-stats token-sub">${r.closed_trades} trades · win ${r.win_rate == null ? '—' : r.win_rate + '%'} · ${r.open_posities} open</span>
+      <span class="train-sol ${cls}">${fmtSol(r.total_sol)} SOL</span>
+    </div>`;
+  }).join('');
+
+  return `
+    ${t.geslaagd ? `<div class="grad-banner">🎓 <strong>Training voltooid!</strong> Beste strategie: <strong>${escapeHtml(t.kampioen)}</strong> — voldoet aan alle slagingseisen. Wil je hiermee echt gaan handelen, vraag dan aan Claude om deze strategie over te nemen en volg de stappen in de README (bewust en met klein geld).</div>` : ''}
+    <div class="bot-card train-card">
+      <h3>🎓 Training — dag ${t.dagen_bezig ?? 0} <span class="token-sub">5 strategieën strijden met nepgeld; de beste telt</span></h3>
+      <div class="eisen-grid">${eisen}</div>
+      <div class="train-list">${rows}</div>
+      <p class="token-sub">Eerlijk: winst in de training garandeert géén winst in het echt — de markt verandert.
+      Maar zo zie je zwart-op-wit welke aanpak het beste standhoudt vóór er ook maar één echte euro op het spel staat.</p>
+    </div>`;
+}
+
 async function renderBotPanel() {
   const panel = $('botPanel');
   let s;
@@ -861,6 +907,22 @@ async function renderBotPanel() {
         { time: '2026-01-01 13:15:00', side: 'VERKOOP', symbol: 'SLERF', sol: 0.0451, reason: 'stop-loss −9,8%', pnl_pct: -9.8, profit_sol: -0.0049 },
       ],
       settings: { koop_drempel_pct: 10, verkoop_drempel_pct: 10, stop_loss_pct: 10, take_profit_pct: 25, per_trade_sol: 0.05, max_posities: 3, max_dag_budget_sol: 0.25 },
+      training: {
+        dagen_bezig: 4, kampioen: 'Trailing', geslaagd: false,
+        eisen: {
+          genoeg_trades: { nodig: 20, nu: 11, ok: false },
+          genoeg_dagen: { nodig: 7, nu: 4, ok: false },
+          winst: { nodig: 0, nu: 0.031, ok: true },
+          win_rate: { nodig: 50, nu: 64, ok: true },
+        },
+        ranglijst: [
+          { naam: 'Trailing', regels: { koop_drempel_pct: 10, stop_loss_pct: 10, trailing_pct: 10 }, total_sol: 0.031, win_rate: 64, closed_trades: 11, open_posities: 1 },
+          { naam: 'Jouw regel', regels: { koop_drempel_pct: 10, stop_loss_pct: 10, take_profit_pct: 25 }, total_sol: 0.018, win_rate: 55, closed_trades: 9, open_posities: 2 },
+          { naam: 'Voorzichtig', regels: { koop_drempel_pct: 10, stop_loss_pct: 5, take_profit_pct: 15 }, total_sol: 0.006, win_rate: 50, closed_trades: 14, open_posities: 1 },
+          { naam: 'Streng', regels: { koop_drempel_pct: 20, stop_loss_pct: 10, take_profit_pct: 30 }, total_sol: 0.002, win_rate: 67, closed_trades: 3, open_posities: 0 },
+          { naam: 'Gevoelig', regels: { koop_drempel_pct: 5, stop_loss_pct: 8, take_profit_pct: 20 }, total_sol: -0.012, win_rate: 38, closed_trades: 16, open_posities: 2 },
+        ],
+      },
       error: null, updated_at: '',
     };
   }
@@ -960,6 +1022,8 @@ async function renderBotPanel() {
       </div>
     </div>
 
+    ${renderTraining(s.training)}
+
     <div class="bot-grid">
       <div class="bot-card status-card">
         <div class="status-head">
@@ -1021,9 +1085,9 @@ function init() {
       sessionStorage.setItem('mr_healed', '1');
       Promise.allSettled([
         fetch(location.pathname, { cache: 'reload' }),
-        fetch('app.js?v=16', { cache: 'reload' }),
-        fetch('swap.js?v=16', { cache: 'reload' }),
-        fetch('style.css?v=16', { cache: 'reload' }),
+        fetch('app.js?v=17', { cache: 'reload' }),
+        fetch('swap.js?v=17', { cache: 'reload' }),
+        fetch('style.css?v=17', { cache: 'reload' }),
       ]).then(() => location.reload());
       return;
     }

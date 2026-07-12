@@ -9,8 +9,24 @@
   ],
   "_tokens_uitleg": "Solana-mintadressen die de bot mag verhandelen (standaard: BONK en WIF). Voeg toe wat jij wilt volgen — adressen vind je in de app via Zoeken.",
 
-  "auto_scan": false,
-  "_auto_scan_uitleg": "true = ook zelf trending (boosted) tokens zoeken die aan de filters voldoen. Riskanter: boosts zijn betaalde promotie. Standaard uit.",
+  "auto_scan": true,
+  "_auto_scan_uitleg": "true = ook zelf tokens zoeken die aan de strenge filters voldoen (alleen geverifieerd + gezonde organische score). Tijdens training aan, zodat er genoeg kansen zijn om van te leren.",
+
+  "training": {
+    "_uitleg": "5 strategieën handelen tegelijk, elk met eigen nepgeld. De ranglijst staat in de app (tabblad Bot). Zodra de beste strategie aan de slagingseisen voldoet, meldt het dashboard: training voltooid.",
+    "varianten": [
+      { "naam": "Jouw regel",   "koop_drempel_pct": 10, "stop_loss_pct": 10, "take_profit_pct": 25 },
+      { "naam": "Voorzichtig",  "koop_drempel_pct": 10, "stop_loss_pct": 5,  "take_profit_pct": 15 },
+      { "naam": "Streng",       "koop_drempel_pct": 20, "stop_loss_pct": 10, "take_profit_pct": 30 },
+      { "naam": "Gevoelig",     "koop_drempel_pct": 5,  "stop_loss_pct": 8,  "take_profit_pct": 20 },
+      { "naam": "Trailing",     "koop_drempel_pct": 10, "stop_loss_pct": 10, "trailing_pct": 10 }
+    ],
+    "slagingseisen": {
+      "min_trades": 20,
+      "min_dagen": 7,
+      "min_winrate_pct": 50
+    }
+  },
 
   "koop_drempel_pct": 10,
   "verkoop_drempel_pct": 10,

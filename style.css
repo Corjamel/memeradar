@@ -539,6 +539,61 @@ button.trade-buy:active, button.trade-sell:active { transform: translateY(1px); 
 
 /* ---------- bot-dashboard: beloningen & stats ---------- */
 
+/* ---------- trainingskaart ---------- */
+
+.grad-banner {
+  background: linear-gradient(120deg, rgba(46,230,160,0.18), rgba(168,121,255,0.12));
+  border: 1px solid rgba(46,230,160,0.5);
+  color: #c8f5e2;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+  margin-bottom: var(--s4);
+  line-height: 1.55;
+  box-shadow: 0 0 30px rgba(46,230,160,0.12);
+}
+
+.train-card { margin-bottom: var(--s4); }
+.eisen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s2);
+  margin-bottom: var(--s4);
+}
+.eis {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.eis-ok { border-color: rgba(46,230,160,0.4); }
+.eis-check { color: var(--text-faint); font-weight: 700; }
+.eis-ok .eis-check { color: var(--green); }
+.eis-naam { flex: 1; }
+.eis-waarde { font-weight: 600; color: var(--text); }
+
+.train-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--s3); }
+.train-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 10px 13px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+.train-champ {
+  border-color: rgba(46,230,160,0.45);
+  background: linear-gradient(120deg, rgba(46,230,160,0.08), var(--bg-card));
+}
+.train-rank { width: 24px; text-align: center; font-weight: 700; color: var(--text-faint); }
+.train-name { flex: 1; font-weight: 700; min-width: 140px; }
+.train-stats { min-width: 150px; }
+.train-sol { font-weight: 700; margin-left: auto; }
+
 .demo-banner {
   background: #1a2740;
   border: 1px solid var(--accent);
