@@ -487,7 +487,7 @@
       <div id="kcloudmsg" style="min-height:18px;margin-top:10px;font-size:13px;font-weight:700;color:var(--coral-d);white-space:pre-wrap"></div>
     </div>
     <div style="margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);text-align:center">
-      <a role="button" tabindex="0" onclick="ghostPrompt()" onkeydown="if(event.key==='Enter')ghostPrompt()" style="font-size:12.5px;color:var(--grey);cursor:pointer">👻 Ghost-toegang — test alle rollen (offline)</a>
+      <a id="ghostLink" role="button" tabindex="0" onclick="ghostPrompt()" onkeydown="if(event.key==='Enter')ghostPrompt()" style="font-size:12.5px;color:var(--grey);cursor:pointer">👻 Ghost Protocol — test alle rollen (lokaal)</a>
     </div>
     </div>
    </div>
@@ -544,7 +544,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v64-cloud · TPCloud-datalaag + omzet-compleet + ghost testmodus';
+window.__TP_BUILD='v64b-cloud · ghost lokaal-only (verborgen op productie) + TPCloud + omzet-compleet';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -921,21 +921,24 @@ function _doLoginKantoorVervolg(n,_u){
   kantoorNaam=_u.naam;kantoorRol=_u.rol;kantoorRechten=_u.rol==='beheer'?Object.assign({},ALLE_RECHTEN):Object.assign({},_u.rechten);beheerOpen=false;
   Store.profile=n;role='kantoor';document.getElementById('login').style.display='none';document.getElementById('app').hidden=false;document.getElementById('who').textContent=n;const rl=document.getElementById('roleLabel');if(rl)rl.textContent='Kantoor';go('kdash');}
 
-/* ============== 👻 GHOST-TOEGANG (alleen om te testen) ==============
-   Eén sleutel die in ÁLLE rollen binnenkomt — volledig offline, zonder cloud,
-   hosting of Supabase. Bedoeld om zelf snel elke rol te bekijken en er live
-   tussen te wisselen met de balk onderin.
-   LET OP: dit is een test-achterdeur. Zet GHOST_AAN op false (of verwijder dit
-   blok) voordat je live gaat met echte klantgegevens. */
-var GHOST_AAN=true;        // false = ghost volledig uit
-var GHOST_PW='ghost';      // wachtwoord voor de ghost-toegang (pas gerust aan)
+/* ============== 👻 GHOST PROTOCOL (alleen lokaal testen) ==============
+   Eén ingang die in ÁLLE rollen binnenkomt — volledig offline, zonder cloud of
+   hosting. Bedoeld om zelf snel elke rol te bekijken en er live tussen te wisselen
+   met de balk onderin.
+   VEILIG OP PRODUCTIE: werkt UITSLUITEND als het bestand lokaal draait (direct
+   geopend via file:// of localhost). Op een gehoste (https) site is de ghost
+   automatisch verborgen én niet te activeren — geen achterdeur op productie.
+   Daarom is er ook geen wachtwoord nodig: hij kan buiten lokaal toch niet aan.
+   Zet GHOST_AAN op false om 'm ook lokaal helemaal uit te schakelen. */
+var GHOST_AAN=true;
+function _ghostLokaal(){try{return location.protocol==='file:'||/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?)$/.test(location.hostname||'');}catch(e){return false;}}
+function ghostBeschikbaar(){return GHOST_AAN&&_ghostLokaal();}
+/* Verberg de ghost-link zodra we NIET lokaal draaien (gehoste site). */
+function _ghostLinkSync(){try{var a=document.getElementById('ghostLink');if(a){var box=a.closest?a.closest('div'):a.parentElement;if(box)box.style.display=ghostBeschikbaar()?'':'none';}}catch(e){}}
 window.__ghost=false;window.__ghostRole='';window.__ghostAcc='';
 function ghostPrompt(){
-  if(!GHOST_AAN){toast('Ghost-toegang staat uit.');return;}
-  edOpen({titel:'👻 Ghost-toegang',hint:'Voer het ghost-wachtwoord in. Hiermee test je alle rollen en accounts offline.',cb:function(p){
-    if(String(p||'')!==GHOST_PW){toast('Onjuist ghost-wachtwoord.');return;}
-    window.__ghost=true;ghostGo('am');
-  }});
+  if(!ghostBeschikbaar()){toast('Ghost Protocol werkt alleen lokaal (bestand direct openen of localhost) — op de gepubliceerde site is hij bewust uitgeschakeld.');return;}
+  edConfirm('👻 Ghost Protocol activeren?','Hiermee test je alle rollen en accounts lokaal. Werkt niet op de gepubliceerde site.',function(){window.__ghost=true;ghostGo('am');});
 }
 /* Alle beschikbare accounts per rol — zodat je in de ghost kunt kiezen wélk account. */
 function ghostAccounts(r){
@@ -4012,7 +4015,8 @@ migrate();
 renderChips();
 const last=LS.getItem("tp_portal::__last__");
 if(last){document.getElementById("pname").value=last;}
-document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('tp-build');if(b)b.textContent='build '+window.__TP_BUILD;});
+try{_ghostLinkSync();}catch(e){}
+document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('tp-build');if(b)b.textContent='build '+window.__TP_BUILD;try{_ghostLinkSync();}catch(e){}});
 </script>
 <div id="edsheet" hidden style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:960;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(30,25,20,.25);padding:16px 16px calc(16px + env(safe-area-inset-bottom))">
   <div style="max-width:560px;margin:0 auto">
