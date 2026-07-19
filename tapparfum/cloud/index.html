@@ -61,8 +61,9 @@
     <h1>Inloggen</h1>
     <div class="sub">Je gegevens staan veilig in de cloud — op elk apparaat gelijk.</div>
 
-    <div class="seg">
-      <button id="tabWinkel" class="on" onclick="setRol('winkel')">Winkel</button>
+    <div class="seg" style="font-size:13px">
+      <button id="tabAm" onclick="setRol('am')">Accountmanager</button>
+      <button id="tabWinkel" class="on" onclick="setRol('winkel')">Partner</button>
       <button id="tabKantoor" onclick="setRol('kantoor')">Kantoor</button>
     </div>
 
@@ -105,14 +106,24 @@
       </div>
     </div>
 
+    <!-- Accountmanager -->
+    <div id="amMain" class="hidden">
+      <p class="note">Voor accountmanagers: log in met je e-mail en wachtwoord. Je ziet je eigen winkels.</p>
+      <label for="aEmail">E-mailadres</label>
+      <input type="email" id="aEmail" autocomplete="username" placeholder="jij@retail-brands.nl">
+      <label for="aPass">Wachtwoord</label>
+      <input type="password" id="aPass" autocomplete="current-password" placeholder="jouw wachtwoord">
+      <div style="margin-top:16px"><button class="btn coral" id="aLoginBtn" onclick="staffLogin('am')">Inloggen →</button></div>
+    </div>
+
     <!-- Kantoor -->
     <div id="kMain" class="hidden">
-      <p class="note">Voor kantoor/accountmanager: log in met je e-mail en wachtwoord.</p>
+      <p class="note">Voor kantoor: log in met je e-mail en wachtwoord. Je ziet alle winkels van het hele netwerk.</p>
       <label for="kEmail">E-mailadres</label>
       <input type="email" id="kEmail" autocomplete="username" placeholder="jij@retail-brands.nl">
       <label for="kPass">Wachtwoord</label>
       <input type="password" id="kPass" autocomplete="current-password" placeholder="jouw wachtwoord">
-      <div style="margin-top:16px"><button class="btn coral" id="kLoginBtn" onclick="kantoorLogin()">Inloggen →</button></div>
+      <div style="margin-top:16px"><button class="btn coral" id="kLoginBtn" onclick="staffLogin('kantoor')">Inloggen →</button></div>
     </div>
 
     <div id="loginMsg" class="msg"></div>
@@ -174,12 +185,15 @@ let mijnTappunt = null;
 
 /* ====== UI-helpers ====== */
 function setRol(r){ rol=r;
+  document.getElementById('tabAm').classList.toggle('on', r==='am');
   document.getElementById('tabWinkel').classList.toggle('on', r==='winkel');
   document.getElementById('tabKantoor').classList.toggle('on', r==='kantoor');
   ['pMain','pFirst','pReset'].forEach(id=>document.getElementById(id).classList.toggle('hidden', r!=='winkel' || id!=='pMain'));
+  document.getElementById('amMain').classList.toggle('hidden', r!=='am');
   document.getElementById('kMain').classList.toggle('hidden', r!=='kantoor');
   msg('loginMsg','');
 }
+let staffKeuze='kantoor';
 function show(id){ ['pMain','pFirst','pReset'].forEach(x=>document.getElementById(x).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); msg('loginMsg',''); }
 function msg(box,text,type){ const el=document.getElementById(box); el.className='msg'+(text?(' '+(type||'err')):''); el.textContent=text||''; }
 function busy(id,on,txt){ const b=document.getElementById(id); if(!b)return; b.disabled=on; b.dataset.t=b.dataset.t||b.textContent; b.innerHTML=on?('<span class="spin"></span> '+(txt||'Even geduld…')):b.dataset.t; }
@@ -248,18 +262,20 @@ async function winkelReset(){
   busy('rBtn',false);
 }
 
-/* ====== Kantoor: inloggen ====== */
-async function kantoorLogin(){
-  const email=(document.getElementById('kEmail').value||'').trim();
-  const pass=(document.getElementById('kPass').value||'');
+/* ====== Accountmanager / Kantoor: inloggen (beide 'staff') ====== */
+async function staffLogin(welke){
+  staffKeuze = welke;
+  const email=(document.getElementById(welke==='am'?'aEmail':'kEmail').value||'').trim();
+  const pass=(document.getElementById(welke==='am'?'aPass':'kPass').value||'');
+  const btn = welke==='am'?'aLoginBtn':'kLoginBtn';
   if(!email||!pass){ return msg('loginMsg','Vul je e-mail en wachtwoord in.'); }
-  busy('kLoginBtn',true,'Inloggen…');
+  busy(btn,true,'Inloggen…');
   try{
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if(error) throw error;
     await naBinnen(data.user);
   }catch(e){ fout('loginMsg', e.message==='Invalid login credentials' ? {message:'Onjuiste e-mail of wachtwoord.'} : e); }
-  busy('kLoginBtn',false);
+  busy(btn,false);
 }
 
 /* ====== Na inloggen: staff of winkel? ====== */
@@ -269,6 +285,7 @@ async function naBinnen(user){
   msg('loginMsg','');
   if(isStaff(user)){
     document.getElementById('kMail2').textContent = user.email||'';
+    document.getElementById('kNaam').textContent = (staffKeuze==='am') ? 'Accountmanager' : 'Kantoor';
     toonScherm('appKantoor');
     await laadWinkels();
   }else{
