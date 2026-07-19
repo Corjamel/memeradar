@@ -1001,7 +1001,7 @@ function ghostGo(r,id){
   }
   ghostBar();
 }
-function ghostExit(){window.__ghost=false;window.__ghostRole='';window.__ghostAcc='';var b=document.getElementById('ghostBar');if(b)b.remove();logout();toast('Ghost-toegang verlaten.');}
+function ghostExit(){window.__ghost=false;window.__ghostRole='';window.__ghostAcc='';var b=document.getElementById('ghostBar');if(b)b.remove();logout();toast('Ghost Protocol verlaten.');}
 
 /* ============== BACK-UP ============== */
 function exportAll(){const data={app:"TapParfum AM Portal",profile:Store.profile,exported:new Date().toISOString(),tappunten:clients()};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`tapparfum-portal-${Store.profile}.json`;a.click();Store.set("lastBackup",vandaagISO());Store.set("dirtyData",0);refresh()}
