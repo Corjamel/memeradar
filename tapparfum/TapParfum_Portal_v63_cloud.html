@@ -526,12 +526,22 @@
 </div>
 
 <!-- TODO Clarence: bevestig of de basis op 70 of 79 punten moet uitkomen; nu telt BASIS_MAX op tot de som van de basiswaarden -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>window.TP_SUPABASE={url:"https://hhynbohuxcmdofwwlznj.supabase.co",key:"sb_publishable_UsNSEI-nODjctbD4qSJRYA_0S0Is20J"};
-window._tpSb=null;function tpSb(){if(!window._tpSb&&window.supabase){try{window._tpSb=window.supabase.createClient(window.TP_SUPABASE.url,window.TP_SUPABASE.key);}catch(e){}}return window._tpSb;}</script>
+<script>
+/* Cloud-verbinding: laadt de bibliotheek PAS wanneer nodig, zodat de pagina nooit blokkeert. */
+window.TP_SUPABASE={url:"https://hhynbohuxcmdofwwlznj.supabase.co",key:"sb_publishable_UsNSEI-nODjctbD4qSJRYA_0S0Is20J"};
+window._tpSb=null;
+function ensureSb(cb){
+  if(window._tpSb)return cb(window._tpSb);
+  function make(){try{window._tpSb=window.supabase.createClient(window.TP_SUPABASE.url,window.TP_SUPABASE.key);}catch(e){}cb(window._tpSb||null);}
+  if(window.supabase&&window.supabase.createClient)return make();
+  var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  s.onload=function(){setTimeout(make,0);};s.onerror=function(){cb(null);};
+  (document.head||document.documentElement).appendChild(s);
+}
+</script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v63-cloud · kantoor-login via Supabase (stap 1)';
+window.__TP_BUILD='v63b-cloud · kantoor-login (niet-blokkerend)';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -886,18 +896,20 @@ function doLoginKantoor(){
   var email=(document.getElementById('kmail')||{}).value; email=(email||'').trim();
   var pass=(document.getElementById('kpass')||{}).value||'';
   if(!email||!pass){_kmsg('Vul je e-mail en wachtwoord in.');return;}
-  var client=tpSb();
-  if(!client){_kmsg('Kon geen verbinding met de cloud maken. Controleer je internet en herlaad de pagina.');return;}
-  var btn=document.getElementById('kbtn'); if(btn){btn.disabled=true;btn.dataset.t=btn.dataset.t||btn.textContent;btn.textContent='Inloggen…';}
+  var btn=document.getElementById('kbtn'); if(btn){btn.disabled=true;btn.dataset.t=btn.dataset.t||btn.textContent;btn.textContent='Verbinden…';}
   _kmsg('');
-  client.auth.signInWithPassword({email:email,password:pass}).then(function(res){
+  ensureSb(function(client){
+   if(!client){ if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;} _kmsg('Kon geen verbinding met de cloud maken. Controleer je internet en probeer opnieuw.');return; }
+   if(btn)btn.textContent='Inloggen…';
+   client.auth.signInWithPassword({email:email,password:pass}).then(function(res){
     if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;}
     if(res.error){_kmsg(res.error.message==='Invalid login credentials'?'Onjuiste e-mail of wachtwoord.':('Fout: '+res.error.message));return;}
     var user=res.data&&res.data.user;
     var isStaff=user&&user.app_metadata&&user.app_metadata.role==='staff';
     if(!isStaff){_kmsg('Dit account heeft nog geen kantoor-toegang (rol "staff"). Vraag de beheerder dit in te stellen.');return;}
     _doLoginKantoorVervolg(user.email,{id:user.id,naam:user.email,rol:'beheer',rechten:Object.assign({},ALLE_RECHTEN),pin:'',geblokkeerd:false});
-  }).catch(function(e){ if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;} _kmsg('Onverwachte fout: '+(e&&e.message?e.message:e)); });
+   }).catch(function(e){ if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;} _kmsg('Onverwachte fout: '+(e&&e.message?e.message:e)); });
+  });
 }
 function _doLoginKantoorVervolg(n,_u){
   {const _l=gebruikers();const _x=_l.find(x=>x.id===_u.id);if(_x){_x.laatsteLogin=new Date().toISOString().slice(0,16).replace('T',' ');saveGebruikers(_l);}}
