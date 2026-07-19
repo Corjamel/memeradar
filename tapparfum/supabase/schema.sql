@@ -8,6 +8,7 @@
 --   * Row Level Security: een partner ziet/bewerkt alleen zijn eigen winkel;
 --     kantoor/AM-medewerkers (rol 'staff') zien het hele netwerk
 -- Idempotent: veilig om opnieuw te draaien.
+-- Gevalideerd tegen PostgreSQL 16 (schema + RLS + RPC + triggers, exit 0).
 -- ============================================================================
 
 -- ---- Uitbreidingen -------------------------------------------------------
