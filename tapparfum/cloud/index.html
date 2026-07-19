@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TapParfum · Cloud</title>
+<style>
+  :root{--coral:#C2452F;--coral-l:#EE644D;--peach:#FDEEE7;--ink:#2A211C;--grey:#6E6259;--line:#E8DECF;--bg:#F6F4F0;--ok:#2F5D14;--okbg:#E6F0DC;--err:#8C1D12;--errbg:#F9E3E0;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-text-size-adjust:100%}
+  button{font-family:inherit;cursor:pointer}
+  input,select{font-family:inherit;font-size:16px}
+  .wrap{max-width:460px;margin:0 auto;padding:24px 18px 60px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 20px 50px -30px rgba(60,30,18,.3)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;font-size:15px;margin-bottom:4px}
+  .brand b{color:var(--coral-l)}
+  h1{font-size:24px;font-weight:800;margin:6px 0 2px}
+  .sub{color:var(--grey);font-size:14px;margin-bottom:18px}
+  label{display:block;font-weight:700;font-size:13px;margin:12px 0 5px}
+  input,select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;background:#fff}
+  input:focus{outline:2px solid var(--coral);outline-offset:1px;border-color:var(--coral)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:11px;padding:13px 18px;font-weight:800;font-size:15px;min-height:48px;width:100%}
+  .btn.coral{background:var(--coral);color:#fff}
+  .btn.coral:active{background:#a53a28}
+  .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .seg{display:flex;background:var(--peach);border-radius:12px;padding:4px;margin-bottom:16px}
+  .seg button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font-weight:800;color:var(--ink);font-size:14px}
+  .seg button.on{background:var(--coral);color:#fff}
+  .link{display:inline-block;color:var(--coral);font-weight:700;font-size:13.5px;background:none;border:0;padding:6px 0;text-align:left}
+  .links{display:flex;flex-direction:column;gap:2px;margin-top:12px}
+  .msg{border-radius:11px;padding:11px 13px;font-size:13.5px;font-weight:600;margin-top:14px;display:none}
+  .msg.ok{background:var(--okbg);color:var(--ok);display:block}
+  .msg.err{background:var(--errbg);color:var(--err);display:block;white-space:pre-wrap}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  .hidden{display:none!important}
+  .kassa{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:12px}
+  .fles{border:1.5px solid var(--line);border-radius:14px;padding:12px;text-align:center;background:#fff}
+  .fles .n{font-size:12px;color:var(--grey);margin-top:6px}
+  .fles .n b{color:var(--ink)}
+  .tot{display:flex;gap:16px;flex-wrap:wrap;font-weight:800;font-size:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .winkelrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .winkelrow:last-child{border:0}
+  .pill{font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px}
+  .pill.on{background:var(--okbg);color:var(--ok)}.pill.off{background:#F3E8CF;color:#7A5B00}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .who{font-size:13px;color:var(--grey)}
+  .who b{color:var(--ink);display:block;font-size:15px}
+  .build{text-align:center;color:var(--grey);font-size:11px;margin-top:18px}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .note{font-size:13px;color:var(--grey);margin:2px 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== LOGIN ===================== -->
+  <div id="login" class="card">
+    <div class="brand">TAP<b>PARFUM</b> · cloud</div>
+    <h1>Inloggen</h1>
+    <div class="sub">Je gegevens staan veilig in de cloud — op elk apparaat gelijk.</div>
+
+    <div class="seg">
+      <button id="tabWinkel" class="on" onclick="setRol('winkel')">Winkel</button>
+      <button id="tabKantoor" onclick="setRol('kantoor')">Kantoor</button>
+    </div>
+
+    <!-- Winkel: normaal inloggen -->
+    <div id="pMain">
+      <label for="wEmail">E-mailadres</label>
+      <input type="email" id="wEmail" autocomplete="username" placeholder="naam@winkel.nl">
+      <label for="wPass">Wachtwoord</label>
+      <input type="password" id="wPass" autocomplete="current-password" placeholder="jouw wachtwoord">
+      <div style="margin-top:16px"><button class="btn coral" id="wLoginBtn" onclick="winkelLogin()">Inloggen →</button></div>
+      <div class="links">
+        <button class="link" onclick="show('pFirst')">Eerste keer inloggen? Gebruik je snelstartcode →</button>
+        <button class="link" style="color:var(--grey)" onclick="show('pReset')">Wachtwoord vergeten?</button>
+      </div>
+    </div>
+
+    <!-- Winkel: eerste keer -->
+    <div id="pFirst" class="hidden">
+      <p class="note">Welkom! De eerste keer maak je je account aan. Vul de snelstartcode van je accountmanager in, plus een e-mail en wachtwoord.</p>
+      <label for="fSnel">Snelstartcode</label>
+      <input type="text" id="fSnel" placeholder="bijv. KL-2042">
+      <label for="fEmail">E-mailadres</label>
+      <input type="email" id="fEmail" autocomplete="email" placeholder="naam@winkel.nl">
+      <label for="fPass">Kies een wachtwoord (min. 8 tekens)</label>
+      <input type="password" id="fPass" autocomplete="new-password" placeholder="nieuw wachtwoord">
+      <div style="margin-top:16px" class="row">
+        <button class="btn coral" id="fBtn" onclick="winkelEersteKeer()">Account aanmaken →</button>
+        <button class="btn ghost" onclick="show('pMain')">Terug</button>
+      </div>
+    </div>
+
+    <!-- Winkel: reset -->
+    <div id="pReset" class="hidden">
+      <p class="note">Vul je e-mailadres in — we sturen je een link om een nieuw wachtwoord in te stellen.</p>
+      <label for="rEmail">E-mailadres</label>
+      <input type="email" id="rEmail" autocomplete="email" placeholder="naam@winkel.nl">
+      <div style="margin-top:16px" class="row">
+        <button class="btn coral" id="rBtn" onclick="winkelReset()">Stuur reset-mail →</button>
+        <button class="btn ghost" onclick="show('pMain')">Terug</button>
+      </div>
+    </div>
+
+    <!-- Kantoor -->
+    <div id="kMain" class="hidden">
+      <p class="note">Voor kantoor/accountmanager: log in met je e-mail en wachtwoord.</p>
+      <label for="kEmail">E-mailadres</label>
+      <input type="email" id="kEmail" autocomplete="username" placeholder="jij@retail-brands.nl">
+      <label for="kPass">Wachtwoord</label>
+      <input type="password" id="kPass" autocomplete="current-password" placeholder="jouw wachtwoord">
+      <div style="margin-top:16px"><button class="btn coral" id="kLoginBtn" onclick="kantoorLogin()">Inloggen →</button></div>
+    </div>
+
+    <div id="loginMsg" class="msg"></div>
+    <div class="build" id="buildTxt">verbinden…</div>
+  </div>
+
+  <!-- ===================== PARTNER APP ===================== -->
+  <div id="appWinkel" class="card hidden">
+    <div class="top">
+      <div class="who"><b id="wNaam">—</b><span id="wCode"></span></div>
+      <button class="btn ghost" style="width:auto;min-height:0;padding:8px 12px" onclick="doLogout()">Uitloggen</button>
+    </div>
+    <div id="wGeenKoppel" class="hidden">
+      <p class="note">Je account is nog niet aan een winkel gekoppeld. Vul je snelstartcode in.</p>
+      <label for="cSnel">Snelstartcode</label>
+      <input type="text" id="cSnel" placeholder="bijv. KL-2042">
+      <div style="margin-top:12px"><button class="btn coral" onclick="koppelWinkel()">Koppelen →</button></div>
+    </div>
+    <div id="wKassaBlok">
+      <div style="font-weight:800;font-size:16px">🧾 Kassa — tik elke verkoop</div>
+      <div class="kassa" id="kassaVak"></div>
+      <div class="tot" id="kassaTot"></div>
+    </div>
+    <div id="winkelMsg" class="msg"></div>
+  </div>
+
+  <!-- ===================== KANTOOR APP ===================== -->
+  <div id="appKantoor" class="card hidden">
+    <div class="top">
+      <div class="who"><b id="kNaam">Kantoor</b><span id="kMail2"></span></div>
+      <button class="btn ghost" style="width:auto;min-height:0;padding:8px 12px" onclick="doLogout()">Uitloggen</button>
+    </div>
+    <div style="font-weight:800;font-size:16px;margin-bottom:6px">Winkels</div>
+    <p class="note">Voeg een winkel toe met een snelstartcode. De winkel logt daarmee de eerste keer in en maakt zelf een account aan.</p>
+    <div class="row" style="align-items:flex-end">
+      <div style="flex:2"><label for="nName" style="margin-top:0">Winkelnaam</label><input type="text" id="nName" placeholder="Boetiek Zwolle"></div>
+      <div><label for="nSnel" style="margin-top:0">Snelstartcode</label><input type="text" id="nSnel" placeholder="KL-1234"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn coral" onclick="winkelToevoegen()">+ Winkel toevoegen</button></div>
+    <div id="winkelLijst" style="margin-top:16px"></div>
+    <div id="kantoorMsg" class="msg"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ====== Verbinding ====== */
+const TP = { url: "https://hhynbohuxcmdofwwlznj.supabase.co", key: "sb_publishable_UsNSEI-nODjctbD4qSJRYA_0S0Is20J" };
+let sb = null;
+try { sb = supabase.createClient(TP.url, TP.key); } catch(e){}
+
+/* Flesmaten voor de kassa (later uit de database te halen) */
+const MATEN = [{m:'30ml',p:19.5},{m:'50ml',p:29.5},{m:'100ml',p:44.5}];
+const vandaag = () => new Date().toISOString().slice(0,10);
+
+let rol = 'winkel';
+let mijnTappunt = null;
+
+/* ====== UI-helpers ====== */
+function setRol(r){ rol=r;
+  document.getElementById('tabWinkel').classList.toggle('on', r==='winkel');
+  document.getElementById('tabKantoor').classList.toggle('on', r==='kantoor');
+  ['pMain','pFirst','pReset'].forEach(id=>document.getElementById(id).classList.toggle('hidden', r!=='winkel' || id!=='pMain'));
+  document.getElementById('kMain').classList.toggle('hidden', r!=='kantoor');
+  msg('loginMsg','');
+}
+function show(id){ ['pMain','pFirst','pReset'].forEach(x=>document.getElementById(x).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); msg('loginMsg',''); }
+function msg(box,text,type){ const el=document.getElementById(box); el.className='msg'+(text?(' '+(type||'err')):''); el.textContent=text||''; }
+function busy(id,on,txt){ const b=document.getElementById(id); if(!b)return; b.disabled=on; b.dataset.t=b.dataset.t||b.textContent; b.innerHTML=on?('<span class="spin"></span> '+(txt||'Even geduld…')):b.dataset.t; }
+function toonScherm(which){ ['login','appWinkel','appKantoor'].forEach(id=>document.getElementById(id).classList.toggle('hidden', id!==which)); }
+function fout(box,e){ msg(box, (e&&e.message)?e.message:String(e), 'err'); }
+
+/* ====== Bij laden: bestaat er al een sessie? ====== */
+async function init(){
+  document.getElementById('buildTxt').textContent = 'TapParfum Cloud · verbonden met je database';
+  if(!sb){ msg('loginMsg','Kon de cloud-bibliotheek niet laden. Controleer je internet en herlaad de pagina.','err'); return; }
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session){ await naBinnen(session.user); }
+  }catch(e){ /* geen sessie, gewoon inlogscherm */ }
+}
+
+/* ====== Winkel: eerste keer (account aanmaken + koppelen) ====== */
+async function winkelEersteKeer(){
+  const snel=(document.getElementById('fSnel').value||'').trim();
+  const email=(document.getElementById('fEmail').value||'').trim();
+  const pass=(document.getElementById('fPass').value||'');
+  if(snel.length<3){ return msg('loginMsg','Vul je snelstartcode in.'); }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ return msg('loginMsg','Vul een geldig e-mailadres in.'); }
+  if(pass.length<8){ return msg('loginMsg','Kies een wachtwoord van minimaal 8 tekens.'); }
+  busy('fBtn',true,'Account aanmaken…');
+  try{
+    const { data, error } = await sb.auth.signUp({ email, password: pass });
+    if(error) throw error;
+    if(!data.session){
+      // e-mailbevestiging staat aan
+      msg('loginMsg','Account aangemaakt! Check je e-mail om te bevestigen, en log daarna in met "Eerste keer" opnieuw of gewoon met je e-mail + wachtwoord.', 'ok');
+      busy('fBtn',false); return;
+    }
+    // gekoppeld: winkel claimen via snelstartcode
+    const { data:claimed, error:cerr } = await sb.rpc('claim_tappunt', { p_snelstart: snel, p_user: email.split('@')[0] });
+    if(cerr) throw cerr;
+    await naBinnen(data.session.user);
+  }catch(e){ fout('loginMsg',e); }
+  busy('fBtn',false);
+}
+
+/* ====== Winkel: normaal inloggen ====== */
+async function winkelLogin(){
+  const email=(document.getElementById('wEmail').value||'').trim();
+  const pass=(document.getElementById('wPass').value||'');
+  if(!email||!pass){ return msg('loginMsg','Vul je e-mail en wachtwoord in.'); }
+  busy('wLoginBtn',true,'Inloggen…');
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error) throw error;
+    await naBinnen(data.user);
+  }catch(e){ fout('loginMsg', e.message==='Invalid login credentials' ? {message:'Onjuiste e-mail of wachtwoord.'} : e); }
+  busy('wLoginBtn',false);
+}
+
+/* ====== Winkel: reset ====== */
+async function winkelReset(){
+  const email=(document.getElementById('rEmail').value||'').trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ return msg('loginMsg','Vul een geldig e-mailadres in.'); }
+  busy('rBtn',true,'Versturen…');
+  try{
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+    if(error) throw error;
+    msg('loginMsg','Als dit e-mailadres bekend is, is er een reset-mail verstuurd. Check je inbox (en spam).','ok');
+  }catch(e){ fout('loginMsg',e); }
+  busy('rBtn',false);
+}
+
+/* ====== Kantoor: inloggen ====== */
+async function kantoorLogin(){
+  const email=(document.getElementById('kEmail').value||'').trim();
+  const pass=(document.getElementById('kPass').value||'');
+  if(!email||!pass){ return msg('loginMsg','Vul je e-mail en wachtwoord in.'); }
+  busy('kLoginBtn',true,'Inloggen…');
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error) throw error;
+    await naBinnen(data.user);
+  }catch(e){ fout('loginMsg', e.message==='Invalid login credentials' ? {message:'Onjuiste e-mail of wachtwoord.'} : e); }
+  busy('kLoginBtn',false);
+}
+
+/* ====== Na inloggen: staff of winkel? ====== */
+function isStaff(user){ return (user && user.app_metadata && user.app_metadata.role==='staff'); }
+
+async function naBinnen(user){
+  msg('loginMsg','');
+  if(isStaff(user)){
+    document.getElementById('kMail2').textContent = user.email||'';
+    toonScherm('appKantoor');
+    await laadWinkels();
+  }else{
+    // haal de gekoppelde winkel op
+    const { data, error } = await sb.from('tappunten').select('*').eq('auth_user_id', user.id).maybeSingle();
+    if(error){ toonScherm('appWinkel'); return fout('winkelMsg',error); }
+    mijnTappunt = data;
+    toonScherm('appWinkel');
+    if(!data){ document.getElementById('wGeenKoppel').classList.remove('hidden'); document.getElementById('wKassaBlok').classList.add('hidden'); }
+    else { document.getElementById('wGeenKoppel').classList.add('hidden'); document.getElementById('wKassaBlok').classList.remove('hidden'); renderWinkel(); }
+  }
+}
+
+/* ====== Winkel koppelen (als account nog los is) ====== */
+async function koppelWinkel(){
+  const snel=(document.getElementById('cSnel').value||'').trim();
+  if(snel.length<3) return msg('winkelMsg','Vul je snelstartcode in.');
+  try{
+    const { data, error } = await sb.rpc('claim_tappunt', { p_snelstart: snel, p_user:'' });
+    if(error) throw error;
+    mijnTappunt = data;
+    document.getElementById('wGeenKoppel').classList.add('hidden');
+    document.getElementById('wKassaBlok').classList.remove('hidden');
+    renderWinkel();
+  }catch(e){ fout('winkelMsg',e); }
+}
+
+/* ====== Winkel-dashboard + kassa ====== */
+function renderWinkel(){
+  const t=mijnTappunt; if(!t) return;
+  document.getElementById('wNaam').textContent = t.name||'Mijn winkel';
+  document.getElementById('wCode').textContent = 'snelstartcode: '+(t.snelstart||'—');
+  const verkopen = (t.data&&t.data.verkopen)||{};
+  const vand = verkopen[vandaag()]||{};
+  document.getElementById('kassaVak').innerHTML = MATEN.map(f=>{
+    const n = vand[f.m]||0;
+    return `<div class="fles"><button class="btn coral" onclick="vkPlus('${f.m}')">+ ${f.m}</button>
+      <div class="n">€ ${String(f.p).replace('.',',')}${n?` · <b>${n}× vandaag</b> <button class="link" style="padding:0;color:var(--coral)" onclick="vkMin('${f.m}')">−</button>`:''}</div></div>`;
+  }).join('');
+  let totV=0, totJaar=0, stuksJaar=0; const jaar=new Date().getFullYear()+'';
+  Object.entries(verkopen).forEach(([dag,cs])=>{ Object.entries(cs).forEach(([m,n])=>{ const p=(MATEN.find(x=>x.m===m)||{}).p||0; const bedrag=p*n; if(dag.slice(0,4)===jaar){totJaar+=bedrag; stuksJaar+=n;} if(dag===vandaag())totV+=bedrag; }); });
+  document.getElementById('kassaTot').innerHTML = `<span>Vandaag: € ${Math.round(totV)}</span><span>Dit jaar: € ${Math.round(totJaar)} · ${stuksJaar} flesjes</span>`;
+}
+async function vkPlus(m){ await vkWijzig(m,+1); }
+async function vkMin(m){ await vkWijzig(m,-1); }
+async function vkWijzig(m,delta){
+  const t=mijnTappunt; if(!t) return;
+  t.data = t.data||{}; t.data.verkopen = t.data.verkopen||{};
+  const d = t.data.verkopen[vandaag()] = t.data.verkopen[vandaag()]||{};
+  d[m]=(d[m]||0)+delta; if(d[m]<=0) delete d[m];
+  renderWinkel();
+  try{
+    const { error } = await sb.from('tappunten').update({ data: t.data }).eq('id', t.id);
+    if(error) throw error;
+  }catch(e){ fout('winkelMsg',e); }
+}
+
+/* ====== Kantoor: winkels beheren ====== */
+async function laadWinkels(){
+  try{
+    const { data, error } = await sb.from('tappunten').select('*').order('name');
+    if(error) throw error;
+    const el=document.getElementById('winkelLijst');
+    if(!data||!data.length){ el.innerHTML='<p class="note">Nog geen winkels. Voeg er hierboven één toe.</p>'; return; }
+    el.innerHTML = data.map(t=>`<div class="winkelrow"><span><b>${esc(t.name)}</b><br><span class="note">code ${esc(t.snelstart)}</span></span>
+      <span class="pill ${t.auth_user_id?'on':'off'}">${t.auth_user_id?'account actief':'nog geen account'}</span></div>`).join('');
+  }catch(e){ fout('kantoorMsg',e); }
+}
+async function winkelToevoegen(){
+  const name=(document.getElementById('nName').value||'').trim();
+  const snel=(document.getElementById('nSnel').value||'').trim();
+  if(!name||snel.length<3) return msg('kantoorMsg','Vul een winkelnaam en snelstartcode in.');
+  try{
+    const { error } = await sb.from('tappunten').insert({ name, snelstart: snel });
+    if(error) throw error;
+    document.getElementById('nName').value=''; document.getElementById('nSnel').value='';
+    msg('kantoorMsg','✓ Winkel toegevoegd.','ok');
+    await laadWinkels();
+  }catch(e){ fout('kantoorMsg',e); }
+}
+
+/* ====== Uitloggen ====== */
+async function doLogout(){ try{ await sb.auth.signOut(); }catch(e){} mijnTappunt=null; toonScherm('login'); setRol('winkel'); }
+
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+init();
+</script>
+</body>
+</html>
