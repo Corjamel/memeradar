@@ -544,7 +544,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v63c-cloud · ghost-toegang (alle rollen offline testen)';
+window.__TP_BUILD='v63d-cloud · ghost + omzet-fix (winkelverkoop) + formulier-behoud (acties/producten)';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -1835,7 +1835,14 @@ function prodStats(pid){let n=0,b=0;const perAM=[];
   Store.listProfiles().forEach(pr=>{const ts=rawTappunten(pr);let bb=0;ts.forEach(t=>{n++;if(t.prodBesteld&&t.prodBesteld[pid]&&t.prodBesteld[pid].done){b++;bb++;}});if(ts.length)perAM.push([pr,bb,ts.length]);});
   return {n,b,pct:n?Math.round(b/n*100):0,perAM};}
 let kpImg='';
-function kpImgUI(ev){const f=ev.target&&ev.target.files&&ev.target.files[0];if(!f)return;compressImage(f,url=>{if(!url){toast('Afbeelding kon niet verwerkt worden — probeer een kleinere foto.');return;}kpImg=url;VIEWS.kproducten();});}
+/* Hertekent het producten-formulier zonder de al ingetypte velden te wissen. */
+function _kpRerender(){
+  var ids=['kp-n','kp-a','kp-d','kp-f','kp-v'];
+  var draft={};ids.forEach(function(i){var el=document.getElementById(i);if(el)draft[i]=el.value;});
+  VIEWS.kproducten();
+  ids.forEach(function(i){var el=document.getElementById(i);if(el&&draft[i]!=null)el.value=draft[i];});
+}
+function kpImgUI(ev){const f=ev.target&&ev.target.files&&ev.target.files[0];if(!f)return;compressImage(f,url=>{if(!url){toast('Afbeelding kon niet verwerkt worden — probeer een kleinere foto.');return;}kpImg=url;_kpRerender();});}
 let kpEditId=null;
 function kProdEdit(id){const p=producten().find(x=>x.id===id);if(!p)return;
   kpEditId=id;kpImg=p.img||'';VIEWS.kproducten();
@@ -3250,6 +3257,8 @@ VIEWS.zelf=()=>{
     return;}
   /* Drie fases: onboarding (inwerktraject loopt) → breakeven (terugverdienen) → existing (jaardoel). */
   const jo=jaaromzet(t);
+  const _wi=winkelOmzetInfo(t);const vk=_wi.bron==='schatting'?0:_wi.bedrag; /* échte winkelverkoop dit jaar (kassa/teller); 0 als er nog niets is getikt */
+  const vkTempo=(function(){const m=monthsElapsed(t);return m>0?vk/m:0;})();
   const sold=flessenVerkocht(t);
   const onboarding=!setupComplete(t);
   const skipped=!!(t.setup&&t.setup.skipped);
@@ -3264,15 +3273,15 @@ VIEWS.zelf=()=>{
     } else {
       prog=`<div class="card"><div class="zh">Begin met verkopen</div><p class="note" style="margin-top:0">Log hieronder je dagverkoop. Zodra je je investering hebt terugverdiend, komt je jaardoel vanzelf in beeld.</p></div>`;
     }
-  } else if(t.goal&&t.goal.doel>0){const togo=Math.max(t.goal.doel-jo,0);
-    prog=`<div class="card"><div class="zh">Op weg naar je jaardoel</div><p class="note" style="margin-top:0">Jaardoel <b>${eur0(t.goal.doel)}</b> · nog <b>${eur0(togo)}</b> te gaan. Nodig: <b>${t.goal.flWeek} flessen/week</b> · <b>${t.goal.klanten} vaste klanten</b>.</p>${weekGridHTML(t.goal.flWeek)}</div>`;
+  } else if(t.goal&&t.goal.doel>0){const togo=Math.max(t.goal.doel-vk,0);
+    prog=`<div class="card"><div class="zh">Op weg naar je jaardoel</div><p class="note" style="margin-top:0">Jaardoel <b>${eur0(t.goal.doel)}</b> · winkelverkoop tot nu <b>${eur0(vk)}</b> · nog <b>${eur0(togo)}</b> te gaan. Nodig: <b>${t.goal.flWeek} flessen/week</b> · <b>${t.goal.klanten} vaste klanten</b>.</p>${weekGridHTML(t.goal.flWeek)}</div>`;
   } else {
     prog=`<div class="card"><div class="zh">Je doel</div><p class="note" style="margin-top:0">Je accountmanager stelt samen met jou een jaardoel op.</p></div>`;
   }
   const head=`<div class="vhead"><div><h2>${esc(t.name)} — jouw dashboard</h2><div class="sub">${ED('sub.'+route,`Vul je eigen cijfers in en houd je checklists bij. Je accountmanager ziet dit automatisch.`)}</div></div>${role!=="partner"?`<button class="btn ghost sm" onclick="openTappunt('${t.id}')">← Terug (accountmanager)</button>`:""}</div>`;
   const cijfers=(onboarding||breakeven)
     ?`<div class="card"><div class="zh">Jouw cijfers</div><div class="frow"><div><label class="fl" style="margin-top:0">Aantal vaste klanten</label><input type="number" value="${t.klanten||''}" onchange="setField('${t.id}','klanten',this.value)"></div></div><p class="note">Je omzet houd je bij via “Verkoop bijhouden” hieronder. Omzet vorig jaar en je jaardoel komen pas in beeld als je tappunt loopt.</p></div>`
-    :`<div class="card"><div class="zh">Jouw cijfers</div><div class="frow"><div><label class="fl" style="margin-top:0">Omzet dit jaar (uit verkooplog)</label><div class="roval">${jo?eur0(jo):'—'}</div></div><div><label class="fl" style="margin-top:0">Omzet vorig jaar (€)</label><input type="number" value="${t.vorigJaar||''}" onchange="setVorigJaar('${t.id}',this.value)"></div></div><div class="frow"><div><label class="fl">Aantal vaste klanten</label><input type="number" value="${t.klanten||''}" onchange="setField('${t.id}','klanten',this.value)"></div><div><label class="fl">Jouw jaardoel (€)</label><input type="number" value="${t.doel||''}" onchange="setDoel('${t.id}',this.value)"></div></div><p class="note">≈ ${eur0(maandtempo(t))} per maand · op jaarbasis ≈ ${eur0(maandtempo(t)*12)}.</p></div>`;
+    :`<div class="card"><div class="zh">Jouw cijfers</div><div class="frow"><div><label class="fl" style="margin-top:0">Winkelverkoop dit jaar (uit kassa)</label><div class="roval">${vk?eur0(vk):'—'}</div></div><div><label class="fl" style="margin-top:0">Inkoop bij TapParfum dit jaar</label><div class="roval">${jo?eur0(jo):'—'}</div></div></div><div class="frow"><div><label class="fl">Omzet vorig jaar (€)</label><input type="number" value="${t.vorigJaar||''}" onchange="setVorigJaar('${t.id}',this.value)"></div><div><label class="fl">Aantal vaste klanten</label><input type="number" value="${t.klanten||''}" onchange="setField('${t.id}','klanten',this.value)"></div></div><div class="frow"><div><label class="fl">Jouw jaardoel (€)</label><input type="number" value="${t.doel||''}" onchange="setDoel('${t.id}',this.value)"></div></div><p class="note">Winkelverkoop ≈ ${eur0(vkTempo)} per maand · op jaarbasis ≈ ${eur0(vkTempo*12)}. Je verkopen tik je hieronder in de kassa.</p></div>`;
   const stappen=(onboarding&&!skipped)?`<div class="card"><div class="zh">Stap 1 · Inwerktraject / eerste order</div><p class="note" style="margin-top:0">Doorloop dit eerst, stap voor stap. Je accountmanager kijkt mee.</p>${stepsHTML(t,'partner')}</div>`:'';
   const punten=`<div class="card"><div class="zh">Jouw punten — claimen</div><p class="note" style="margin-top:0">Vink aan wat je in orde hebt. Je accountmanager keurt ze goed bij een bezoek (✓). Alleen goedgekeurde punten tellen mee voor je officiële status (≥ ${OFFICIEEL} van ${BASIS_MAX}).</p><details class="setup" id="claimbp-${t.id}" ${uiOpen['claimbp-'+t.id]?'open':''} ontoggle="uiOpen['claimbp-${t.id}']=this.open" style="margin-top:6px"><summary>Basispunten claimen <span class="chev">▾</span></summary><div class="setupbody">${claimChecklist(t,BASIS,'bp')}</div></details><details class="setup" id="claimbo-${t.id}" ${uiOpen['claimbo-'+t.id]?'open':''} ontoggle="uiOpen['claimbo-${t.id}']=this.open" style="margin-top:8px"><summary>Bonuspunten claimen <span class="chev">▾</span></summary><div class="setupbody">${claimChecklist(t,BONUS_MANUAL,'bonus')}</div></details></div>`;
   const form=(()=>{const ds=daysSinceLive(t);const demoGepland=setupActionDone(t,2,0);
@@ -3648,8 +3657,16 @@ VIEWS.kdash=()=>{
    ${att?`<div class="sec-t" style="margin-top:22px">Vraagt aandacht — stagnerende tappunten</div>${att}`:''}`;
 };
 let kaImg='',kaMats=[];
-function kaMatAdd(){kaMats.push({naam:'',artnr:'',aantal:''});VIEWS.kacties();}
-function kaMatDel(i){kaMats.splice(i,1);VIEWS.kacties();}
+/* Hertekent het acties-formulier ZONDER de al ingetypte velden te wissen.
+   (Bij afbeelding toevoegen of materiaal +/− moet de rest blijven staan.) */
+function _kaRerender(){
+  var ids=['ka-t','ka-d','ka-s','ka-e','ka-v','ka-bd','ka-p','ka-todo'];
+  var draft={};ids.forEach(function(i){var el=document.getElementById(i);if(el)draft[i]=el.value;});
+  VIEWS.kacties();
+  ids.forEach(function(i){var el=document.getElementById(i);if(el&&draft[i]!=null)el.value=draft[i];});
+}
+function kaMatAdd(){kaMats.push({naam:'',artnr:'',aantal:''});_kaRerender();}
+function kaMatDel(i){kaMats.splice(i,1);_kaRerender();}
 function compressImage(file,cb){try{const rd=new FileReader();rd.onload=()=>{const src=rd.result;
   if(typeof Image==='undefined'){cb(String(src).length<300000?String(src):null);return;}
   const im=new Image();im.onload=()=>{try{
@@ -3659,7 +3676,7 @@ function compressImage(file,cb){try{const rd=new FileReader();rd.onload=()=>{con
     if(out&&out.length>240000)out=maak(480,0.55);
     cb(out&&out.length<=240000?out:(out?null:(String(src).length<240000?String(src):null)));}catch(e){cb(null);}};
   im.onerror=()=>cb(null);im.src=src;};rd.onerror=()=>cb(null);rd.readAsDataURL(file);}catch(e){cb(null);}}
-function kaImgUI(ev){const f=ev.target&&ev.target.files&&ev.target.files[0];if(!f)return;compressImage(f,url=>{if(!url){toast('Afbeelding kon niet verwerkt worden — probeer een kleinere foto.');return;}kaImg=url;VIEWS.kacties();});}
+function kaImgUI(ev){const f=ev.target&&ev.target.files&&ev.target.files[0];if(!f)return;compressImage(f,url=>{if(!url){toast('Afbeelding kon niet verwerkt worden — probeer een kleinere foto.');return;}kaImg=url;_kaRerender();});}
 let bhTab='assistent';
 let kaEditId=null;
 function kEditActie(id){const a=centralActies().find(x=>x.id===id);if(!a)return;
@@ -3865,7 +3882,7 @@ VIEWS.kproducten=()=>{
    <div class="card"><div class="zh">Nieuw product lanceren</div>
     <div class="frow"><div><label class="fl" style="margin-top:0">Productnaam</label><input type="text" id="kp-n" placeholder="Bijv. Amber Nights 50ml"></div><div><label class="fl" style="margin-top:0">Artikelnr</label><input type="text" id="kp-a" placeholder="AN-50" style="max-width:140px"></div></div>
     <label class="fl">Omschrijving</label><textarea id="kp-d" placeholder="Warme ambergeur voor het najaar…" style="min-height:52px"></textarea>
-    <div class="frow" style="margin-top:8px"><div><label class="fl" style="margin-top:0">Startfase</label><select id="kp-f">${PROD_FASES.map((l,i)=>`<option value="${i}">${l}</option>`).join('')}</select></div><div><label class="fl" style="margin-top:0">Verwacht leverbaar</label><input type="date" id="kp-v"></div><div><label class="fl" style="margin-top:0">🖼 Productfoto</label><div style="display:flex;gap:10px;align-items:center"><label class="btn ghost sm" style="cursor:pointer;margin:0">Kies foto<input type="file" accept="image/*" style="display:none" onchange="kpImgUI(event)"></label>${kpImg?`<img src="${safeImgSrc(kpImg)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px"><a onclick="kpImg='';VIEWS.kproducten()" style="color:var(--coral-d);font-weight:700;cursor:pointer">×</a>`:''}</div></div></div>
+    <div class="frow" style="margin-top:8px"><div><label class="fl" style="margin-top:0">Startfase</label><select id="kp-f">${PROD_FASES.map((l,i)=>`<option value="${i}">${l}</option>`).join('')}</select></div><div><label class="fl" style="margin-top:0">Verwacht leverbaar</label><input type="date" id="kp-v"></div><div><label class="fl" style="margin-top:0">🖼 Productfoto</label><div style="display:flex;gap:10px;align-items:center"><label class="btn ghost sm" style="cursor:pointer;margin:0">Kies foto<input type="file" accept="image/*" style="display:none" onchange="kpImgUI(event)"></label>${kpImg?`<img src="${safeImgSrc(kpImg)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px"><a onclick="kpImg='';_kpRerender()" style="color:var(--coral-d);font-weight:700;cursor:pointer">×</a>`:''}</div></div></div>
     <div style="margin-top:12px"><button class="btn coral" onclick="kProdAdd()">Lanceren →</button></div></div>
    ${lijst.length?lijst.map(rij).join(''):'<div class="empty" style="margin-top:14px">Nog geen producten gelanceerd.</div>'}`;
 };
@@ -3881,7 +3898,7 @@ VIEWS.kacties=()=>{
     <div class="frow"><div><label class="fl" style="margin-top:0">Titel</label><input type="text" id="ka-t" placeholder="Bijv. Zomeractie: gratis flesje bij zomergeur"></div><div><label class="fl" style="margin-top:0">Periode (van / tot)</label><div style="display:flex;gap:8px"><input type="date" id="ka-s"><input type="date" id="ka-e"></div></div></div>
     <label class="fl">Omschrijving voor tappunt & klant</label><textarea id="ka-d" placeholder="Wat houdt de actie in?"></textarea>
     <label class="fl">📋 Wat moet er gebeuren — voor AM & tappunt (één stap per regel)</label><textarea id="ka-todo" placeholder="Raamposter ophangen&#10;Social post plaatsen&#10;Actietafel inrichten bij de tapbar" style="min-height:56px"></textarea>
-    <div class="frow" style="margin-top:10px"><div><label class="fl" style="margin-top:0">🖼 Campagnebeeld (optioneel)</label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="btn ghost sm" style="cursor:pointer;margin:0">Kies afbeelding<input type="file" accept="image/*" style="display:none" onchange="kaImgUI(event)"></label>${kaImg?`<img src="${safeImgSrc(kaImg)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px"><a onclick="kaImg='';VIEWS.kacties()" style="color:var(--coral-d);font-weight:700;cursor:pointer">×</a>`:'<span class="note" style="margin:0">wordt verkleind opgeslagen</span>'}</div></div>
+    <div class="frow" style="margin-top:10px"><div><label class="fl" style="margin-top:0">🖼 Campagnebeeld (optioneel)</label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="btn ghost sm" style="cursor:pointer;margin:0">Kies afbeelding<input type="file" accept="image/*" style="display:none" onchange="kaImgUI(event)"></label>${kaImg?`<img src="${safeImgSrc(kaImg)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px"><a onclick="kaImg='';_kaRerender()" style="color:var(--coral-d);font-weight:700;cursor:pointer">×</a>`:'<span class="note" style="margin:0">wordt verkleind opgeslagen</span>'}</div></div>
     <div><label class="fl" style="margin-top:0">🛒 Materialen bestellen</label><p class="note" style="margin:4px 0 0">Loopt automatisch via het B2B-bestelportaal${bestelportaalUrl()?'':' — <b>stel eerst de portaal-URL in</b> (Kantoor-cockpit)'}. De API-koppeling (Fase 1) zet de artikelen straks met één klik in de winkelmand.</p></div></div>
     <div class="frow" style="margin-top:10px"><div><label class="fl" style="margin-top:0">▶ Actievideo (YouTube/Vimeo-link, optioneel)</label><input type="text" id="ka-v" placeholder="https://youtu.be/…"></div><div><label class="fl" style="margin-top:0">⏳ Materialen bestelbaar t/m</label><input type="date" id="ka-bd"></div><div><label class="fl" style="margin-top:0">⭐ Punten bij afronden</label><input type="number" id="ka-p" min="0" step="1" placeholder="bijv. 3" style="max-width:110px"></div></div>
     <label class="fl">🧰 Benodigde materialen (optioneel)</label>
