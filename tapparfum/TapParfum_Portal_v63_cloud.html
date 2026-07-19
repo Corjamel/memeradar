@@ -486,6 +486,9 @@
       <div style="margin-top:18px"><button class="btn coral" id="kbtn" onclick="doLoginKantoor()">Inloggen →</button></div>
       <div id="kcloudmsg" style="min-height:18px;margin-top:10px;font-size:13px;font-weight:700;color:var(--coral-d);white-space:pre-wrap"></div>
     </div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);text-align:center">
+      <a role="button" tabindex="0" onclick="ghostPrompt()" onkeydown="if(event.key==='Enter')ghostPrompt()" style="font-size:12.5px;color:var(--grey);cursor:pointer">👻 Ghost-toegang — test alle rollen (offline)</a>
+    </div>
     </div>
    </div>
   </div>
@@ -541,7 +544,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v63b-cloud · kantoor-login (niet-blokkerend)';
+window.__TP_BUILD='v63c-cloud · ghost-toegang (alle rollen offline testen)';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -915,6 +918,61 @@ function _doLoginKantoorVervolg(n,_u){
   {const _l=gebruikers();const _x=_l.find(x=>x.id===_u.id);if(_x){_x.laatsteLogin=new Date().toISOString().slice(0,16).replace('T',' ');saveGebruikers(_l);}}
   kantoorNaam=_u.naam;kantoorRol=_u.rol;kantoorRechten=_u.rol==='beheer'?Object.assign({},ALLE_RECHTEN):Object.assign({},_u.rechten);beheerOpen=false;
   Store.profile=n;role='kantoor';document.getElementById('login').style.display='none';document.getElementById('app').hidden=false;document.getElementById('who').textContent=n;const rl=document.getElementById('roleLabel');if(rl)rl.textContent='Kantoor';go('kdash');}
+
+/* ============== 👻 GHOST-TOEGANG (alleen om te testen) ==============
+   Eén sleutel die in ÁLLE rollen binnenkomt — volledig offline, zonder cloud,
+   hosting of Supabase. Bedoeld om zelf snel elke rol te bekijken en er live
+   tussen te wisselen met de balk onderin.
+   LET OP: dit is een test-achterdeur. Zet GHOST_AAN op false (of verwijder dit
+   blok) voordat je live gaat met echte klantgegevens. */
+var GHOST_AAN=true;        // false = ghost volledig uit
+var GHOST_PW='ghost';      // wachtwoord voor de ghost-toegang (pas gerust aan)
+window.__ghost=false;window.__ghostRole='';
+function ghostPrompt(){
+  if(!GHOST_AAN){toast('Ghost-toegang staat uit.');return;}
+  edOpen({titel:'👻 Ghost-toegang',hint:'Voer het ghost-wachtwoord in. Hiermee test je alle rollen offline.',cb:function(p){
+    if(String(p||'')!==GHOST_PW){toast('Onjuist ghost-wachtwoord.');return;}
+    window.__ghost=true;ghostGo('am');
+  }});
+}
+function ghostBar(){
+  var bar=document.getElementById('ghostBar');
+  if(!window.__ghost){if(bar)bar.remove();return;}
+  if(!bar){
+    var st=document.createElement('style');st.textContent='#ghostBar ._gbtn{background:#3a2a5c;color:#fff;border:0;border-radius:8px;padding:7px 11px;font-weight:700;cursor:pointer;font-size:12.5px}#ghostBar ._gbtn:hover{filter:brightness(1.18)}#ghostBar ._gbtn.on{background:#f4b942;color:#1c1230}';document.head.appendChild(st);
+    bar=document.createElement('div');bar.id='ghostBar';
+    bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;padding:8px 12px;background:#1c1230;box-shadow:0 -4px 18px rgba(0,0,0,.28)';
+    bar.innerHTML='<b style="color:#fff;letter-spacing:.3px;font-size:13px">👻 Ghost</b>'
+      +'<button data-g="am" onclick="ghostGo(\'am\')" class="_gbtn">🧑‍💼 Accountmanager</button>'
+      +'<button data-g="partner" onclick="ghostGo(\'partner\')" class="_gbtn">🏪 Partner</button>'
+      +'<button data-g="kantoor" onclick="ghostGo(\'kantoor\')" class="_gbtn">🏢 Kantoor</button>'
+      +'<button onclick="ghostExit()" class="_gbtn" style="background:#e6534b">✕ Verlaten</button>'
+      +'<span id="ghostNow" style="color:#fff;opacity:.7;font-size:12px;margin-left:4px"></span>';
+    document.body.appendChild(bar);
+  }
+  var nm={am:'Accountmanager',partner:'Partner',kantoor:'Kantoor'}[window.__ghostRole]||'';
+  var now=document.getElementById('ghostNow');if(now)now.textContent=nm?('· nu: '+nm):'';
+  bar.querySelectorAll('._gbtn').forEach(function(b){if(b.dataset.g)b.classList.toggle('on',b.dataset.g===window.__ghostRole);});
+}
+function ghostGo(r){
+  if(!window.__ghost)return;
+  sluitOverlays();
+  Store.profile=null;role='am';_partnerLock=null;kantoorNaam='';kantoorRol='';kantoorRechten=null;beheerOpen=false;
+  window.__ghostRole=r;
+  if(r==='am'){
+    var profs=Store.listProfiles();var pf=profs[0]||'Marian';var aa=amAccounts();
+    _doLoginAmVervolg(pf,aa[pf]||null,aa);
+  }else if(r==='partner'){
+    var found=null,profs2=Store.listProfiles();
+    for(var i=0;i<profs2.length;i++){Store.profile=profs2[i];var list=Store.get('tappunten',[])||[];if(list.length){found={p:profs2[i],t:list[0]};break;}}
+    if(!found){Store.profile=null;toast('Nog geen tappunt om als partner te openen — bekijk eerst een andere rol.');window.__ghostRole='am';var pf2=(Store.listProfiles()[0])||'Marian';var aa2=amAccounts();_doLoginAmVervolg(pf2,aa2[pf2]||null,aa2);ghostBar();return;}
+    _partnerBinnen(found);
+  }else if(r==='kantoor'){
+    _doLoginKantoorVervolg('👻 Ghost (kantoor)',{id:'ghost',naam:'👻 Ghost (kantoor)',rol:'beheer',rechten:Object.assign({},ALLE_RECHTEN),pin:'',geblokkeerd:false});
+  }
+  ghostBar();
+}
+function ghostExit(){window.__ghost=false;window.__ghostRole='';var b=document.getElementById('ghostBar');if(b)b.remove();logout();toast('Ghost-toegang verlaten.');}
 
 /* ============== BACK-UP ============== */
 function exportAll(){const data={app:"TapParfum AM Portal",profile:Store.profile,exported:new Date().toISOString(),tappunten:clients()};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`tapparfum-portal-${Store.profile}.json`;a.click();Store.set("lastBackup",vandaagISO());Store.set("dirtyData",0);refresh()}
