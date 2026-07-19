@@ -544,7 +544,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v63e-cloud · ghost met accountkeuze + omzet-fix + formulier-behoud';
+window.__TP_BUILD='v64-cloud · TPCloud-datalaag + omzet-compleet + ghost testmodus';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -891,7 +891,7 @@ function _doLoginAmVervolg(n,_a,_aa){
   if(_a){_a.laatsteLogin=new Date().toISOString().slice(0,16).replace('T',' ');saveAmAccounts(_aa);}
   Store.profile=n;Store.addProfile(n);role='am';LS.setItem("tp_portal::__last__",n);document.getElementById("login").style.display="none";document.getElementById("app").hidden=false;document.getElementById("who").textContent=n;const rl=document.getElementById("roleLabel");if(rl)rl.textContent="Accountmanager";checkBeloningenAll();go("vandaag")}
 function sluitOverlays(){['welk','uitleg','edsheet','gs','mailc','tptoast','tpop'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.hidden=true;if(el.style)el.style.display='none';});_edCb=null;}
-function logout(){sluitOverlays();Store.profile=null;role='am';_partnerLock=null;kantoorNaam='';kantoorRol='';kantoorRechten=null;beheerOpen=false;document.getElementById("app").hidden=true;document.getElementById("login").style.display="flex";document.getElementById("pname").value="";const pc=document.getElementById("pcode");if(pc)pc.value="";const kn=document.getElementById("kname");if(kn)kn.value="";setLoginRole("am");renderChips()}
+function logout(){sluitOverlays();Store.profile=null;role='am';_partnerLock=null;kantoorNaam='';kantoorRol='';kantoorRechten=null;beheerOpen=false;window._tpCloudUser=null;try{if(window._tpSb&&window._tpSb.auth&&window._tpSb.auth.signOut)window._tpSb.auth.signOut();}catch(_){}document.getElementById("app").hidden=true;document.getElementById("login").style.display="flex";document.getElementById("pname").value="";const pc=document.getElementById("pcode");if(pc)pc.value="";const kn=document.getElementById("kname");if(kn)kn.value="";setLoginRole("am");renderChips()}
 /* Kantoor & directie: geen AM-profiel — overzicht over álle profielen op dit apparaat. */
 /* Kantoor/AM-login via de cloud (Supabase). E-mail + wachtwoord; account moet 'staff' zijn. */
 function _kmsg(t){var el=document.getElementById('kcloudmsg');if(el)el.textContent=t||'';}
@@ -910,7 +910,9 @@ function doLoginKantoor(){
     var user=res.data&&res.data.user;
     var isStaff=user&&user.app_metadata&&user.app_metadata.role==='staff';
     if(!isStaff){_kmsg('Dit account heeft nog geen kantoor-toegang (rol "staff"). Vraag de beheerder dit in te stellen.');return;}
+    window._tpCloudUser=user;   /* activeert TPCloud: kantoor werkt nu op de database */
     _doLoginKantoorVervolg(user.email,{id:user.id,naam:user.email,rol:'beheer',rechten:Object.assign({},ALLE_RECHTEN),pin:'',geblokkeerd:false});
+    try{TPCloud.pullCentral(function(){if(role==='kantoor'&&VIEWS[route])VIEWS[route]();});TPCloud.pullTappunten('__cloud__');}catch(_){}
    }).catch(function(e){ if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;} _kmsg('Onverwachte fout: '+(e&&e.message?e.message:e)); });
   });
 }
@@ -958,6 +960,7 @@ function ghostBar(){
     bar=document.createElement('div');bar.id='ghostBar';
     bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;padding:8px 12px;background:#1c1230;box-shadow:0 -4px 18px rgba(0,0,0,.28)';
     bar.innerHTML='<b style="color:#fff;letter-spacing:.3px;font-size:13px">👻 Ghost</b>'
+      +'<span title="Test-achterdeur — zet GHOST_AAN op false voor productie" style="background:#e6534b;color:#fff;font-size:10px;font-weight:800;padding:3px 7px;border-radius:20px;letter-spacing:.4px">⚠ TESTMODUS</span>'
       +'<button data-g="am" onclick="ghostGo(\'am\')" class="_gbtn">🧑‍💼 Accountmanager</button>'
       +'<button data-g="partner" onclick="ghostGo(\'partner\')" class="_gbtn">🏪 Partner</button>'
       +'<button data-g="kantoor" onclick="ghostGo(\'kantoor\')" class="_gbtn">🏢 Kantoor</button>'
@@ -1006,13 +1009,52 @@ function importAll(e){const f=e.target.files[0];if(!f)return;const r=new FileRea
    In Fase 1 verhuist precies deze laag 1-op-1 naar Supabase-tabellen. */
 const GStore={k:ns=>`tp_portal::__central__::${ns}`,
   get(ns,def){try{const v=LS.getItem(this.k(ns));return v==null?def:JSON.parse(v)}catch(e){return def}},
-  set(ns,val){try{LS.setItem(this.k(ns),JSON.stringify(val))}catch(e){try{toast('⚠ Opslag vol of geblokkeerd — maak een back-up en ruim op.');}catch(_){}}}};
+  set(ns,val){try{LS.setItem(this.k(ns),JSON.stringify(val))}catch(e){try{toast('⚠ Opslag vol of geblokkeerd — maak een back-up en ruim op.');}catch(_){}}
+    try{TPCloud.pushCentral(ns,val);}catch(_){}}};
+
+/* ============== ☁️ TPCloud — datalaag naar Supabase (fail-safe) ==============
+   Centrale config (acties/producten/merk…) en tappunten leven óók in de database,
+   gedeeld tussen apparaten. Werkt ALLEEN met een echte Supabase-sessie (kantoor-
+   cloud-login als 'staff'). Zonder sessie doet deze laag niets — dan werkt de app
+   1-op-1 lokaal zoals altijd. Elke cloud-fout wordt opgevangen; een hapering mag
+   de app nooit blokkeren. localStorage blijft de directe cache. */
+var _tpCloudUser=null;                       /* gezet na geslaagde staff-login */
+function _tpCloudActief(){return !!(window._tpSb && _tpCloudUser);}
+const TPCloud={
+  actief:_tpCloudActief,
+  pushCentral:function(ns,val){ if(!_tpCloudActief())return; try{
+    var r=window._tpSb.from('central').upsert({ns:ns,data:val},{onConflict:'ns'});
+    if(r&&r.then)r.then(function(res){ if(res&&res.error)console.warn('[cloud] central push',ns,res.error.message); });
+  }catch(e){} },
+  pullCentral:function(cb){ if(!_tpCloudActief()){if(cb)cb(false);return;} try{
+    window._tpSb.from('central').select('ns,data').then(function(res){
+      if(res&&!res.error&&res.data&&res.data.length!==undefined){
+        for(var i=0;i<res.data.length;i++){var row=res.data[i];try{LS.setItem('tp_portal::__central__::'+row.ns,JSON.stringify(row.data));}catch(e){}}
+        if(cb)cb(true);
+      } else if(cb)cb(false);
+    });
+  }catch(e){if(cb)cb(false);} },
+  pushTappunt:function(t){ if(!_tpCloudActief()||!t||!t.snelstart)return; try{
+    var r=window._tpSb.from('tappunten').upsert({snelstart:t.snelstart,name:t.name||t.snelstart,email:t.email||null,geblokkeerd:!!t.geblokkeerd,data:t},{onConflict:'snelstart'});
+    if(r&&r.then)r.then(function(res){ if(res&&res.error)console.warn('[cloud] tappunt push',t.snelstart,res.error.message); });
+  }catch(e){} },
+  pushTappunten:function(arr){ if(!_tpCloudActief()||!arr)return; for(var i=0;i<arr.length;i++)TPCloud.pushTappunt(arr[i]); },
+  pullTappunten:function(profile,cb){ if(!_tpCloudActief()){if(cb)cb(false);return;} try{
+    window._tpSb.from('tappunten').select('snelstart,name,email,geblokkeerd,data').then(function(res){
+      if(res&&!res.error&&res.data&&res.data.length!==undefined){
+        var arr=res.data.map(function(row){var t=(row.data&&typeof row.data==='object')?row.data:{};t.snelstart=t.snelstart||row.snelstart;t.name=t.name||row.name;if(row.email&&!t.email)t.email=row.email;t.geblokkeerd=!!row.geblokkeerd;return t;});
+        try{LS.setItem('tp_portal::'+(profile||'__cloud__')+'::tappunten',JSON.stringify(arr));}catch(e){}
+        if(cb)cb(true,arr);
+      } else if(cb)cb(false);
+    });
+  }catch(e){if(cb)cb(false);} }
+};
 function centralActies(){return GStore.get('acties',[])}
 function saveCentralActies(a){GStore.set('acties',a)}
 function activeActies(){const t=vandaagISO();return centralActies().filter(a=>!a.archived&&(!a.eind||a.eind>=t))}
 /* Ruwe lees/schrijf van tappunten van een wíllekeurig profiel (kantoor kijkt over alle AM's heen). */
 function rawTappunten(p){try{return JSON.parse(LS.getItem(`tp_portal::${p}::tappunten`))||[]}catch(e){return[]}}
-function saveRawTappunten(p,arr){LS.setItem(`tp_portal::${p}::tappunten`,JSON.stringify(arr));if(_clProf===p){_clCache=arr;}}
+function saveRawTappunten(p,arr){LS.setItem(`tp_portal::${p}::tappunten`,JSON.stringify(arr));if(_clProf===p){_clCache=arr;}try{TPCloud.pushTappunten(arr);}catch(_){}}
 function amOverview(){return Store.listProfiles().map(p=>{const ts=rawTappunten(p);let jo=0;const cnt={nieuw:0,groeit:0,stagneert:0,top:0};ts.forEach(t=>{jo+=jaaromzet(t);cnt[statusKey(t)]++;});return {p,n:ts.length,jo,cnt,ts};});}
 function actieDeelnameStats(aid){let tot=0,mee=0;const perAM=[];Store.listProfiles().forEach(p=>{const ts=rawTappunten(p);let m=0;ts.forEach(t=>{tot++;if(t.actieDeelname&&t.actieDeelname[aid]&&t.actieDeelname[aid].done){mee++;m++;}});perAM.push({p,n:ts.length,mee:m});});return {tot,mee,pct:tot?Math.round(mee/tot*100):0,perAM};}
 /* Ingrijpen vanuit kantoor: opdracht als signaal op een tappunt — landt in de Inbox van de AM. */
@@ -2322,7 +2364,7 @@ const V=()=>document.getElementById(_viewTarget);
 /* clients() cachet de geparste lijst per profiel — voorkomt een JSON.parse van de hele dataset bij elke aanroep (meerdere per render). saveClients ververst de cache en markeert de data als 'niet geback-upt'. */
 let _clCache=null,_clProf=null;
 function clients(){if(_clProf!==Store.profile){_clCache=null;_clProf=Store.profile;}if(!_clCache)_clCache=Store.get("tappunten",[]);return _clCache}
-function saveClients(c){Store.set("tappunten",c);_clCache=c;_clProf=Store.profile;Store.set("dirtyData",1)}
+function saveClients(c){Store.set("tappunten",c);_clCache=c;_clProf=Store.profile;Store.set("dirtyData",1);try{TPCloud.pushTappunten(c);}catch(_){}}
 /* Dagen vanaf vandaag (00:00) tot een datum — negatief = verleden. */
 function dagenTot(d){const t0=new Date();t0.setHours(0,0,0,0);return Math.round((new Date(d)-t0)/86400000)}
 function groeiTxt(g){return g==null?'—':(g>=0?'+':'')+Math.round(g*100)+'%'}
@@ -2354,7 +2396,15 @@ function winkelOmzet(t){return Math.round(jaaromzet(t)*margeFactor());}
 function kassaJaar(t){return Math.round((vkJaar(t)||{tot:0}).tot||0);}
 function tellerJaar(t){return Math.round(omzetVerkochtJaar(t));}
 /* Eén waarheid voor 'winkelomzet dit jaar': echte kassa > flessenteller > schatting (inkoop × factor). Bronnen vervangen elkaar — nooit optellen. */
-function winkelOmzetInfo(t){const k=kassaJaar(t);if(k>0)return {bedrag:k,bron:'kassa'};const f=tellerJaar(t);if(f>0)return {bedrag:f,bron:'teller'};return {bedrag:winkelOmzet(t),bron:'schatting'};}
+function winkelOmzetInfo(t){
+  /* De flessenlog is de meest complete bron: via de kassa-brug bevat hij zowel de
+     'verkoop bijhouden'-regels als elke kassa-tik. Die gebruiken we dus eerst, zodat
+     winkelverkoop nooit daalt/verbergt als een winkel beide methodes door elkaar gebruikt.
+     Alleen als er geen flessenlog is vallen we terug op de losse kassa, dan op schatting. */
+  const f=tellerJaar(t);
+  if(f>0){const heeftKassa=(t.flesLog||[]).some(e=>e&&e.src==='kassa');return {bedrag:f,bron:heeftKassa?'kassa':'teller'};}
+  const k=kassaJaar(t);if(k>0)return {bedrag:k,bron:'kassa'};
+  return {bedrag:winkelOmzet(t),bron:'schatting'};}
 function kSetMarge(){const v=parseFloat(String((document.getElementById('k-marge')||{}).value||'').replace(',','.'));
   if(!(v>0)){toast('Vul een factor groter dan 0 in (bijv. 2,0).');return;}
   GStore.set('margeFactor',v);toast('✓ Marge-factor '+String(v).replace('.',',')+' opgeslagen — ABCD rekent nu met geschatte winkelomzet (inkoop × '+String(v).replace('.',',')+').');refresh();}
