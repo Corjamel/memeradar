@@ -544,7 +544,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v63d-cloud · ghost + omzet-fix (winkelverkoop) + formulier-behoud (acties/producten)';
+window.__TP_BUILD='v63e-cloud · ghost met accountkeuze + omzet-fix + formulier-behoud';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -927,52 +927,75 @@ function _doLoginKantoorVervolg(n,_u){
    blok) voordat je live gaat met echte klantgegevens. */
 var GHOST_AAN=true;        // false = ghost volledig uit
 var GHOST_PW='ghost';      // wachtwoord voor de ghost-toegang (pas gerust aan)
-window.__ghost=false;window.__ghostRole='';
+window.__ghost=false;window.__ghostRole='';window.__ghostAcc='';
 function ghostPrompt(){
   if(!GHOST_AAN){toast('Ghost-toegang staat uit.');return;}
-  edOpen({titel:'👻 Ghost-toegang',hint:'Voer het ghost-wachtwoord in. Hiermee test je alle rollen offline.',cb:function(p){
+  edOpen({titel:'👻 Ghost-toegang',hint:'Voer het ghost-wachtwoord in. Hiermee test je alle rollen en accounts offline.',cb:function(p){
     if(String(p||'')!==GHOST_PW){toast('Onjuist ghost-wachtwoord.');return;}
     window.__ghost=true;ghostGo('am');
   }});
+}
+/* Alle beschikbare accounts per rol — zodat je in de ghost kunt kiezen wélk account. */
+function ghostAccounts(r){
+  var out=[];var profs=Store.listProfiles();var was=Store.profile;
+  if(r==='am'){
+    profs.forEach(function(p){out.push({id:p,label:p});});
+    if(!out.length)out.push({id:'Marian',label:'Marian'});
+  }else if(r==='partner'){
+    profs.forEach(function(p){Store.profile=p;(Store.get('tappunten',[])||[]).forEach(function(t){out.push({id:t.id,label:t.name+' · AM '+p});});});
+    Store.profile=was;
+  }else if(r==='kantoor'){
+    out.push({id:'ghost',label:'👻 Ghost — volledige rechten'});
+    try{(gebruikers()||[]).forEach(function(u){out.push({id:u.id,label:(u.naam||'kantoor')+(u.rol?' · '+u.rol:'')});});}catch(e){}
+  }
+  return out;
 }
 function ghostBar(){
   var bar=document.getElementById('ghostBar');
   if(!window.__ghost){if(bar)bar.remove();return;}
   if(!bar){
-    var st=document.createElement('style');st.textContent='#ghostBar ._gbtn{background:#3a2a5c;color:#fff;border:0;border-radius:8px;padding:7px 11px;font-weight:700;cursor:pointer;font-size:12.5px}#ghostBar ._gbtn:hover{filter:brightness(1.18)}#ghostBar ._gbtn.on{background:#f4b942;color:#1c1230}';document.head.appendChild(st);
+    var st=document.createElement('style');st.textContent='#ghostBar ._gbtn{background:#3a2a5c;color:#fff;border:0;border-radius:8px;padding:7px 11px;font-weight:700;cursor:pointer;font-size:12.5px}#ghostBar ._gbtn:hover{filter:brightness(1.18)}#ghostBar ._gbtn.on{background:#f4b942;color:#1c1230}#ghostBar select{background:#fff;color:#1c1230;border:0;border-radius:8px;padding:7px 9px;font-weight:700;font-size:12.5px;max-width:230px}';document.head.appendChild(st);
     bar=document.createElement('div');bar.id='ghostBar';
     bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;padding:8px 12px;background:#1c1230;box-shadow:0 -4px 18px rgba(0,0,0,.28)';
     bar.innerHTML='<b style="color:#fff;letter-spacing:.3px;font-size:13px">👻 Ghost</b>'
       +'<button data-g="am" onclick="ghostGo(\'am\')" class="_gbtn">🧑‍💼 Accountmanager</button>'
       +'<button data-g="partner" onclick="ghostGo(\'partner\')" class="_gbtn">🏪 Partner</button>'
       +'<button data-g="kantoor" onclick="ghostGo(\'kantoor\')" class="_gbtn">🏢 Kantoor</button>'
-      +'<button onclick="ghostExit()" class="_gbtn" style="background:#e6534b">✕ Verlaten</button>'
-      +'<span id="ghostNow" style="color:#fff;opacity:.7;font-size:12px;margin-left:4px"></span>';
+      +'<span style="color:#fff;opacity:.6;font-size:12px">account:</span>'
+      +'<select id="ghostPick" onchange="ghostPick(this.value)" title="Kies welk account"></select>'
+      +'<button onclick="ghostExit()" class="_gbtn" style="background:#e6534b">✕ Verlaten</button>';
     document.body.appendChild(bar);
   }
-  var nm={am:'Accountmanager',partner:'Partner',kantoor:'Kantoor'}[window.__ghostRole]||'';
-  var now=document.getElementById('ghostNow');if(now)now.textContent=nm?('· nu: '+nm):'';
   bar.querySelectorAll('._gbtn').forEach(function(b){if(b.dataset.g)b.classList.toggle('on',b.dataset.g===window.__ghostRole);});
+  var sel=document.getElementById('ghostPick');
+  if(sel){var accs=ghostAccounts(window.__ghostRole);
+    sel.innerHTML=accs.map(function(a){return '<option value="'+escAttrJs(String(a.id))+'"'+(String(a.id)===String(window.__ghostAcc)?' selected':'')+'>'+esc(a.label)+'</option>';}).join('');
+    sel.disabled=accs.length<2;}
 }
-function ghostGo(r){
+function ghostPick(id){if(!window.__ghost)return;ghostGo(window.__ghostRole||'am',id);}
+function ghostGo(r,id){
   if(!window.__ghost)return;
   sluitOverlays();
   Store.profile=null;role='am';_partnerLock=null;kantoorNaam='';kantoorRol='';kantoorRechten=null;beheerOpen=false;
   window.__ghostRole=r;
   if(r==='am'){
-    var profs=Store.listProfiles();var pf=profs[0]||'Marian';var aa=amAccounts();
-    _doLoginAmVervolg(pf,aa[pf]||null,aa);
+    var profs=Store.listProfiles();var pf=id||profs[0]||'Marian';var aa=amAccounts();
+    window.__ghostAcc=pf;_doLoginAmVervolg(pf,aa[pf]||null,aa);
   }else if(r==='partner'){
     var found=null,profs2=Store.listProfiles();
-    for(var i=0;i<profs2.length;i++){Store.profile=profs2[i];var list=Store.get('tappunten',[])||[];if(list.length){found={p:profs2[i],t:list[0]};break;}}
-    if(!found){Store.profile=null;toast('Nog geen tappunt om als partner te openen — bekijk eerst een andere rol.');window.__ghostRole='am';var pf2=(Store.listProfiles()[0])||'Marian';var aa2=amAccounts();_doLoginAmVervolg(pf2,aa2[pf2]||null,aa2);ghostBar();return;}
-    _partnerBinnen(found);
+    if(id){for(var j=0;j<profs2.length;j++){Store.profile=profs2[j];var l2=Store.get('tappunten',[])||[];var t2=l2.find(function(x){return x.id===id;});if(t2){found={p:profs2[j],t:t2};break;}}}
+    if(!found){for(var i=0;i<profs2.length;i++){Store.profile=profs2[i];var list=Store.get('tappunten',[])||[];if(list.length){found={p:profs2[i],t:list[0]};break;}}}
+    if(!found){Store.profile=null;toast('Nog geen tappunt om als partner te openen — bekijk eerst een andere rol.');ghostGo('am');return;}
+    window.__ghostAcc=found.t.id;_partnerBinnen(found);
   }else if(r==='kantoor'){
-    _doLoginKantoorVervolg('👻 Ghost (kantoor)',{id:'ghost',naam:'👻 Ghost (kantoor)',rol:'beheer',rechten:Object.assign({},ALLE_RECHTEN),pin:'',geblokkeerd:false});
+    var u=null;
+    if(id&&id!=='ghost'){try{u=(gebruikers()||[]).find(function(x){return x.id===id;});}catch(e){}}
+    if(u){window.__ghostAcc=u.id;_doLoginKantoorVervolg(u.naam||'kantoor',{id:u.id,naam:u.naam||'kantoor',rol:u.rol||'beheer',rechten:u.rol==='beheer'?Object.assign({},ALLE_RECHTEN):Object.assign({},u.rechten||{}),pin:'',geblokkeerd:false});}
+    else{window.__ghostAcc='ghost';_doLoginKantoorVervolg('👻 Ghost (kantoor)',{id:'ghost',naam:'👻 Ghost (kantoor)',rol:'beheer',rechten:Object.assign({},ALLE_RECHTEN),pin:'',geblokkeerd:false});}
   }
   ghostBar();
 }
-function ghostExit(){window.__ghost=false;window.__ghostRole='';var b=document.getElementById('ghostBar');if(b)b.remove();logout();toast('Ghost-toegang verlaten.');}
+function ghostExit(){window.__ghost=false;window.__ghostRole='';window.__ghostAcc='';var b=document.getElementById('ghostBar');if(b)b.remove();logout();toast('Ghost-toegang verlaten.');}
 
 /* ============== BACK-UP ============== */
 function exportAll(){const data={app:"TapParfum AM Portal",profile:Store.profile,exported:new Date().toISOString(),tappunten:clients()};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`tapparfum-portal-${Store.profile}.json`;a.click();Store.set("lastBackup",vandaagISO());Store.set("dirtyData",0);refresh()}
@@ -3308,7 +3331,7 @@ VIEWS.zelf=()=>{
   const _off=officieel(t);
   const _vt=breakeven?(t.be&&t.be.bottles?Math.round(Math.min(sold/t.be.bottles*100,100))+'%':sold+' fl'):((existing&&t.goal&&t.goal.flJaar)?Math.round(Math.min(sold/t.goal.flJaar*100,100))+'%':'—');
   const _vl=breakeven?'Break-even':((existing&&t.goal&&t.goal.doel>0)?'Jaardoel':'Voortgang');
-  const stats=`<div class="kpirow" style="margin-bottom:14px"><div class="kpi ${_off?'acc-green':''}"><div class="kicon">${ICON.merk}</div><div class="v ${_off?'green':''}" style="font-size:16px">${_off?'Officieel ✓':'Nog niet'}</div><div class="l">Status</div></div><div class="kpi"><div class="kicon">${ICON.punten}</div><div class="v">${basisScore(t)}<span style="font-size:13px;color:var(--grey)">/${BASIS_MAX}</span></div><div class="l">Basispunten</div></div><div class="kpi acc-green"><div class="kicon">${ICON.euro}</div><div class="v">${eur0(jo)}</div><div class="l">Omzet dit jaar</div></div><div class="kpi"><div class="kicon">${ICON.omzet}</div><div class="v coral">${_vt}</div><div class="l">${_vl}</div></div></div>`;
+  const stats=`<div class="kpirow" style="margin-bottom:14px"><div class="kpi ${_off?'acc-green':''}"><div class="kicon">${ICON.merk}</div><div class="v ${_off?'green':''}" style="font-size:16px">${_off?'Officieel ✓':'Nog niet'}</div><div class="l">Status</div></div><div class="kpi"><div class="kicon">${ICON.punten}</div><div class="v">${basisScore(t)}<span style="font-size:13px;color:var(--grey)">/${BASIS_MAX}</span></div><div class="l">Basispunten</div></div><div class="kpi acc-green"><div class="kicon">${ICON.euro}</div><div class="v">${vk?eur0(vk):'—'}</div><div class="l">Winkelverkoop dit jaar</div></div><div class="kpi"><div class="kicon">${ICON.omzet}</div><div class="v coral">${_vt}</div><div class="l">${_vl}</div></div></div>`;
   /* Mijlpaal-vieringen (niveau / jaardoel / break-even) — blijven staan tot de partner ze wegklikt. */
   const vier=(t.vieringen||[]).map((v,i)=>{let txt='';
     if(v.type==='level')txt=`<b style="font-size:16px">🎉 Niveau ${esc(v.k)} bereikt!</b><br><span style="font-size:13.5px">${esc(v.r||'')} — knap gedaan. Meer punten = meer beloningen, zie je beloningsladder hieronder.</span>`;
