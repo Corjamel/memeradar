@@ -1,0 +1,259 @@
+<title>Foutenrapport · TapParfum Portal v58</title>
+<style>
+:root{
+  --bg:#FCFAF8;--surface:#FFFFFF;--ink:#2A211C;--muted:#6E6259;--line:#E9E1D8;
+  --accent:#C2452F;--accent-soft:#FBEAE5;
+  --crit:#8C1D12;--crit-bg:#F9E3E0;
+  --hoog:#8A4A03;--hoog-bg:#FBEBD7;
+  --mid:#6E5A08;--mid-bg:#F6EFCF;
+  --laag:#47566B;--laag-bg:#E8EDF3;
+  --ok:#2F5D14;--ok-bg:#E6F0DC;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#211B17;--surface:#2B241F;--ink:#F0E9E2;--muted:#B3A79C;--line:#3D352E;
+  --accent:#F08A73;--accent-soft:#3B2A25;
+  --crit:#F5A79D;--crit-bg:#452019;
+  --hoog:#F2C088;--hoog-bg:#43301A;
+  --mid:#E5D384;--mid-bg:#3C3517;
+  --laag:#AFC0D6;--laag-bg:#2A323D;
+  --ok:#B4D394;--ok-bg:#2A3A1E;
+}}
+:root[data-theme="dark"]{
+  --bg:#211B17;--surface:#2B241F;--ink:#F0E9E2;--muted:#B3A79C;--line:#3D352E;
+  --accent:#F08A73;--accent-soft:#3B2A25;
+  --crit:#F5A79D;--crit-bg:#452019;
+  --hoog:#F2C088;--hoog-bg:#43301A;
+  --mid:#E5D384;--mid-bg:#3C3517;
+  --laag:#AFC0D6;--laag-bg:#2A323D;
+  --ok:#B4D394;--ok-bg:#2A3A1E;
+}
+:root[data-theme="light"]{
+  --bg:#FCFAF8;--surface:#FFFFFF;--ink:#2A211C;--muted:#6E6259;--line:#E9E1D8;
+  --accent:#C2452F;--accent-soft:#FBEAE5;
+  --crit:#8C1D12;--crit-bg:#F9E3E0;
+  --hoog:#8A4A03;--hoog-bg:#FBEBD7;
+  --mid:#6E5A08;--mid-bg:#F6EFCF;
+  --laag:#47566B;--laag-bg:#E8EDF3;
+  --ok:#2F5D14;--ok-bg:#E6F0DC;
+}
+body{background:var(--bg);color:var(--ink);font-family:"Avenir Next","Seravek","Segoe UI",system-ui,sans-serif;line-height:1.55;margin:0}
+.wrap{max-width:880px;margin:0 auto;padding:48px 22px 80px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+h1{font-size:clamp(26px,4.5vw,36px);font-weight:700;margin:6px 0 4px;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14.5px;max-width:62ch}
+h2{font-size:19px;font-weight:700;margin:44px 0 4px;letter-spacing:-.005em;display:flex;align-items:baseline;gap:10px}
+h2 .n{color:var(--muted);font-weight:600;font-size:13px}
+.secline{color:var(--muted);font-size:13.5px;margin:0 0 16px;max-width:66ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:26px 0 8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.tile .v{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .l{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:4px;display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.chip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2.5px 9px;border-radius:20px;white-space:nowrap}
+.c-crit{color:var(--crit);background:var(--crit-bg)}
+.c-hoog{color:var(--hoog);background:var(--hoog-bg)}
+.c-mid{color:var(--mid);background:var(--mid-bg)}
+.c-laag{color:var(--laag);background:var(--laag-bg)}
+.c-ok{color:var(--ok);background:var(--ok-bg)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 12px}
+.card.crit{border-left:4px solid var(--crit)}
+.card.hoog{border-left:4px solid var(--hoog)}
+.fh{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.fh b{font-size:15px;flex:1;min-width:200px}
+.ref{font-family:var(--mono);font-size:11.5px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1.5px 7px;white-space:nowrap}
+.card p{margin:8px 0 0;font-size:13.5px;color:var(--ink)}
+.card p.fix{color:var(--muted)}
+.card p.fix b{color:var(--ink)}
+code{font-family:var(--mono);font-size:.92em;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.rows{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.rows details{border-bottom:1px solid var(--line)}
+.rows details:last-child{border-bottom:none}
+.rows summary{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;font-size:14px;font-weight:600;list-style:none;flex-wrap:wrap}
+.rows summary::-webkit-details-marker{display:none}
+.rows summary:hover{background:var(--accent-soft)}
+.rows summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rows summary .t{flex:1;min-width:220px}
+.rows summary::after{content:"+";color:var(--muted);font-weight:400;font-size:16px}
+.rows details[open] summary::after{content:"–"}
+.rows .body{padding:2px 16px 14px;font-size:13.5px;color:var(--muted)}
+.rows .body b{color:var(--ink)}
+.toplist{counter-reset:top;list-style:none;margin:0;padding:0}
+.toplist li{counter-increment:top;display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.toplist li:last-child{border-bottom:none}
+.toplist li::before{content:counter(top);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;font-size:15px;flex:none;width:18px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.foot{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+@media (prefers-reduced-motion:no-preference){.card,.rows,.tile{transition:border-color .15s}}
+</style>
+
+<div class="wrap">
+<div class="eyebrow">Foutenrapport · 19 juli 2026</div>
+<h1>TapParfum Accountmanager Portal</h1>
+<p class="sub">Bestand <code>TapParfum_Portal_v58_Berichtlijn.html</code> (536&nbsp;KB, 3.648 regels) — volledige audit: statische analyse, live browsertest van alle 36 views in drie rollen (accountmanager, partner, kantoor), vijf parallelle code-reviews en een UI/toegankelijkheids&shy;audit. Alle regelnummers verwijzen naar het originele bestand.</p>
+
+<div class="tiles">
+  <div class="tile"><div class="v">2</div><div class="l"><span class="dot" style="background:var(--crit)"></span>Kritiek</div></div>
+  <div class="tile"><div class="v">10</div><div class="l"><span class="dot" style="background:var(--hoog)"></span>Hoog</div></div>
+  <div class="tile"><div class="v">19</div><div class="l"><span class="dot" style="background:var(--mid)"></span>Middel</div></div>
+  <div class="tile"><div class="v">16</div><div class="l"><span class="dot" style="background:var(--laag)"></span>Laag</div></div>
+</div>
+<p class="sub" style="font-size:13px">Totaal 47 geverifieerde bevindingen. De app <b>crasht nergens</b> — alle views renderen foutloos en het rekenwerk van de calculator klopt exact. De echte problemen zitten in de bonus-/niveaulogica, twee injectielekken, ontbrekende afbeeldingen en toegankelijkheid.</p>
+
+<h2>Eerst oppakken</h2>
+<div class="card">
+<ol class="toplist">
+  <li>De <b>injectie-lekken</b> dichten: profielnamen in beheer-knoppen (r. 3452, 3503, 3546) en het <code>javascript:</code>-scheme in actievideo-links (r. 1073).</li>
+  <li><b><code>checkMilestones()</code> aansluiten</b> (r. 2678) — mijlpaal-bonuspunten en vieringen werken nu helemaal niet.</li>
+  <li>De <b>marge-factor consequent doorvoeren</b> in álle beloningsdrempels en voortgangsbalken — nu worden beloningen bij factor&nbsp;≠&nbsp;1 op de verkeerde omzet uitgekeerd.</li>
+  <li>De <b><code>assets/</code>-map meeleveren</b> (21 afbeeldingen ontbreken) en het <b>versienummer</b> bijwerken (app zegt v20.2, bestand heet v58).</li>
+  <li><b>Contrast en toetsenbord</b>: coral-knoppen halen WCAG AA niet (3,19:1) en klantkaarten zijn zonder muis niet te openen.</li>
+</ol>
+</div>
+
+<h2>Kritiek <span class="n">2 bevindingen · beveiliging</span></h2>
+
+<div class="card crit">
+  <div class="fh"><span class="chip c-crit">Kritiek</span><b>JS-injectie via profielnaam in beheer-knoppen</b><span class="ref">r. 3452 · 3503 · 3546</span></div>
+  <p>Op drie plekken wordt de AM-profielnaam (vrije invoer bij login) met <code>esc()</code> in een <code>onclick</code>-attribuut gezet in plaats van met <code>escAttrJs()</code>: <code>onclick="kBegeleidSignaal('${esc(s.am)}',…)"</code> en alle <code>bhWelkomP/bhPartnerCode/bhBlokP/bhExport/bhAnon/bhWelkomAM/bhAmPin/bhBlokAm</code>-knoppen. <code>esc()</code> escapet geen enkele quote.</p>
+  <p class="fix"><b>Gevolg:</b> een naam als "D'Amico" breekt álle beheerknoppen voor die accountmanager (SyntaxError); een naam als <code>x',(alert(1)),'</code> voert willekeurige JavaScript uit in de kantoor-/beheeromgeving — precies waar AVG-export en blokkades zitten. <b>Fix:</b> overal <code>escAttrJs()</code>, zoals elders in het bestand al correct gebeurt (o.a. r. 3423).</p>
+</div>
+
+<div class="card crit">
+  <div class="fh"><span class="chip c-crit">Kritiek</span><b>Stored XSS via actievideo-URL</b><span class="ref">r. 1073</span></div>
+  <p>De fallback van <code>videoEmbed()</code> rendert een door kantoor ingevoerde URL rechtstreeks als <code>href="${esc(u)}"</code>. <code>esc()</code> blokkeert het <code>javascript:</code>-scheme niet.</p>
+  <p class="fix"><b>Gevolg:</b> één kantoor-account kan een link plaatsen die JavaScript uitvoert in de sessie van elke accountmanager en partner die erop klikt. <b>Fix:</b> scheme-whitelist (<code>^https?://</code>) vóór het renderen.</p>
+</div>
+
+<h2>Hoog <span class="n">10 bevindingen</span></h2>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b><code>checkMilestones()</code> wordt nergens aangeroepen — dode kernfunctie</b><span class="ref">r. 2678 · 2692 · 2699</span></div>
+  <p>De functie die mijlpalen (break-even, niveau, jaardoel) detecteert bestaat, maar de aanroep ontbreekt in <code>addSale</code> en <code>setDagVerkoop</code> — daar wordt <code>joVoor</code> wel berekend maar nooit gebruikt.</p>
+  <p class="fix"><b>Gevolg:</b> <code>beDoneAt</code> wordt nooit automatisch gezet, dus de bonuspunten voor "op tijd terugverdiend" blijven altijd 0 en de vieringen/inbox-signalen verschijnen nooit. De UI toont wél "terugverdiend", waardoor dit onopgemerkt blijft.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Marge-factor inconsistent toegepast in niveau- en beloningslogica</b><span class="ref">r. 2231 · 2267 · 2674 · 2866–2881 · 3040–3047</span></div>
+  <p><code>levelOf()</code> (r. 2063) vermenigvuldigt inkoop-omzet correct met de marge-factor, maar de beloningsuitkering (<code>checkBeloningen</code>), de beloningsladder, de voortgangsbalken (<code>jaaromzetBlock</code>, r. 2267: <code>jo/L.nextMin</code> zonder factor) en het partnerdashboard rekenen met kale inkoop. Eén blok gebruikt zelfs drie verschillende bases (r. 3040–3047).</p>
+  <p class="fix"><b>Gevolg bij factor 2,0:</b> het scherm toont "niveau A+ bereikt", maar de bijbehorende korting wordt pas bij het dubbele uitgekeerd; voortgangsbalken staan structureel te laag en een beloning kan volledig uit beeld verdwijnen (noch behaald, noch "eerstvolgende"). <b>Fix:</b> overal via <code>winkelOmzet(t)</code> rekenen.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Veld <code>jaaromzet</code> heeft twee tegenstrijdige betekenissen</b><span class="ref">r. 790 · 2065 · 2960 · 2989</span></div>
+  <p>Regel 790 documenteert het veld als consumentenverkoop; regel 2065 als "uitsluitend inkoop bij TapParfum". In de UI heet dezelfde waarde zowel "Inkoop bij TapParfum dit jaar" als "Omzet dit jaar (uit verkooplog)". Het jaardoel wordt bovendien op consumentenprijzen berekend maar tegen inkoop afgemeten.</p>
+  <p class="fix"><b>Fix:</b> kies één betekenis, hernoem het veld daarnaar (bijv. <code>inkoopJaar</code>) en corrigeer de twee UI-labels en de jaardoel-vergelijking.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Versienummer 38 versies achter: app zegt v20.2, bestand heet v58</b><span class="ref">r. 475</span></div>
+  <p><code>window.__TP_BUILD='v20.2 · 16 jul 2026'</code> wordt getoond op het loginscherm én in de foutbanner "maak hier een foto van" — precies het diagnosemechanisme dat op het juiste buildnummer moet kunnen vertrouwen.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>21 afbeeldingen ontbreken (hele <code>assets/</code>-map)</b><span class="ref">live getest</span></div>
+  <p>Alle verwijzingen naar <code>assets/…</code> (logo, herofoto, productfoto's, geurnoten) falen met <code>ERR_FILE_NOT_FOUND</code> zodra het HTML-bestand los wordt verspreid. De <code>onerror</code>-handlers verbergen het meeste netjes, maar logo en sfeerbeeld zijn overal weg.</p>
+  <p class="fix"><b>Fix:</b> lever de map mee, of embed de belangrijkste beelden als data-URI in het bestand (het is al een single-file app).</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Wit-op-coral haalt WCAG AA niet (3,19:1)</b><span class="ref">CSS r. 35–37 · 97 · 248 e.a.</span></div>
+  <p>Alle primaire knoppen, actieve nav-items, badges en pills zetten witte tekst (10–13,5px) op <code>--coral #EE644D</code>: contrast ≈ 3,19:1, onder de vereiste 4,5:1. Ook <code>--coral-d</code> als kleine tekstkleur op wit (3,97:1) en <code>.fchip.on .fn</code> (2,06:1) falen.</p>
+  <p class="fix"><b>Fix:</b> knop-/nav-achtergrond verdonkeren naar ± <code>#C24A34</code> (≈ 4,6:1). De thema-laag heeft al contrast-bewaking (<code>_aaDonker</code>) — pas die ook op het standaardpalet toe.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Klikbare rijen en kaarten zonder toetsenbordtoegang</b><span class="ref">r. 853 · 1498 · 2343 e.v.</span></div>
+  <p>Tientallen <code>&lt;div class="ai" onclick="openTappunt(…)"&gt;</code>-rijen en kaarten missen <code>role="button" tabindex="0"</code> + keyboard-handler. Het patroon is elders wél correct toegepast (accordeonkoppen, KPI-tegels) maar niet doorgevoerd.</p>
+  <p class="fix"><b>Gevolg:</b> toetsenbordgebruikers kunnen klantkaarten niet openen vanaf lijsten en zoekresultaten.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Modals missen dialog-semantiek, focus-trap en Escape</b><span class="ref">r. 461–467 · 3626–3638</span></div>
+  <p><code>#tpop</code>, <code>#gs</code>, <code>#welk</code>, <code>#mailc</code> en <code>#edsheet</code> hebben geen <code>role="dialog" aria-modal</code>, geen focus-trap en geen globale Escape; focus keert na sluiten niet terug naar de trigger.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Formulieren: 0× autocomplete, telefoon als <code>type="text"</code>, geen Enter-submit</b><span class="ref">r. 2169 · 3291–3295</span></div>
+  <p>Geen enkel <code>&lt;form&gt;</code>-element of <code>autocomplete</code>-attribuut in het hele bestand; telefoonvelden zijn <code>type="text"</code> (geen numeriek toetsenbord op mobiel, geen autofill); de nieuwe-tappunt-toolbar heeft geen Enter-afhandeling.</p>
+</div>
+
+<div class="card hoog">
+  <div class="fh"><span class="chip c-hoog">Hoog</span><b>Onbeveiligde <code>.find()</code>-setters crashen op verwijderd tappunt</b><span class="ref">r. 2106 · 2185–2188</span></div>
+  <p><code>setKlanten</code>, <code>notesC</code>, <code>liveC</code>, <code>setPakket</code> en <code>setStatus</code> doen <code>c.find(…).veld =</code> zonder null-check, terwijl vergelijkbare buurfuncties wél <code>if(!t)return</code> hebben. Bij een stale id (tappunt net gewist in ander tabblad/AVG-wis) crasht de view.</p>
+</div>
+
+<h2>Middel <span class="n">19 bevindingen</span></h2>
+<p class="secline">Reken- en datumfouten die onder specifieke omstandigheden verkeerde cijfers tonen, plus de belangrijkste toegankelijkheids- en performancepunten.</p>
+
+<div class="rows">
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Kassa-omzet wordt met terugwerkende kracht herberekend bij prijswijziging</span><span class="ref">r. 1963</span></summary><div class="body"><code>vkTotaal()</code> vermenigvuldigt historische aantallen met de <b>huidige</b> flesprijs. Verhoogt kantoor in juli een prijs, dan stijgt de complete jaaromzet januari–juni van álle partners mee — in strijd met de belofte "elke tik = échte verkoop, geen schatting". <b>Fix:</b> prijs op verkoopmoment opslaan.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t"><code>setMonth</code>-overflow: maandgrafiek klopt niet op de 29e–31e</span><span class="ref">r. 3472</span></summary><div class="body"><code>d.setMonth(d.getMonth()-i)</code> rolt op maandeindes door naar de verkeerde maand (31 juli − 5 mnd → 3 maart). De grafiek "Échte activaties per maand" mist dan een maand en reset een andere naar 0. <b>Fix:</b> eerst <code>d.setDate(1)</code>.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Kassa-kaart "per maat (jaar)" telt álle jaren mee</span><span class="ref">r. 3483</span></summary><div class="body">De sommatie over <code>t.verkopen</code> heeft geen jaarfilter, terwijl het label "(jaar)" zegt en de KPI's ernaast wél filteren. Na een jaarwisseling tellen oude verkopen gewoon mee.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">UTC- en lokale tijdstempels door elkaar</span><span class="ref">r. 705 · 719 · 1887–1909</span></summary><div class="body">Logins, berichten en de beheer-auditlog stempelen met <code>toISOString()</code> (UTC, in NL 1–2 uur te vroeg; na 23:00 zomertijd zelfs de vorige dag), terwijl AI-berichten (r. 3448) lokaal stempelen. Lijsten sorteren rond middernacht verkeerd. <b>Fix:</b> overal <code>isoLokaal()</code>.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Kassaprijzen ≠ calculatorprijzen voor dezelfde flesformaten</span><span class="ref">r. 2449 vs. calculator</span></summary><div class="body">Kassa-defaults: 30/50/100&nbsp;ml = €19,50/€29,50/€44,50. De calculator impliceert incl. btw €15,00/€20,00/€32,50 — tot ~48% verschil, nergens toegelicht. Eén van beide prijslijsten is verouderd.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">"Resterend na 12 mnd" toont een negatief bedrag</span><span class="ref">r. 2512</span></summary><div class="body">In de resterend-tak is <code>boven12</code> per definitie negatief, dus er staat "Resterend na 12 mnd: € -1.500" waar +€1.500 bedoeld is.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t"><code>_donker()</code> clampt niet op 255 → ongeldige CSS-kleuren</span><span class="ref">r. 1146</span></summary><div class="body">Bij verlichten (factor &gt; 1) kan een kanaal boven 255 komen → 3-cijferige hex zoals <code>#1016c53</code>. Concreet: beheerder kiest "maak game koraal" → de Sales-Game-banner verliest zijn gradient. <b>Fix:</b> <code>Math.min(255,…)</code>.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Open TODO: basispunten-maximum 70 of 79?</span><span class="ref">r. 472</span></summary><div class="body">De HTML-comment vraagt het expliciet aan Clarence. BASIS telt nu op tot 70; de beloningschip "70 basispunten" is daarnaast hardcoded en loopt stilletjes uit de pas zodra de puntenlijst wijzigt.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t"><code>bezoekGepland</code> ongefilterd in HTML-attribuut (injectie)</span><span class="ref">r. 2101 · 2119</span></summary><div class="body">Via "plan bezoek" kan de AM vrije tekst invoeren die raw in <code>value="…"</code> en in de banner belandt; een <code>"</code> breekt het attribuut open. Impact beperkt (AM injecteert bij zichzelf), maar het escaping-contract wordt geschonden.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Toast-meldingen zonder <code>aria-live</code> — screenreaders horen niets</span><span class="ref">r. 3636</span></summary><div class="body">Alle validatiefouten gaan uitsluitend via <code>toast()</code>; er is geen <code>role="status"</code>, geen inline foutmelding en geen <code>aria-invalid</code>.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Labels niet aan inputs gekoppeld; zoekvelden alleen placeholder</span><span class="ref">r. 2169 · 3291–3295 · 3641</span></summary><div class="body"><code>label.fl</code> heeft nergens <code>for</code>; de globale zoekbalk en de toolbar-inputs hebben alleen een placeholder. Het loginscherm doet het wél goed — dat patroon doortrekken.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">KPI-waarden in <code>aria-hidden</code> SVG's onzichtbaar voor screenreaders</span><span class="ref">svgRing/svgBars</span></summary><div class="body">Percentages staan als <code>&lt;text&gt;</code> bínnen een aria-hidden svg zonder tekstalternatief. <b>Fix:</b> <code>role="img" aria-label</code> of de waarde buiten de svg herhalen.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t"><code>prefers-reduced-motion</code> en dark mode ontbreken volledig</span><span class="ref">CSS</span></summary><div class="body">0 treffers op beide media queries, terwijl er oneindige animaties draaien (rewGlow, vierSpark) en elke view-wissel een fadeUp afspeelt. Minimaal een reduced-motion-regel toevoegen.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Tabellen zonder scroll-container → overflow of geclipte kolommen op mobiel</span><span class="ref">r. 2537 · 2799 · 3344</span></summary><div class="body">Geen enkele tabel heeft een <code>overflow-x:auto</code>-wrapper; op r. 3344 clipt <code>overflow:hidden</code> zelfs kolommen weg.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Elke klik her-rendert de complete view; tekst-overrides lopen daar nog eens overheen</span><span class="ref">r. 2095 e.v.</span></summary><div class="body">Een checkbox afvinken hertekent de hele pagina via <code>innerHTML</code> (42×), de fadeUp-animatie flikkert opnieuw en scroll/focus gaan verloren; <code>applyTxOverrides</code> bezoekt daarna nog álle tekstnodes — ook als er nul overrides zijn. Zoekvelden renderen bovendien per toetsaanslag zonder debounce.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Touch targets tot 28px (norm: 44px)</span><span class="ref">CSS r. 68 · 453 · 1649</span></summary><div class="body">Profielknoppen ± 28px, topbar-zoekknop ± 33px, sluitkruisjes als kale <code>&lt;a&gt;×&lt;/a&gt;</code> van 18–19px.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Heading-hiërarchie gebroken</span><span class="ref">r. 450 · 2539</span></summary><div class="body">Alleen het loginscherm heeft een <code>&lt;h1&gt;</code>; paginatitels en sectiekoppen zijn gestylede divs, en op r. 2539 wordt een <code>&lt;h2 style="font-size:12px"&gt;</code> als micro-label misbruikt. Screenreader-navigatie op koppen werkt niet.</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Typefout "geurnotenbook" in juridische akkoordteksten (2×)</span><span class="ref">r. 617 · 625</span></summary><div class="body">Juist in de voorwaarden-checklists waar partners akkoord op geven; elders staat correct "Geurnotenboek".</div></details>
+<details><summary><span class="chip c-mid">Middel</span><span class="t">Niveau-widget kiest doel mét factor maar toont voortgang zonder</span><span class="ref">r. 2231–2233</span></summary><div class="body">De eerstvolgende beloning wordt op winkelomzet gekozen, de balk ernaast op kale inkoop — bij factor 2,0 toont een winkel op 80% een balk van 40%. (Onderdeel van het marge-factorprobleem hierboven, apart genoemd omdat dit de meest zichtbare plek is.)</div></details>
+</div>
+
+<h2>Laag <span class="n">16 bevindingen</span></h2>
+<p class="secline">Cosmetisch, dode code en randgevallen — geen dagelijkse hinder, wel opruimen waard.</p>
+
+<div class="rows">
+<details><summary><span class="chip c-laag">Laag</span><span class="t">"2 afspraaken" — meervoudsfout</span><span class="ref">r. 3117</span></summary><div class="body"><code>afspraak${nA&gt;1?'en':''}</code> levert "afspraaken"; r. 987 doet het wél goed (<code>'afspra'+(nA&gt;1?'ken':'ak')</code>).</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Knop "Accountmanager" afgekapt op het loginscherm</span><span class="ref">live getest</span></summary><div class="body">130px tekst in een 114px knop — de segmentknop toont "Accountmanag". Padding verkleinen of <code>flex:auto</code>.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Ontbrekende <code>;</code> in style: afgehandelde inbox-rijen renderen fout</span><span class="ref">r. 2369</span></summary><div class="body"><code>'opacity:.55'+'display:block'</code> wordt één ongeldige declaratie — beide vallen weg.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Dubbele escaping: "H&amp;M" wordt "H&amp;amp;M" in toasts en sheet-titels</span><span class="ref">r. 2114–2122</span></summary><div class="body"><code>esc()</code> gecombineerd met <code>textContent</code>-sinks (<code>toast</code>, <code>edOpen</code>) is dubbelop.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Dode code: 5 functies + 2 velden nergens gebruikt</span><span class="ref">r. 1338 · 2106 · 2935 e.a.</span></summary><div class="body"><code>bhPrevUpd</code>/<code>bhTxPrev</code>/<code>_mockje</code> (vervangen door <code>bhPortalPreview</code>), <code>setKlanten</code>, <code>pFeedbackAdd</code> (doelelementen bestaan niet meer), veld <code>omzet2024</code> (wordt gelezen op r. 2103 maar nergens geschreven; naam bovendien verouderd) en GStore-key <code>seedDemo</code> (geschreven, nooit gelezen).</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Beloning kan verdwijnen: <code>checkBeloningen</code> zonder <code>saveClients</code></span><span class="ref">r. 1084</span></summary><div class="body">In <code>actieResSave</code> blijft de vrijgespeelde beloning alleen in de cache; bij reload vóór de volgende save is hij weg en wordt hij later met een nieuwe datum opnieuw aangemaakt.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Draft-teller telt elke tekstbewerking dubbel</span><span class="ref">r. 1395</span></summary><div class="body">Elke bewerking zet twee sleutels (tekst + kleur, ook bij lege kleur) — "4 teksten bewerkt" na 2 bewerkingen.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Campagne-sectiekop verdwijnt bij 0 actieve producten; "nieuw"-badge partner dooft niet in randgeval</span><span class="ref">prodSectieP</span></summary><div class="body">Bij module aan + geen producten staan campagne-cards zonder kop; de partner-"gezien"-markering draait alleen als de sectie rendert.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Demo-afspraak met vastlegdatum 3 dagen in de toekomst</span><span class="ref">r. 666</span></summary><div class="body">Het <code>at</code>-veld is overal de vastlegdatum; de seed toont een afspraak die pas over 3 dagen "gemaakt" wordt onder "open afspraken uit vorig contact".</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Drie verschillende objectvormen voor hetzelfde tappunt-record</span><span class="ref">r. 663 · 974 · 2179</span></summary><div class="body">seedDemo zet defaults die <code>addClient</code> en <code>importTappunten</code> weglaten (o.a. <code>land</code>: 'NL' vs ''), ondanks de comment "zelfde veldopbouw". Geen crash (overal defensief), wel fragiel.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">5 dubbele element-id's — sluiten elkaar uit, maar fragiel</span><span class="ref">r. 2444/2471 · 3355/3553</span></summary><div class="body"><code>cType</code>, <code>cSize</code> (calculator-tabs), <code>k-marge</code>, <code>k-b2b</code>, <code>km-N</code> (kantoor-cockpit vs. beheer) staan nooit tegelijk in de DOM — live geverifieerd — maar één gedeelde opslaan-functie leunt op id-uniciteit over twee schermen.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Google Fonts render-blocking; 'Gravesend Sans' wordt nergens geladen</span><span class="ref">r. 7–9 · 17</span></summary><div class="body">Offline (het beoogde gebruik) valt de typografie terug op systeemfonts na een timeout; het eerstgenoemde display-font bestaat niet in de font-stack-bronnen, dus koppen renderen altijd in Jost.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Informatieve afbeeldingen met leeg <code>alt</code></span><span class="ref">r. 2840 · 3083 e.a.</span></summary><div class="body">Product- en actiefoto's die inhoud dragen krijgen <code>alt=""</code>; statische beelden hebben wél goede alt-teksten.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Number-inputs zonder <code>min</code>/<code>step</code></span><span class="ref">r. 2465 · 646</span></summary><div class="body">Jaardoel en actieplan-bedragen accepteren negatieve waarden; lege invoer wordt stil 0.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Focus-styles alleen voor knoppen en inputs</span><span class="ref">CSS r. 36 · 232</span></summary><div class="body">Nav-links, chips en klikbare kaarten leunen op de UA-ring, die bij <code>overflow:hidden</code>-cards deels wegvalt.</div></details>
+<details><summary><span class="chip c-laag">Laag</span><span class="t">Builddatum "16 jul 2026" drie dagen oud t.o.v. bestandsversie</span><span class="ref">r. 475</span></summary><div class="body">Hoort bij het versieprobleem hierboven; de demo-data zelf is netjes volledig relatief opgebouwd (geen verouderde hardcoded datums).</div></details>
+</div>
+
+<h2>Wat goed werkt <span class="n">expliciet gecontroleerd</span></h2>
+<div class="card" style="border-left:4px solid var(--ok)">
+  <p style="margin-top:0"><span class="chip c-ok">Geverifieerd</span></p>
+  <p>• <b>Geen enkele runtime-crash</b>: alle 36 views in drie rollen live doorlopen zonder JavaScript-fouten; beide scriptblokken syntactisch foutloos.<br>
+  • <b>Calculator rekent exact</b>: 237 flessen, 70 dagen, € 17.574 boven investering — alle formules onderling consistent.<br>
+  • <b>Alle 37 views en 80+ routes bestaan</b>; geen dode links, geen ontbrekende handlers.<br>
+  • <b>localStorage-keys volledig consistent</b> (Store, GStore, alle namespaces schrijven/lezen hetzelfde).<br>
+  • <b>Escaping-discipline grotendeels op orde</b> — de gevonden lekken zijn de uitzonderingen op een verder net patroon.<br>
+  • Doordachte details: foutbanner voor eindgebruikers, localStorage-fallback met nette waarschuwing, timezone-veilige datumhelpers, contrast-bewaking in de themalaag, <code>aria-expanded</code> op accordeons.</p>
+</div>
+
+<h2>Aanpak</h2>
+<div class="tblwrap"><table>
+<tr><th>Methode</th><th>Wat is gecontroleerd</th></tr>
+<tr><td>Statische analyse</td><td>Syntaxcontrole van beide scriptblokken, alle 200 element-id's op duplicaten, alle 200 inline event-handlers tegen de functiedefinities</td></tr>
+<tr><td>Live browsertest (Playwright)</td><td>Login in alle drie rollen, alle 36 views geopend, console- en netwerkfouten verzameld, dubbele id's in de DOM gemeten, mobiel (390px) gecontroleerd, screenshots van elk hoofdscherm</td></tr>
+<tr><td>5 parallelle code-reviews</td><td>Volledige JS in vier delen + een aparte datamodel/content-audit; elke bevinding geverifieerd tegen het hele bestand voordat hij is opgenomen</td></tr>
+<tr><td>UI-richtlijnen-audit</td><td>Toegankelijkheid (WCAG-contrast berekend), formulieren, responsive, semantiek, performance</td></tr>
+<tr><td>Rekenverificatie</td><td>Calculator-uitkomsten nagerekend; marge-/niveau-/bonusformules tegen elkaar gehouden</td></tr>
+</table></div>
+
+<p class="foot">Foutenrapport · TapParfum_Portal_v58_Berichtlijn.html · gegenereerd 19 juli 2026 · 47 bevindingen (2 kritiek · 10 hoog · 19 middel · 16 laag). Regelnummers verwijzen naar het aangeleverde bestand; alle kritieke en hoge bevindingen zijn op de exacte regel geverifieerd.</p>
+</div>
