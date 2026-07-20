@@ -403,7 +403,7 @@
       <img src="assets/store_hero.jpg" alt="TapParfum-winkel met tapbar en geurwand" loading="lazy" onerror="this.onerror=null;this.src='assets/product_pour.jpg'">
       <div class="ls-veil"></div>
       <div class="ls-txt">
-        <div class="ls-brand"><img id="brandImgLogin" src="assets/logo_app.png" alt="TapParfum logo" loading="lazy" onerror="this.style.display='none'"><span>TAP<b>PARFUM</b></span></div>
+        <div class="ls-brand"><img id="brandImgLogin" alt="TapParfum logo" style="display:none;height:36px;width:auto;object-fit:contain;border-radius:8px"><svg id="brandSvgLogin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:26px;height:26px;color:var(--coral);flex-shrink:0"><path d="M12 2.5C12 2.5 5.5 10 5.5 15a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5Z" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 14.5a2.4 2.4 0 0 0 2.4 2.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>TAP<b>PARFUM</b></span></div>
         <div class="ls-tag">Ruiken met je neus, niet je portemonnee</div>
       </div>
     </div>
@@ -507,7 +507,7 @@
 
 <div id="app" hidden>
   <aside class="side">
-    <div class="logo"><img id="brandImgSide" src="assets/logo_app.png" alt="TapParfum logo" loading="lazy" style="width:26px;height:26px;object-fit:contain;border-radius:7px;flex-shrink:0" onerror="this.style.display='none';var s=this.nextElementSibling;if(s)s.style.display='inline-flex'"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:none"><path d="M12 2.5C12 2.5 5.5 10 5.5 15a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5Z" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 14.5a2.4 2.4 0 0 0 2.4 2.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>TAP<b>PARFUM</b></span></div>
+    <div class="logo"><img id="brandImgSide" alt="TapParfum logo" style="display:none;width:26px;height:26px;object-fit:contain;border-radius:7px;flex-shrink:0"><svg id="brandSvgSide" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2.5C12 2.5 5.5 10 5.5 15a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5Z" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 14.5a2.4 2.4 0 0 0 2.4 2.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>TAP<b>PARFUM</b></span></div>
     <nav class="nav" id="nav"></nav>
     <div class="profilebox">
       <div class="who" id="who"></div><div class="role" id="roleLabel">Accountmanager</div>
@@ -555,7 +555,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v66b-cloud · Trajecten-layout bij lege AM + v66-features';
+window.__TP_BUILD='v66c-cloud · game-kaart leesbaar (bg-fallback) + logo ingebouwd (geen extern bestand)';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -1529,7 +1529,7 @@ function gameDagen(sg){if(!sg.eind)return null;const d=Math.ceil((new Date(sg.ei
 function gamePodium(k,eigen){const useG=k.groei.length>0;const top=(useG?k.groei:k.nieuw).slice(0,3);if(!top.length)return '';
   const zicht=x=>(!eigen||eigen.has(x.t.id));
   return `<div style="display:flex;gap:10px;justify-content:center;align-items:flex-end;margin-top:14px;flex-wrap:wrap">${top.map((x,i)=>`<div style="text-align:center;order:${i===0?2:(i===1?1:3)};min-width:92px"><div style="font-size:${i===0?'34':'26'}px">${['🥇','🥈','🥉'][i]}</div><div style="font-weight:800;font-size:${i===0?'14':'12.5'}px;max-width:120px">${zicht(x)?esc(x.t.name):'Tappunt van '+esc(x.p)}</div><div style="color:rgba(255,255,255,.85);font-size:12px;font-weight:700">${zicht(x)?(useG?x.sc.score+' ptn'+(x.sc.groeiPct!=null?' · +'+x.sc.groeiPct+'%':''):eur0(x.jo)+' omzet'):(useG?x.sc.score+' ptn':'🌱 nieuwkomer')}</div><div style="background:rgba(255,255,255,.28);border-radius:10px 10px 0 0;height:${i===0?'46':(i===1?'32':'24')}px;margin-top:6px"></div></div>`).join('')}</div><div style="text-align:center;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85;margin-top:4px">${useG?'Groei-klassement':'🌱 Nieuwkomers van het jaar'}</div>`;}
-let GAME_GRAD='background:linear-gradient(130deg,#A8422C,#C2523A 70%,var(--coral-d));color:#fff;border:0';
+let GAME_GRAD='background:#A8422C;background:linear-gradient(130deg,#A8422C,#C2523A 70%,#8f3a26);color:#fff;border:0';
 /* ---- THEMA: merkkleuren instelbaar, met automatische contrast-bewaking ---- */
 const THEMA_STD={coral:'#EE644D',corald:'#D9543C',green:'#3B6D11',amber:'#BA7517'};
 const THEMA_ZONES=[['global','🌍 Basis (alles)'],['am','🚗 AM-omgeving'],['partner','🏪 Partner-omgeving'],['kantoor','🏢 Kantoor-omgeving']];
@@ -1557,8 +1557,12 @@ function applyThema(){const th=thema();
       _tpStyle.textContent=css;}
   }catch(e){}
   const basis=(th.game&&th.game.kleur)||(th.global&&th.global.corald)||THEMA_STD.corald;
-  const g1=_aaDonker(basis),g2=_contrast('#ffffff',basis)>=4.6?basis:_aaDonker(_donker(basis,1.08));
-  GAME_GRAD='background:linear-gradient(130deg,'+g1+','+g2+' 70%,'+(_contrast('#ffffff',basis)>=4.5?basis:_aaDonker(basis))+');color:#fff;border:0';}
+  var g1=_aaDonker(basis),g2=_contrast('#ffffff',basis)>=4.6?basis:_aaDonker(_donker(basis,1.08)),g3=_contrast('#ffffff',basis)>=4.5?basis:_aaDonker(basis);
+  /* Vaste terugval-kleur VÓÓR de gradient: als een thema-kleur een ongeldige
+     gradient oplevert, valt de browser terug op de solide kleur i.p.v. wit
+     (witte tekst op wit = onleesbaar). Zo blijft de game-kaart altijd leesbaar. */
+  var solid=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(g1))?g1:'#A8422C';
+  GAME_GRAD='background:'+solid+';background:linear-gradient(130deg,'+(g1||'#A8422C')+','+(g2||'#C2523A')+' 70%,'+(g3||'#8f3a26')+');color:#fff;border:0';}
 function bhThemaSave(){const th={};
   THEMA_ZONES.forEach(([z])=>{const zt={};['coral','corald','green','amber'].forEach(k=>{const el=document.getElementById('th-'+z+'-'+k);if(el&&el.value)zt[k]=el.value;});
     const std={coral:THEMA_STD.coral,corald:THEMA_STD.corald,green:THEMA_STD.green,amber:THEMA_STD.amber};
@@ -1725,10 +1729,14 @@ applyLayout(); /* applyRegels() draait ná de LEVELS/REWARDS-definities */
 function brand(){return GStore.get('brand',{});}
 function bhLogoSet(dataUrl,naam){const b=brand();b.logo=dataUrl;b.logoNaam=naam||'logo';GStore.set('brand',b);applyBrand();bLog('Logo vervangen ('+(naam||'upload')+')');go('beheer');}
 function bhLogoWis(){const b=brand();delete b.logo;delete b.logoNaam;GStore.set('brand',b);applyBrand();bLog('Logo terug naar standaard');go('beheer');}
-function applyBrand(){const b=brand();['brandImgSide','brandImgLogin'].forEach(id=>{const el=document.getElementById(id);if(!el)return;
-  el.style=el.style||{};
-  if(b.logo){el.src=b.logo;el.style.display='';}
-  else{el.src='assets/logo_app.png';}});}
+/* Logo: geen extern bestand meer. Standaard = ingebouwd inline-SVG-merk (altijd
+   zichtbaar, geen 404). Alleen als kantoor zélf een logo uploadt (data-URL in
+   GStore 'brand') tonen we dat i.p.v. het SVG-merk. */
+function applyBrand(){const b=brand();[['brandImgLogin','brandSvgLogin'],['brandImgSide','brandSvgSide']].forEach(function(p){
+  var img=document.getElementById(p[0]),svg=document.getElementById(p[1]);
+  if(b&&b.logo){if(img){img.src=b.logo;img.style.display='';}if(svg)svg.style.display='none';}
+  else{if(img){img.style.display='none';img.removeAttribute('src');}if(svg)svg.style.display='';}
+});}
 function bhLogoUpload(inp){const f=inp&&inp.files&&inp.files[0];if(!f)return;
   if(!/^image\//.test(f.type||'')){toast('Upload een afbeelding (PNG/JPG/SVG). Een PDF kan de browser niet uitlezen — maak een schermafbeelding van de logopagina.');return;}
   const r=new FileReader();r.onload=()=>{bhLogoSet(String(r.result),f.name);};r.readAsDataURL(f);}
@@ -1880,8 +1888,9 @@ function _pvRender(target,rt,tx,editbaar){const wrap=document.getElementById(tar
   const zone=_zoneVoorRoute(rt);
   const kl=_effKleur(zone,editbaar);
   const gameK=editbaar?((_thDraft.game&&_thDraft.game.kleur)||((thema().game||{}).kleur)||kl.corald):(((thema().game||{}).kleur)||_effKleur(zone,false).corald);
-  const g1=_aaDonker(gameK),g2=_contrast('#ffffff',gameK)>=4.6?gameK:_aaDonker(_donker(gameK,1.08));
-  GAME_GRAD='background:linear-gradient(130deg,'+g1+','+g2+' 70%,'+(_contrast('#ffffff',gameK)>=4.5?gameK:_aaDonker(gameK))+');color:#fff;border:0';
+  var g1=_aaDonker(gameK),g2=_contrast('#ffffff',gameK)>=4.6?gameK:_aaDonker(_donker(gameK,1.08)),g3=_contrast('#ffffff',gameK)>=4.5?gameK:_aaDonker(gameK);
+  var solid=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(g1))?g1:'#A8422C';
+  GAME_GRAD='background:'+solid+';background:linear-gradient(130deg,'+(g1||'#A8422C')+','+(g2||'#C2523A')+' 70%,'+(g3||'#8f3a26')+');color:#fff;border:0';
   _paneKleur(wrap,kl,gameK);
   _previewTx=tx;_pvEdit=editbaar;_tx2Preview=editbaar?'wordt':'was';_viewTarget=target;
   try{
