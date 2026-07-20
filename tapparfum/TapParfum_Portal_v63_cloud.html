@@ -555,7 +555,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v66-cloud · bezoek-agenda + bedieningspaneel + Mijn winkels + sync-whitelist (lekdicht)';
+window.__TP_BUILD='v66b-cloud · Trajecten-layout bij lege AM + v66-features';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -2914,7 +2914,8 @@ VIEWS.heractiveren=()=>{
     return `<details class="trajg" id="traj-${tr.k}" open style="border-left:4px solid ${tr.col}"><summary><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${tr.col};flex-shrink:0"></span><span>${STATUS[tr.k].l}</span><span class="trajcount" style="background:${tr.col}">${items.length}</span><span class="trajfoc">${tr.foc}</span></summary><div class="trajbody"><p class="note" style="margin:6px 2px 10px">${tr.desc}</p>${items.length?items.map(x=>trajRow(x.t,tr,tdef)).join(''):'<div class="note" style="padding:6px 2px">Geen tappunten in dit traject.</div>'}</div></details>`;}).join('');
   V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Trajecten`)}</h2><div class="sub">${ED('sub.'+route,`Elk tappunt zit in één van vier trajecten, elk met een eigen kleur en aanpak. Klik op een tegel om naar dat traject te springen; leg per tappunt een actie + opvolgdatum vast — de opvolging verschijnt in de Agenda.`)}</div></div></div>
    ${gameBlokAM()}
-  ${cl.length===0?'<div class="empty">Nog geen tappunten. <a onclick="go(\'tappunten\')">Naar Mijn winkels →</a></div>':tiles+groups}`;
+   ${tiles}
+   ${cl.length===0?`<div class="card" style="text-align:center;padding:26px 18px;border-left:4px solid var(--coral)"><div class="zh" style="justify-content:center;margin-bottom:4px">Nog geen tappunten in een traject</div><p class="note" style="margin:0 auto;max-width:540px">Zodra je winkels hebt — of ze aan een traject koppelt — verschijnen ze hier per fase (Nieuw · Groeit · Stagneert · Top). <a onclick="go('tappunten')">Naar Mijn winkels →</a></p></div>`:groups}`;
 };
 /* Spring vanaf de teltegels naar de bijbehorende trajectgroep. */
 function trajJump(k){var el=document.getElementById('traj-'+k);if(el){el.open=true;el.scrollIntoView({behavior:'smooth',block:'start'});}}
