@@ -555,7 +555,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v65-cloud · AM-login via Supabase (eigen winkels) + TPCloud + ghost lokaal-only';
+window.__TP_BUILD='v66-cloud · bezoek-agenda + bedieningspaneel + Mijn winkels + sync-whitelist (lekdicht)';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -1081,20 +1081,30 @@ var _tpCloudUser=null;                       /* gezet na geslaagde staff-login *
 function _tpCloudActief(){return !!(window._tpSb && _tpCloudUser);}
 const TPCloud={
   actief:_tpCloudActief,
-  pushCentral:function(ns,val){ if(!_tpCloudActief())return; try{
+  /* BEVEILIGING: de central-tabel is leesbaar voor ÁLLE ingelogde gebruikers (RLS
+     central_read). Daarom synct alleen deze whitelist van publieke netwerk-config.
+     Gevoelige namespaces (amAccounts/gebruikers/beheerPin/berichten/beheerLog/aiLog)
+     blijven uitsluitend lokaal — PIN's en interne berichten mogen nooit in een
+     wereld-leesbare tabel staan. Zelfde filter op pull (defense-in-depth). */
+  CENTRAL_SYNC:['acties','producten','brand','regels','flesMaten','margeFactor','shopUrl','teksten','modules','salesgame','layout'],
+  _syncbaar:function(ns){return TPCloud.CENTRAL_SYNC.indexOf(ns)>=0;},
+  pushCentral:function(ns,val){ if(!_tpCloudActief()||!TPCloud._syncbaar(ns))return; try{
     var r=window._tpSb.from('central').upsert({ns:ns,data:val},{onConflict:'ns'});
     if(r&&r.then)r.then(function(res){ if(res&&res.error)console.warn('[cloud] central push',ns,res.error.message); });
   }catch(e){} },
   pullCentral:function(cb){ if(!_tpCloudActief()){if(cb)cb(false);return;} try{
     window._tpSb.from('central').select('ns,data').then(function(res){
       if(res&&!res.error&&res.data&&res.data.length!==undefined){
-        for(var i=0;i<res.data.length;i++){var row=res.data[i];try{LS.setItem('tp_portal::__central__::'+row.ns,JSON.stringify(row.data));}catch(e){}}
+        for(var i=0;i<res.data.length;i++){var row=res.data[i];if(!TPCloud._syncbaar(row.ns))continue;try{LS.setItem('tp_portal::__central__::'+row.ns,JSON.stringify(row.data));}catch(e){}}
         if(cb)cb(true);
       } else if(cb)cb(false);
     });
   }catch(e){if(cb)cb(false);} },
   pushTappunt:function(t){ if(!_tpCloudActief()||!t||!t.snelstart)return; try{
-    var row={snelstart:t.snelstart,name:t.name||t.snelstart,email:t.email||null,geblokkeerd:!!t.geblokkeerd,data:t};
+    /* Lokale partner-inloggegevens (hash/salt/resetcodes) horen niet in de cloud —
+       partner-auth loopt straks via Supabase Auth. Strippen vóór de push. */
+    var d=Object.assign({},t); delete d.auth;
+    var row={snelstart:t.snelstart,name:t.name||t.snelstart,email:t.email||null,geblokkeerd:!!t.geblokkeerd,data:d};
     /* am_id meesturen zodat een AM zijn eigen winkel mag schrijven (RLS) en de
        koppeling behouden blijft; nooit met null overschrijven als we 'm niet weten. */
     var amid=t.am_id||window._tpAmId||null; if(amid)row.am_id=amid;
@@ -1328,7 +1338,7 @@ let tapImportMsg='';
 /* ÉÉN poort voor klantdata: de B2B-API (Fase 1) en de tijdelijke CSV gebruiken exact dezelfde importTappunten().
    Veldmapping B2B → portaal staat hier, zodat de echte koppeling straks alleen nog een URL + serversleutel nodig heeft. */
 function b2bApi(){return GStore.get('b2bApi',{url:'',actief:false});}
-function kSetB2b(){const url=((document.getElementById('k-b2b')||{}).value||'').trim();GStore.set('b2bApi',{url,actief:!!url});toast(url?'B2B-API-adres opgeslagen. De echte synchronisatie gaat live in Fase 1 (server bewaart de sleutel veilig).':'B2B-API-adres gewist.');refresh();}
+function kSetB2b(){const url=((document.getElementById('k-b2b')||{}).value||'').trim();GStore.set('b2bApi',{url,actief:!!url});toast(url?'B2B-API-adres genoteerd. Let op: de échte, beveiligde synchronisatie vereist nog een server-koppeling — die bouwen we bij de bestel-integratie.':'B2B-API-adres gewist.');refresh();}
 function mapB2bKlant(k){return {b2bId:String(k.id||k.klantnummer||k.customer_id||''),name:String(k.bedrijfsnaam||k.naam||k.name||'').trim(),contact:String(k.contactpersoon||k.contact||''),email:String(k.email||k.e_mail||''),tel:String(k.telefoon||k.tel||k.phone||''),adres:String(k.adres||k.straat||k.address||''),postcode:String(k.postcode||k.zip||''),plaats:String(k.plaats||k.stad||k.city||''),land:String(k.land||k.country||'NL'),type:String(k.type||k.segment||''),snelstart:String(k.klantnummer||k.snelstart||''),laatsteBezoek:''};}
 function syncKlantenB2B(){const api=b2bApi();
   if(!api.url){toast('Nog geen B2B-API gekoppeld.\n\nDe klantensync trekt straks alle klantgegevens rechtstreeks uit het B2B-bestelportaal — één bron, altijd actueel. Dit gaat live in Fase 1; kantoor stelt het API-adres in via de Kantoor-cockpit.');return;}
