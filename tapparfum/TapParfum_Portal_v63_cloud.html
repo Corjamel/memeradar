@@ -432,12 +432,12 @@
     <div id="partnerLogin" style="display:none">
       <!-- Panel A: normaal inloggen met gebruikersnaam + wachtwoord -->
       <div id="pLoginMain">
-        <p>Log in met je eigen gebruikersnaam en wachtwoord.</p>
-        <label for="pUser">Gebruikersnaam</label>
-        <input type="text" id="pUser" autocomplete="username" placeholder="jouw gebruikersnaam" onkeydown="if(event.key==='Enter')pLoginUser()">
+        <p>Log in met je e-mail (of gebruikersnaam) en wachtwoord.</p>
+        <label for="pUser">E-mail of gebruikersnaam</label>
+        <input type="text" id="pUser" autocomplete="username" placeholder="naam@winkel.nl of gebruikersnaam" onkeydown="if(event.key==='Enter')pLoginSmart()">
         <label for="pPass" style="margin-top:12px">Wachtwoord</label>
-        <input type="password" id="pPass" autocomplete="current-password" placeholder="jouw wachtwoord" onkeydown="if(event.key==='Enter')pLoginUser()">
-        <div style="margin-top:18px"><button class="btn coral" onclick="pLoginUser()">Inloggen →</button></div>
+        <input type="password" id="pPass" autocomplete="current-password" placeholder="jouw wachtwoord" onkeydown="if(event.key==='Enter')pLoginSmart()">
+        <div style="margin-top:18px"><button class="btn coral" onclick="pLoginSmart()">Inloggen →</button></div>
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;font-size:13px">
           <a role="button" tabindex="0" onclick="pShowPanel('pFirstCode')" onkeydown="if(event.key==='Enter')pShowPanel('pFirstCode')" style="font-weight:700">Eerste keer inloggen? Gebruik je snelstartcode →</a>
           <a role="button" tabindex="0" onclick="pShowPanel('pReset')" onkeydown="if(event.key==='Enter')pShowPanel('pReset')" style="color:var(--grey)">Wachtwoord vergeten?</a>
@@ -555,7 +555,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v67-cloud · echte pakket-inhoud (2026) + woordmerk-logo (geen druppel)';
+window.__TP_BUILD='v68-cloud · partner-login via Supabase + Mail-de-klant-knop (Bezoeken)';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -809,6 +809,65 @@ function _partnerBinnen(found){Store.profile=found.p;role='partner';zelfClientId
   document.getElementById('who').textContent=found.t.name;var rl=document.getElementById('roleLabel');if(rl)rl.textContent='Partner';
   checkBeloningenAll();go('zelf');}
 
+/* ============== Partner-login via de cloud (Supabase) ==============
+   E-mail + wachtwoord. Eerste keer: snelstartcode -> account (signUp) -> koppelen
+   via de RPC claim_tappunt. RLS zorgt dat een partner alleen zijn eigen winkel
+   ziet. De lokale login (gebruikersnaam/wachtwoord) blijft bestaan als terugval;
+   pLoginSmart kiest cloud als er een e-mailadres is ingevuld. */
+function _cloudAan(){return !!(window.TP_SUPABASE&&window.TP_SUPABASE.url);}
+function _partnerBinnenCloud(t){
+  window._tpAmId=null;Store.profile='__partner__';role='partner';zelfClientId=t.id;_partnerLock=t.id;
+  try{Store.set('tappunten',[t]);_clCache=null;_clProf=null;}catch(e){}
+  document.getElementById('login').style.display='none';document.getElementById('app').hidden=false;
+  document.getElementById('who').textContent=t.name||'Partner';var rl=document.getElementById('roleLabel');if(rl)rl.textContent='Partner';
+  checkBeloningenAll();go('zelf');
+}
+function _rowToTappunt(row,snel){var t=(row&&row.data&&typeof row.data==='object')?row.data:(row||{});t.snelstart=t.snelstart||(row&&row.snelstart)||snel;t.name=t.name||(row&&row.name)||t.snelstart;t.id=t.id||t.snelstart||(row&&row.snelstart)||snel;if(row&&row.geblokkeerd)t.geblokkeerd=true;return t;}
+function pLoginSmart(){var id=((document.getElementById('pUser')||{}).value||'').trim();var pass=(document.getElementById('pPass')||{}).value||'';
+  if(_cloudAan()&&_emailOk(id)){pCloudLogin(id,pass);return;}
+  pLoginUser();
+}
+function pCloudLogin(email,pass){ensureSb(function(client){
+  if(!client){toast('Geen verbinding met de cloud. Controleer je internet.');return;}
+  client.auth.signInWithPassword({email:email,password:pass}).then(function(res){
+    if(res.error){toast(res.error.message==='Invalid login credentials'?'Onjuiste e-mail of wachtwoord.':('Fout: '+res.error.message));return;}
+    window._tpCloudUser=res.data&&res.data.user;
+    var pend=null;try{pend=LS.getItem('tp_pending_claim::'+email.toLowerCase());}catch(e){}
+    function laadEigen(){
+      client.from('tappunten').select('snelstart,name,email,geblokkeerd,am_id,data').then(function(r2){
+        var rows=r2&&!r2.error?r2.data:null,row=rows&&rows.length?rows[0]:null;
+        if(!row){toast('Nog geen winkel gekoppeld. Log de eerste keer in met je snelstartcode.');return;}
+        var t=_rowToTappunt(row);if(t.geblokkeerd){toast('Deze toegang is geblokkeerd. Neem contact op met je accountmanager.');return;}
+        _partnerBinnenCloud(t);
+      });
+    }
+    if(pend){ /* e-mail was bevestigd na signUp -> koppel nu alsnog */
+      client.rpc('claim_tappunt',{p_snelstart:pend,p_user:email}).then(function(rc){
+        try{LS.removeItem('tp_pending_claim::'+email.toLowerCase());}catch(e){}
+        if(rc&&!rc.error&&rc.data){_partnerBinnenCloud(_rowToTappunt(rc.data,pend));}else{laadEigen();}
+      });
+    } else laadEigen();
+  }).catch(function(e){toast('Onverwachte fout: '+(e&&e.message?e.message:e));});
+});}
+function pCloudFirst(snel,email,pass,user){ensureSb(function(client){
+  if(!client){toast('Geen verbinding met de cloud. Controleer je internet.');return;}
+  client.auth.signUp({email:email,password:pass}).then(function(res){
+    if(res.error){toast('Account aanmaken mislukt: '+res.error.message);return;}
+    try{LS.setItem('tp_pending_claim::'+email.toLowerCase(),snel);}catch(e){}
+    if(res.data&&res.data.session){ /* meteen ingelogd -> koppel direct */
+      window._tpCloudUser=res.data.user;
+      client.rpc('claim_tappunt',{p_snelstart:snel,p_user:user}).then(function(rc){
+        if(rc&&rc.error){toast('Koppelen mislukt: '+rc.error.message);return;}
+        try{LS.removeItem('tp_pending_claim::'+email.toLowerCase());}catch(e){}
+        _partnerBinnenCloud(_rowToTappunt(rc.data,snel));
+      });
+    } else {
+      toast('✓ Account aangemaakt! Bevestig je e-mail (check je inbox) en log daarna in met je e-mail + wachtwoord — je winkel koppelt dan automatisch.');
+      try{pShowPanel('pLoginMain');}catch(e){}
+    }
+  }).catch(function(e){toast('Onverwachte fout: '+(e&&e.message?e.message:e));});
+});}
+
 function pLoginUser(){var user=(document.getElementById('pUser')||{}).value||'';var pass=(document.getElementById('pPass')||{}).value||'';
   if(!_pNormUser(user)||!pass){toast('Vul je gebruikersnaam en wachtwoord in.');return;}
   var found=_findByUser(user);
@@ -827,10 +886,12 @@ var _pPending=null;
 function pFirstNext(){var code=(document.getElementById('pcode')||{}).value||'';var q=_pNormUser(code);
   if(q.length<4){toast('Vul je volledige snelstartcode in (van je accountmanager).');return;}
   var found=_findBySnel(q);
-  if(!found){toast('Geen tappunt gevonden met deze snelstartcode. Vraag je accountmanager.');return;}
+  if(!found){
+    if(_cloudAan()){_pPending={snelstart:q,naam:'',email:''};var w0=document.getElementById('pCreateWie');if(w0)w0.textContent='Maak je account aan met je e-mail en wachtwoord — je winkel koppelt automatisch aan je snelstartcode.';pShowPanel('pCreate');return;}
+    toast('Geen tappunt gevonden met deze snelstartcode. Vraag je accountmanager.');return;}
   if(found.t.geblokkeerd){toast('Deze toegang is geblokkeerd. Neem contact op met je accountmanager.');return;}
   if(found.t.auth){toast('Voor dit tappunt bestaat al een account. Log in met je gebruikersnaam, of gebruik "Wachtwoord vergeten?".');pShowPanel('pLoginMain');return;}
-  _pPending={p:found.p,tid:found.t.id,naam:found.t.name,email:found.t.email||''};
+  _pPending={p:found.p,tid:found.t.id,naam:found.t.name,email:found.t.email||'',snelstart:q};
   var w=document.getElementById('pCreateWie');if(w)w.textContent='Welkom '+found.t.name+'! Maak je account aan — dit blijft voortaan je vaste toegang.';
   var em=document.getElementById('pcEmail');if(em&&found.t.email)em.value=found.t.email;
   pShowPanel('pCreate');}
@@ -839,10 +900,12 @@ function pCreateAccount(){if(!_pPending){pShowPanel('pFirstCode');return;}
   var user=(document.getElementById('pcUser')||{}).value||'';var email=(document.getElementById('pcEmail')||{}).value||'';
   var p1=(document.getElementById('pcPass')||{}).value||'';var p2=(document.getElementById('pcPass2')||{}).value||'';
   if(_pNormUser(user).length<3){toast('Kies een gebruikersnaam van minimaal 3 tekens.');return;}
-  if(_userTaken(user,_pPending.tid)){toast('Deze gebruikersnaam is al in gebruik. Kies een andere.');return;}
+  if(!_cloudAan()&&_userTaken(user,_pPending.tid)){toast('Deze gebruikersnaam is al in gebruik. Kies een andere.');return;}
   if(!_emailOk(email)){toast('Vul een geldig e-mailadres in — dit is nodig voor wachtwoord-herstel.');return;}
   if(p1.length<8){toast('Kies een wachtwoord van minimaal 8 tekens.');return;}
   if(p1!==p2){toast('De twee wachtwoorden zijn niet gelijk.');return;}
+  if(_cloudAan()&&_pPending.snelstart){ /* cloud: account via Supabase + koppelen via claim_tappunt */
+    pCloudFirst(_pPending.snelstart,String(email).trim(),p1,String(user).trim());return;}
   var salt=_pRandSalt();
   pwHash(p1,salt).then(function(h){
     var ok=_saveTappuntUnder(_pPending.p,_pPending.tid,function(t){t.auth={user:String(user).trim(),email:String(email).trim(),salt:salt,hash:h,createdAt:new Date().toISOString().slice(0,10),lastLogin:'',reset:null};});
@@ -855,6 +918,7 @@ function pCreateAccount(){if(!_pPending){pShowPanel('pFirstCode');return;}
 /* Reset stap 1: resetcode genereren + (poging tot) e-mail. */
 function _genResetCode(){try{if(window.crypto&&window.crypto.getRandomValues){var a=new Uint32Array(1);window.crypto.getRandomValues(a);return String(100000+(a[0]%900000));}}catch(e){}return String(100000+Math.floor(999999*(parseInt(uid().slice(-4),36)/1679616)));}
 function pResetSend(){var id=(document.getElementById('prId')||{}).value||'';if(!_pNormUser(id)){toast('Vul je e-mail of gebruikersnaam in.');return;}
+  if(_cloudAan()&&_emailOk(id.trim())){ensureSb(function(client){try{if(client)client.auth.resetPasswordForEmail(id.trim());}catch(e){}});toast('Als dit e-mailadres bekend is, is er een reset-mail verstuurd. Check je inbox.');return;}
   var found=_findByEmail(id)||_findByUser(id);
   if(!found||!found.t.auth){toast('Geen account gevonden. Controleer je gegevens of gebruik je snelstartcode.');return;}
   var code=_genResetCode();var exp=Date.now()+30*60*1000;
@@ -3673,6 +3737,7 @@ function bezSave(){const tid=(document.getElementById('bz-t')||{}).value;if(!tid
   const e=logAdd(tid,{type:bezType,at:(document.getElementById('bz-d')||{}).value,txt,nextDate:(document.getElementById('bz-o')||{}).value});
   if(e){const nA=afspraakAdd(tid,(document.getElementById('bz-a')||{}).value);const v=(document.getElementById('bz-v')||{}).value;if(v)planBezoek(tid,v);bezFilter='alle';bezSavedMsg='✓ Vastgelegd'+(nA?` · ${nA} afspraak${nA>1?'en':''}`:'')+(v?' · volgend bezoek '+v:'');VIEWS.bezoeken();
     if(bezType==='bezoek'){if(consumeCheckin(tid,e.id)){const _e2=(clients().find(x=>x.id===tid).logboek||[]).find(x=>x.id===e.id);bezSavedMsg+=' · 📍 check-out'+(_e2&&_e2.duurMin!=null?' · verblijf '+fmtDuur(_e2.duurMin):'');VIEWS.bezoeken();}else stampLog(tid,e.id,ok2=>{bezSavedMsg+=ok2?' · 📍 locatie toegevoegd':' · <span style="color:var(--amber)">⚠ geen locatie — werkt zodra het portaal online (https) staat</span>';if(route==='bezoeken')VIEWS.bezoeken();});}}}
+function bezMailKlant(){var el=document.getElementById('bz-t');var tid=el&&el.value;var t=tid&&clients().find(function(x){return x.id===tid;});if(!t){toast('Kies eerst een tappunt in "Snel vastleggen".');return;}mailTappunt(tid);}
 function bezQuickVisit(tid){const el=document.getElementById('bz-t');if(el)el.value=tid;bezType='bezoek';const seg=document.getElementById('bzTypeSeg');if(seg)seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k==='bezoek'));const n=document.getElementById('bz-n');if(n){n.focus();n.scrollIntoView({behavior:'smooth',block:'center'});}const t=clients().find(x=>x.id===tid);if(t)maybeAfsprakenPopup(t);}
 VIEWS.bezoeken=()=>{
   const cl=clients();
@@ -3689,7 +3754,8 @@ VIEWS.bezoeken=()=>{
   const logRows=lg.slice(0,60).map(x=>`<div class="listrow"><div class="ai" onclick="openTappunt('${x.t.id}')"><div class="nm">${esc(x.t.name)} ${logBadge(x.e.type)}${mailDir(x.e)}${gpsPin(x.e)}${x.e.duurMin!=null?` <span class="stbadge" style="background:var(--bodymist);color:#21343f">⏱ ${fmtDuur(x.e.duurMin)}</span>`:''}</div><div class="mo">${logTxtHTML(x.e)}${x.e.nextDate?` · <span style="color:${x.e.nextDone?'var(--green)':'var(--coral-d)'};font-weight:700">opvolgen ${esc(x.e.nextDate)}${x.e.nextDone?' ✓':''}</span>`:''}</div></div><div style="text-align:right;white-space:nowrap"><div class="when">${esc(x.e.at)}</div><a onclick="logDel('${x.t.id}','${x.e.id}')" style="color:var(--coral-d);font-size:11px;font-weight:700;cursor:pointer">verwijder</a></div></div>`).join('');
   const chips=[['alle','Alle',allLog().length]].concat(Object.keys(LOG_TYPES).map(k=>[k,LOG_TYPES[k].l,allLog().filter(x=>x.e.type===k).length]));
   V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Bezoeken & notities`)}</h2><div class="sub">${ED('sub.'+route,`Leg elk bezoek, telefoontje en elke notitie vast op één plek. Opvolgdatums verschijnen automatisch in je Agenda; een bezoek telt direct mee voor de punten-controle van dat tappunt.`)}</div></div></div>
-   ${checkinBar()}<div style="margin:-4px 0 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn ghost sm" onclick="go('ritten')">🚗 Mijn ritten →</button><label class="btn ghost sm" style="cursor:pointer;margin:0" title="In (nieuwe) Outlook: bericht openen → ⋯ → Downloaden → sleep of kies de .eml-bestanden hier">📥 Outlook-mails (.eml)<input type="file" multiple accept=".eml,message/rfc822" style="display:none" onchange="emlImportUI(event)"></label><span class="note" style="margin:0;font-weight:700;color:var(--green)">${mailImpMsg}</span></div>
+   ${checkinBar()}<div style="margin:-4px 0 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn ghost sm" onclick="go('ritten')">🚗 Mijn ritten →</button><button class="btn coral sm" onclick="bezMailKlant()" title="Open een e-mail aan de gekozen winkel — hij wordt automatisch gelogd bij het tappunt">✉️ Mail de klant</button><label class="btn ghost sm" style="cursor:pointer;margin:0" title="Log een ontvángen mail: open in Outlook het bericht → ⋯ → Downloaden → kies hier de .eml-bestanden">📥 Ontvangen mail loggen (.eml)<input type="file" multiple accept=".eml,message/rfc822" style="display:none" onchange="emlImportUI(event)"></label><span class="note" style="margin:0;font-weight:700;color:var(--green)">${mailImpMsg}</span></div>
+   <p class="note" style="margin:-6px 0 12px">✉️ Mail de klant opent een concept in je e-mailprogramma (Outlook) én registreert de mail automatisch bij het tappunt — kies eerst de winkel hieronder. Volledig automatisch tracken (verzonden én ontvangen) volgt met de Outlook-koppeling.</p>
    <div class="kpirow" style="margin-bottom:18px">
      <div class="kpi"><div class="kicon">${ICON.bezoek}</div><div class="v">${logMaand('bezoek')}</div><div class="l">Bezoeken deze maand</div></div>
      <div class="kpi acc-ink"><div class="kicon">${ICON.inbox}</div><div class="v">${logMaand('telefoon')+logMaand('mail')+logMaand('notitie')}</div><div class="l">Contact & notities</div></div>
