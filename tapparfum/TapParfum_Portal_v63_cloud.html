@@ -412,11 +412,22 @@
     <h1>Inloggen</h1>
     <div class="seg" id="roleSeg" style="margin:0 0 16px;max-width:420px"><button class="on" data-r="am" onclick="setLoginRole('am')">Accountmanager</button><button data-r="partner" onclick="setLoginRole('partner')">Partner</button><button data-r="kantoor" onclick="setLoginRole('kantoor')">Kantoor</button></div>
     <div id="amLogin">
-      <p>Log in op je eigen werkomgeving. Je tappunten blijven op dit apparaat bewaard.</p>
-      <label for="pname">Jouw naam</label>
-      <input type="text" id="pname" placeholder="bijv. Clarence" onkeydown="if(event.key==='Enter')doLogin()">
-      <div class="chips" id="profileChips"></div>
-      <div style="margin-top:18px"><button class="btn coral" onclick="doLogin()">Inloggen →</button></div>
+      <p>Log in met je e-mail en wachtwoord. Je ziet alleen je eigen winkels.</p>
+      <label for="amMail">E-mailadres</label>
+      <input type="email" id="amMail" autocomplete="username" placeholder="jij@voorbeeld.nl" onkeydown="if(event.key==='Enter')amCloudLogin()">
+      <label for="amPass" style="margin-top:12px">Wachtwoord</label>
+      <input type="password" id="amPass" autocomplete="current-password" placeholder="jouw wachtwoord" onkeydown="if(event.key==='Enter')amCloudLogin()">
+      <div style="margin-top:18px"><button class="btn coral" id="amBtn" onclick="amCloudLogin()">Inloggen →</button></div>
+      <div id="amCloudMsg" style="min-height:18px;margin-top:10px;font-size:13px;font-weight:700;color:var(--coral-d);white-space:pre-wrap"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
+        <a role="button" tabindex="0" onclick="amToggleLokaal()" onkeydown="if(event.key==='Enter')amToggleLokaal()" style="font-size:12.5px;color:var(--grey);cursor:pointer">Lokaal inloggen zonder cloud (op naam) →</a>
+        <div id="amLokaalVeld" style="display:none;margin-top:10px">
+          <label for="pname">Jouw naam</label>
+          <input type="text" id="pname" placeholder="bijv. Clarence" onkeydown="if(event.key==='Enter')doLogin()">
+          <div class="chips" id="profileChips"></div>
+          <div style="margin-top:12px"><button class="btn ghost" onclick="doLogin()">Lokaal inloggen →</button></div>
+        </div>
+      </div>
     </div>
     <div id="partnerLogin" style="display:none">
       <!-- Panel A: normaal inloggen met gebruikersnaam + wachtwoord -->
@@ -544,7 +555,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v64b-cloud · ghost lokaal-only (verborgen op productie) + TPCloud + omzet-compleet';
+window.__TP_BUILD='v65-cloud · AM-login via Supabase (eigen winkels) + TPCloud + ghost lokaal-only';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -891,7 +902,7 @@ function _doLoginAmVervolg(n,_a,_aa){
   if(_a){_a.laatsteLogin=new Date().toISOString().slice(0,16).replace('T',' ');saveAmAccounts(_aa);}
   Store.profile=n;Store.addProfile(n);role='am';LS.setItem("tp_portal::__last__",n);document.getElementById("login").style.display="none";document.getElementById("app").hidden=false;document.getElementById("who").textContent=n;const rl=document.getElementById("roleLabel");if(rl)rl.textContent="Accountmanager";checkBeloningenAll();go("vandaag")}
 function sluitOverlays(){['welk','uitleg','edsheet','gs','mailc','tptoast','tpop'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.hidden=true;if(el.style)el.style.display='none';});_edCb=null;}
-function logout(){sluitOverlays();Store.profile=null;role='am';_partnerLock=null;kantoorNaam='';kantoorRol='';kantoorRechten=null;beheerOpen=false;window._tpCloudUser=null;try{if(window._tpSb&&window._tpSb.auth&&window._tpSb.auth.signOut)window._tpSb.auth.signOut();}catch(_){}document.getElementById("app").hidden=true;document.getElementById("login").style.display="flex";document.getElementById("pname").value="";const pc=document.getElementById("pcode");if(pc)pc.value="";const kn=document.getElementById("kname");if(kn)kn.value="";setLoginRole("am");renderChips()}
+function logout(){sluitOverlays();Store.profile=null;role='am';_partnerLock=null;kantoorNaam='';kantoorRol='';kantoorRechten=null;beheerOpen=false;window._tpCloudUser=null;window._tpAmId=null;try{if(window._tpSb&&window._tpSb.auth&&window._tpSb.auth.signOut)window._tpSb.auth.signOut();}catch(_){}document.getElementById("app").hidden=true;document.getElementById("login").style.display="flex";document.getElementById("pname").value="";const pc=document.getElementById("pcode");if(pc)pc.value="";const kn=document.getElementById("kname");if(kn)kn.value="";setLoginRole("am");renderChips()}
 /* Kantoor & directie: geen AM-profiel — overzicht over álle profielen op dit apparaat. */
 /* Kantoor/AM-login via de cloud (Supabase). E-mail + wachtwoord; account moet 'staff' zijn. */
 function _kmsg(t){var el=document.getElementById('kcloudmsg');if(el)el.textContent=t||'';}
@@ -920,6 +931,51 @@ function _doLoginKantoorVervolg(n,_u){
   {const _l=gebruikers();const _x=_l.find(x=>x.id===_u.id);if(_x){_x.laatsteLogin=new Date().toISOString().slice(0,16).replace('T',' ');saveGebruikers(_l);}}
   kantoorNaam=_u.naam;kantoorRol=_u.rol;kantoorRechten=_u.rol==='beheer'?Object.assign({},ALLE_RECHTEN):Object.assign({},_u.rechten);beheerOpen=false;
   Store.profile=n;role='kantoor';document.getElementById('login').style.display='none';document.getElementById('app').hidden=false;document.getElementById('who').textContent=n;const rl=document.getElementById('roleLabel');if(rl)rl.textContent='Kantoor';go('kdash');}
+
+/* ============== Accountmanager-login via de cloud (Supabase) ==============
+   E-mail + wachtwoord. Een AM staat in de tabel accountmanagers (auth_user_id);
+   de database (RLS) zorgt dat hij alleen zijn eigen winkels ziet. Een staff-
+   account (kantoor) dat hier inlogt wordt gewoon als kantoor binnengelaten.
+   'Lokaal inloggen op naam' blijft als terugval bestaan (doLogin). */
+window._tpAmId=null;
+function _amMsg(t){var el=document.getElementById('amCloudMsg');if(el)el.textContent=t||'';}
+function amToggleLokaal(){var el=document.getElementById('amLokaalVeld');if(el)el.style.display=(el.style.display==='none'||!el.style.display)?'':'none';}
+function amCloudLogin(){
+  var email=((document.getElementById('amMail')||{}).value||'').trim();
+  var pass=(document.getElementById('amPass')||{}).value||'';
+  if(!email||!pass){_amMsg('Vul je e-mail en wachtwoord in.');return;}
+  var btn=document.getElementById('amBtn');if(btn){btn.disabled=true;btn.dataset.t=btn.dataset.t||btn.textContent;btn.textContent='Verbinden…';}
+  _amMsg('');
+  ensureSb(function(client){
+    if(!client){if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;}_amMsg('Geen verbinding met de cloud. Controleer je internet en probeer opnieuw.');return;}
+    if(btn)btn.textContent='Inloggen…';
+    client.auth.signInWithPassword({email:email,password:pass}).then(function(res){
+      if(res.error){if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;}_amMsg(res.error.message==='Invalid login credentials'?'Onjuiste e-mail of wachtwoord.':('Fout: '+res.error.message));return;}
+      var user=res.data&&res.data.user;
+      if(user&&user.app_metadata&&user.app_metadata.role==='staff'){
+        if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;}
+        window._tpCloudUser=user;window._tpAmId=null;
+        _doLoginKantoorVervolg(user.email,{id:user.id,naam:user.email,rol:'beheer',rechten:Object.assign({},ALLE_RECHTEN),pin:'',geblokkeerd:false});
+        try{TPCloud.pullCentral(function(){if(role==='kantoor'&&VIEWS[route])VIEWS[route]();});TPCloud.pullTappunten('__cloud__');}catch(_){}
+        return;
+      }
+      client.from('accountmanagers').select('id,naam').eq('auth_user_id',user.id).limit(1).then(function(r2){
+        if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;}
+        var rowlist=r2&&!r2.error?r2.data:null;var row=rowlist&&rowlist.length?rowlist[0]:null;
+        if(!row){_amMsg('Dit account is nog geen accountmanager. Vraag kantoor om je te koppelen.');return;}
+        window._tpCloudUser=user;window._tpAmId=row.id;
+        _amBinnenCloud(row.naam);
+      }).catch(function(e){if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;}_amMsg('Kon je AM-gegevens niet ophalen: '+(e&&e.message?e.message:e));});
+    }).catch(function(e){if(btn){btn.disabled=false;btn.textContent=btn.dataset.t;}_amMsg('Onverwachte fout: '+(e&&e.message?e.message:e));});
+  });
+}
+function _amBinnenCloud(naam){
+  Store.profile=naam;Store.addProfile(naam);role='am';_partnerLock=null;kantoorNaam='';kantoorRol='';kantoorRechten=null;beheerOpen=false;
+  document.getElementById('login').style.display='none';document.getElementById('app').hidden=false;
+  document.getElementById('who').textContent=naam;var rl=document.getElementById('roleLabel');if(rl)rl.textContent='Accountmanager';
+  var start=function(){checkBeloningenAll();go('vandaag');};
+  try{TPCloud.pullCentral(function(){});TPCloud.pullTappunten(naam,start);}catch(e){start();}
+}
 
 /* ============== 👻 GHOST PROTOCOL (alleen lokaal testen) ==============
    Eén ingang die in ÁLLE rollen binnenkomt — volledig offline, zonder cloud of
@@ -1038,14 +1094,18 @@ const TPCloud={
     });
   }catch(e){if(cb)cb(false);} },
   pushTappunt:function(t){ if(!_tpCloudActief()||!t||!t.snelstart)return; try{
-    var r=window._tpSb.from('tappunten').upsert({snelstart:t.snelstart,name:t.name||t.snelstart,email:t.email||null,geblokkeerd:!!t.geblokkeerd,data:t},{onConflict:'snelstart'});
+    var row={snelstart:t.snelstart,name:t.name||t.snelstart,email:t.email||null,geblokkeerd:!!t.geblokkeerd,data:t};
+    /* am_id meesturen zodat een AM zijn eigen winkel mag schrijven (RLS) en de
+       koppeling behouden blijft; nooit met null overschrijven als we 'm niet weten. */
+    var amid=t.am_id||window._tpAmId||null; if(amid)row.am_id=amid;
+    var r=window._tpSb.from('tappunten').upsert(row,{onConflict:'snelstart'});
     if(r&&r.then)r.then(function(res){ if(res&&res.error)console.warn('[cloud] tappunt push',t.snelstart,res.error.message); });
   }catch(e){} },
   pushTappunten:function(arr){ if(!_tpCloudActief()||!arr)return; for(var i=0;i<arr.length;i++)TPCloud.pushTappunt(arr[i]); },
   pullTappunten:function(profile,cb){ if(!_tpCloudActief()){if(cb)cb(false);return;} try{
-    window._tpSb.from('tappunten').select('snelstart,name,email,geblokkeerd,data').then(function(res){
+    window._tpSb.from('tappunten').select('snelstart,name,email,geblokkeerd,am_id,data').then(function(res){
       if(res&&!res.error&&res.data&&res.data.length!==undefined){
-        var arr=res.data.map(function(row){var t=(row.data&&typeof row.data==='object')?row.data:{};t.snelstart=t.snelstart||row.snelstart;t.name=t.name||row.name;if(row.email&&!t.email)t.email=row.email;t.geblokkeerd=!!row.geblokkeerd;return t;});
+        var arr=res.data.map(function(row){var t=(row.data&&typeof row.data==='object')?row.data:{};t.snelstart=t.snelstart||row.snelstart;t.name=t.name||row.name;if(row.email&&!t.email)t.email=row.email;t.geblokkeerd=!!row.geblokkeerd;if(row.am_id)t.am_id=row.am_id;return t;});
         try{LS.setItem('tp_portal::'+(profile||'__cloud__')+'::tappunten',JSON.stringify(arr));}catch(e){}
         if(cb)cb(true,arr);
       } else if(cb)cb(false);
