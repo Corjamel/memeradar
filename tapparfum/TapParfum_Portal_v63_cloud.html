@@ -2521,7 +2521,7 @@ function toppers(){return clients().filter(t=>statusKey(t)==='top')}
 /* Eén bron van waarheid: welke signalen horen bij de berichtlijn klant<->AM/kantoor. */
 const SIG_PUB_CATS=['Vraag','Bezoek','Probleem','Retour','Geurverzoek','Voorraad','Klantvraag','Materiaal','Idee','Traject','Refill'];
 function sigVoorPartner(s){return !!s&&(s.door==='partner'||SIG_PUB_CATS.indexOf(s.cat)>=0);}
-function allSignalen(){const out=[];clients().forEach(t=>{(t.signalen||[]).forEach((s,idx)=>{out.push({cid:t.id,name:t.name,idx,at:s.at||'',cat:s.cat||'Signaal',text:s.text||'',done:!!s.done,antwoord:s.antwoord||null,door:s.door||''});});});return out.sort((a,b)=>(a.at<b.at?1:a.at>b.at?-1:0));}
+function allSignalen(){const out=[];clients().forEach(t=>{(t.signalen||[]).forEach((s,idx)=>{out.push({cid:t.id,name:t.name,idx,at:s.at||'',cat:s.cat||'Signaal',text:s.text||'',done:!!s.done,antwoord:s.antwoord||null,door:s.door||'',wensDatum:s.wensDatum||'',bezoekStatus:s.bezoekStatus||'',bezoekDatum:s.bezoekDatum||''});});});return out.sort((a,b)=>(a.at<b.at?1:a.at>b.at?-1:0));}
 function openSignalen(){return allSignalen().filter(s=>!s.done);}
 function signaalAntwoord(cid,idx){const c=clients();const t=c.find(x=>x.id===cid);if(!t||!t.signalen||!t.signalen[idx])return;
   const huidig=(t.signalen[idx].antwoord||{}).text||'';
@@ -2529,11 +2529,30 @@ function signaalAntwoord(cid,idx){const c=clients();const t=c.find(x=>x.id===cid
     const c2=clients();const t2=c2.find(x=>x.id===cid);if(!t2||!t2.signalen||!t2.signalen[idx])return;
     t2.signalen[idx].antwoord={at:vandaagISO(),text:txt,door:Store.profile||'accountmanager'};if(sigVoorPartner(t2.signalen[idx]))t2.signalen[idx].nieuwVoorP=true;
     saveClients(c2);toast('Antwoord verstuurd naar '+t.name+'.');if(route==='inbox')VIEWS.inbox();else refresh();}});}
-function signaalPlanBezoek(cid,idx){const c=clients();const t=c.find(x=>x.id===cid);if(!t)return;
-  edOpen({titel:'📅 Bezoek plannen — '+esc(t.name),hint:'Datum (JJJJ-MM-DD). De winkel ziet automatisch dat het bezoek gepland staat.',waarde:isoLokaal(new Date(Date.now()+6048e5)),cb:function(d){d=String(d||'').trim();if(!d)return;
-    planBezoek(cid,d);
-    const c2=clients();const t2=c2.find(x=>x.id===cid);if(t2&&t2.signalen&&t2.signalen[idx]){t2.signalen[idx].antwoord={at:vandaagISO(),text:'Bezoek ingepland op '+d+'.',door:Store.profile||'accountmanager'};t2.signalen[idx].done=true;if(sigVoorPartner(t2.signalen[idx]))t2.signalen[idx].nieuwVoorP=true;saveClients(c2);}
-    toast('Bezoek gepland op '+d+' — '+esc(t.name)+' is op de hoogte.');if(route==='inbox')VIEWS.inbox();else refresh();}});}
+/* Statuschip voor bezoekaanvragen — zelfde weergave bij partner, AM (Inbox/Agenda) en kantoor. */
+function bezoekChip(s){if(!s||s.cat!=='Bezoek'||!s.bezoekStatus)return '';
+  if(s.bezoekStatus==='geaccepteerd')return `<span class="stbadge" style="background:#C0DD97;color:#173404">✓ gepland op ${esc(s.bezoekDatum||s.wensDatum||'?')}</span>`;
+  if(s.bezoekStatus==='voorstel')return `<span class="stbadge" style="background:#CBE3F5;color:#0B3D63">🔁 ander voorstel</span>`;
+  return `<span class="stbadge" style="background:#FBE9C6;color:#7A5B00">⏳ aangevraagd</span>`;}
+/* Bezoekaanvraag accepteren: datum kiezen (default de wensdatum van de winkel), optioneel een persoonlijk bericht erbij. */
+function signaalBezoekAccepteer(cid,idx){const c=clients();const t=c.find(x=>x.id===cid);if(!t||!t.signalen||!t.signalen[idx])return;
+  const s=t.signalen[idx];
+  edOpen({titel:'✓ Bezoek accepteren — '+esc(t.name),hint:'Datum (JJJJ-MM-DD)'+(s.wensDatum?' — de winkel vroeg om '+s.wensDatum:'')+'. De winkel ziet automatisch dat het bezoek gepland staat.',waarde:s.wensDatum||isoLokaal(new Date(Date.now()+6048e5)),cb:function(d){d=String(d||'').trim();if(!d){toast('Vul een datum in (JJJJ-MM-DD).');return;}
+    edOpen({titel:'💬 Persoonlijk bericht (optioneel)',hint:'Komt bij de planbevestiging voor '+esc(t.name)+' — laat leeg voor alleen de bevestiging.',groot:true,cb:function(msg){msg=String(msg||'').trim();
+      const c2=clients();const t2=c2.find(x=>x.id===cid);if(!t2||!t2.signalen||!t2.signalen[idx])return;
+      t2.bezoekGepland=d;const s2=t2.signalen[idx];
+      s2.bezoekStatus='geaccepteerd';s2.bezoekDatum=d;
+      s2.antwoord={at:vandaagISO(),text:(msg?msg+' ':'')+'Bezoek gepland op '+d+'.',door:Store.profile||'accountmanager'};
+      s2.done=true;if(sigVoorPartner(s2))s2.nieuwVoorP=true;
+      saveClients(c2);toast('Bezoek gepland op '+d+' — '+esc(t.name)+' is op de hoogte.');if(route==='inbox')VIEWS.inbox();else refresh();}});}});}
+/* Ander voorstel: berichttekst verplicht — de aanvraag blijft open tot er samen een datum gevonden is. */
+function signaalBezoekVoorstel(cid,idx){const c=clients();const t=c.find(x=>x.id===cid);if(!t||!t.signalen||!t.signalen[idx])return;
+  edOpen({titel:'↺ Ander voorstel — '+esc(t.name),hint:'Leg uit wanneer het wél kan (bijv. een andere datum of dagdeel). De aanvraag blijft open tot jullie eruit zijn.',groot:true,cb:function(txt){txt=String(txt||'').trim();if(!txt){toast('Schrijf eerst je voorstel.');return;}
+    const c2=clients();const t2=c2.find(x=>x.id===cid);if(!t2||!t2.signalen||!t2.signalen[idx])return;
+    const s2=t2.signalen[idx];s2.bezoekStatus='voorstel';
+    s2.antwoord={at:vandaagISO(),text:txt,door:Store.profile||'accountmanager'};
+    if(sigVoorPartner(s2))s2.nieuwVoorP=true;
+    saveClients(c2);toast('Voorstel verstuurd naar '+esc(t.name)+' — de aanvraag blijft open.');if(route==='inbox')VIEWS.inbox();else refresh();}});}
 function setSignaalDone(cid,idx,v){const c=clients();const t=c.find(x=>x.id===cid);if(!t||!t.signalen||!t.signalen[idx])return;t.signalen[idx].done=v;if(v&&sigVoorPartner(t.signalen[idx]))t.signalen[idx].nieuwVoorP=true;saveClients(c);if(route==='inbox')VIEWS.inbox();else refresh();}
 /* Portfolio-groei gebruikt dezelfde definitie als omzetGroei() (maandtempo dit jaar vs. vorig jaar/12),
    zodat het "groei"-getal overal in de app consistent is (i.p.v. joLog-deltas). */
@@ -2752,6 +2771,8 @@ function agendaItems(fu){
 VIEWS.agenda=()=>{
   const fu=followups();
   const items=agendaItems(fu);
+  /* Open bezoekaanvragen van winkels (aangevraagd of nog in voorstel-fase) — direct vanuit de agenda te accepteren. */
+  const bezAanvr=openSignalen().filter(s=>s.cat==='Bezoek'&&(s.bezoekStatus==='aangevraagd'||s.bezoekStatus==='voorstel'));
   const telaat=items.filter(i=>i.diff!=null&&i.diff<0).sort((a,b)=>a.diff-b.diff);
   const vandaag=items.filter(i=>i.diff===0);
   const week=items.filter(i=>i.diff!=null&&i.diff>=1&&i.diff<=7).sort((a,b)=>a.diff-b.diff);
@@ -2772,6 +2793,7 @@ VIEWS.agenda=()=>{
    </div>
    ${noLive?`<div class="card" style="margin:0 0 14px;border-left:4px solid var(--coral)"><b>${noLive} tappunt(en)</b> zonder live-datum — vul die in bij Instellingen van het tappunt om opvolging te plannen.</div>`:''}
    ${react.length?`<div class="card" style="margin:0 0 14px;border-left:4px solid var(--amber);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b>${react.length} tappunt(en) stagneren</b><br><span style="color:var(--grey);font-size:13px">${react.map(t=>esc(t.name)).join(' · ')}</span></div><button class="btn coral sm" onclick="go('heractiveren')">Start heractivatie →</button></div>`:''}
+   ${bezAanvr.length?`<div class="card" style="margin:0 0 14px;border-left:4px solid var(--coral-d)"><div class="zh">📍 Bezoekaanvragen (${bezAanvr.length})</div><p class="note" style="margin:2px 0 8px">Winkels die om een bezoek vragen — accepteer met een datum of stuur een ander voorstel. Geaccepteerde bezoeken verschijnen hieronder vanzelf als gepland bezoek.</p>${bezAanvr.map(s=>`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)"><div class="ai" style="cursor:pointer;flex:1" onclick="openTappunt('${s.cid}')"><div class="nm">${esc(s.name)} ${bezoekChip(s)}</div><div class="mo">${esc(s.text)}${s.wensDatum?` · gewenste datum: <b>${esc(s.wensDatum)}</b>`:''} · ${esc(s.at)}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn coral sm" onclick="signaalBezoekAccepteer('${s.cid}',${s.idx})">✓ Accepteren + plannen</button><button class="btn ghost sm" onclick="signaalBezoekVoorstel('${s.cid}',${s.idx})">↺ Ander voorstel</button></div></div>`).join('')}</div>`:''}
    ${sec('Te laat',telaat,'var(--coral-d)')}
    ${sec('Vandaag',vandaag,'var(--coral)')}
    ${sec('Deze week',week,'var(--coral)')}
@@ -2786,7 +2808,7 @@ function markFU(cid,k,v){const c=clients();const t=c.find(y=>y.id===cid);t.fu=t.
 VIEWS.inbox=()=>{
   const open=openSignalen(),done=allSignalen().filter(s=>s.done);
   const badge=cat=>{const s=SIG_CATS[cat]||{bg:'var(--soft)',fg:'var(--ink)'};return badgeHTML(esc(cat),s.bg,s.fg);};
-  const row=(s,isDone)=>`<div class="listrow ${isDone?'':'coral'}" style="${isDone?'opacity:.55':''}display:block"><div style="display:flex;justify-content:space-between;gap:10px"><div class="ai" style="cursor:pointer;flex:1" onclick="openTappunt('${s.cid}')"><div class="nm">${esc(s.name)} ${badge(s.cat)}</div><div class="mo">${esc(s.text)}</div></div><div class="when" style="white-space:nowrap">${esc(s.at)}</div></div>${s.antwoord?`<div style="margin:8px 0 0;padding:8px 10px;background:var(--soft);border-radius:8px;font-size:13px"><b>Jouw antwoord${s.antwoord.at?' · '+esc(s.antwoord.at):''}:</b> ${esc(s.antwoord.text)}</div>`:''}${isDone?'':`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${s.cat==='Bezoek'?`<button class="btn coral sm" onclick="signaalPlanBezoek('${s.cid}',${s.idx})">📅 Plan bezoek</button>`:''}<button class="btn ghost sm" onclick="signaalAntwoord('${s.cid}',${s.idx})">${s.antwoord?'Antwoord aanpassen':'Reageer'}</button><button class="btn ghost sm" onclick="setSignaalDone('${s.cid}',${s.idx},true)">Afgehandeld</button></div>`}</div>`;
+  const row=(s,isDone)=>`<div class="listrow ${isDone?'':'coral'}" style="${isDone?'opacity:.55':''}display:block"><div style="display:flex;justify-content:space-between;gap:10px"><div class="ai" style="cursor:pointer;flex:1" onclick="openTappunt('${s.cid}')"><div class="nm">${esc(s.name)} ${badge(s.cat)} ${bezoekChip(s)}</div><div class="mo">${esc(s.text)}${s.cat==='Bezoek'&&s.wensDatum?` · gewenste datum: <b>${esc(s.wensDatum)}</b>`:''}</div></div><div class="when" style="white-space:nowrap">${esc(s.at)}</div></div>${s.antwoord?`<div style="margin:8px 0 0;padding:8px 10px;background:var(--soft);border-radius:8px;font-size:13px"><b>Jouw antwoord${s.antwoord.at?' · '+esc(s.antwoord.at):''}:</b> ${esc(s.antwoord.text)}</div>`:''}${isDone?'':`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${s.cat==='Bezoek'&&s.bezoekStatus!=='geaccepteerd'?`<button class="btn coral sm" onclick="signaalBezoekAccepteer('${s.cid}',${s.idx})">✓ Accepteren + plannen</button><button class="btn ghost sm" onclick="signaalBezoekVoorstel('${s.cid}',${s.idx})">↺ Ander voorstel</button>`:''}<button class="btn ghost sm" onclick="signaalAntwoord('${s.cid}',${s.idx})">${s.antwoord?'Antwoord aanpassen':'Reageer'}</button><button class="btn ghost sm" onclick="setSignaalDone('${s.cid}',${s.idx},true)">Afgehandeld</button></div>`}</div>`;
   V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Inbox`)}</h2><div class="sub">${ED('sub.'+route,`Signalen en refill-bestellingen die je partners hebben verstuurd. Handel ze af en klik op 'Afgehandeld'.`)}</div></div></div>
    ${open.length?`<div class="sec-t">Open (${open.length})</div>${open.map(s=>row(s,false)).join('')}`:'<div class="empty">'+ICON.check+'Geen open signalen — alles afgehandeld.</div>'}
    ${done.length?`<div class="sec-t" style="margin-top:24px">Afgehandeld (${done.length})</div>${done.map(s=>row(s,true)).join('')}`:''}`;
@@ -3325,7 +3347,7 @@ VIEWS.pfeedback=()=>{const t=pT();if(!t){go('zelf');return;}
   /* Gezien: de vlag wissen zodra de partner de berichtenlijst opent — badge en banner verdwijnen dan. */
   if(nieuwSet.length){const c=clients();const t2=c.find(x=>x.id===zelfClientId);if(t2)(t2.signalen||[]).forEach(s=>{if(s.nieuwVoorP)delete s.nieuwVoorP;});saveClients(c);}
   const catIc=c=>({Vraag:'❓',Bezoek:'📅',Probleem:'⚠️',Retour:'📦',Traject:'🚀',Refill:'🧴'}[c]||'💬');
-  const kaart=(g,idx)=>`<div class="card" style="margin:8px 0${g.done?';opacity:.7':''}"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${catIc(g.cat)} ${esc(g.cat||'Bericht')}${nieuwSet.indexOf(g)>=0?' <span class="stbadge" style="background:var(--coral);color:#fff">nieuw</span>':''}</b><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${g.done?'var(--soft)':'#FBE9C6'};color:${g.done?'var(--grey)':'#7A5B00'}">${g.done?'✓ Afgehandeld':'⏳ In behandeling'}</span></div><div style="color:var(--grey);font-size:12px;margin-top:2px">${esc(g.at)}</div><div style="margin-top:6px">${esc(g.text)}</div>${g.antwoord?`<div style="margin-top:8px;padding:8px 10px;background:var(--soft);border-radius:8px;font-size:13px"><b>Antwoord van ${esc(g.antwoord.door||'je accountmanager')}${g.antwoord.at?' · '+esc(g.antwoord.at):''}:</b><br>${esc(g.antwoord.text)}</div>`:'<div style="margin-top:6px;font-size:12px;color:var(--grey)">Je accountmanager heeft nog niet gereageerd.</div>'}</div>`;
+  const kaart=(g,idx)=>`<div class="card" style="margin:8px 0${g.done?';opacity:.7':''}"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${catIc(g.cat)} ${esc(g.cat||'Bericht')}${nieuwSet.indexOf(g)>=0?' <span class="stbadge" style="background:var(--coral);color:#fff">nieuw</span>':''}</b>${g.cat==='Bezoek'&&g.bezoekStatus?bezoekChip(g):`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${g.done?'var(--soft)':'#FBE9C6'};color:${g.done?'var(--grey)':'#7A5B00'}">${g.done?'✓ Afgehandeld':'⏳ In behandeling'}</span>`}</div><div style="color:var(--grey);font-size:12px;margin-top:2px">${esc(g.at)}</div><div style="margin-top:6px">${esc(g.text)}</div>${g.cat==='Bezoek'&&g.wensDatum?`<div style="font-size:12px;color:var(--grey);margin-top:2px">Gewenste datum: <b>${esc(g.wensDatum)}</b></div>`:''}${g.antwoord?`<div style="margin-top:8px;padding:8px 10px;background:var(--soft);border-radius:8px;font-size:13px"><b>Antwoord van ${esc(g.antwoord.door||'je accountmanager')}${g.antwoord.at?' · '+esc(g.antwoord.at):''}:</b><br>${esc(g.antwoord.text)}</div>`:'<div style="margin-top:6px;font-size:12px;color:var(--grey)">Je accountmanager heeft nog niet gereageerd.</div>'}</div>`;
   V().innerHTML=pHead('Berichten','Vraag, bezoek, probleem of retour — en de antwoorden')+
    berichtKnopKaart(t)+
    (lst.length?`<div class="sec-t">Jouw berichten (${lst.length})</div>${lst.map((g,i)=>kaart(g,i)).join('')}`:`<div class="empty">Nog geen berichten verstuurd. Gebruik de knoppen hierboven — je accountmanager én kantoor pakken het op.</div>`);
@@ -3354,12 +3376,23 @@ function pBericht(cat){
   const def=BERICHT_TYPES.find(b=>b.cat===cat)||BERICHT_TYPES[0];
   edOpen({titel:def.ic+' '+def.titel,hint:def.hint,groot:true,cb:function(txt){
     txt=String(txt||'').trim();if(!txt){toast('Schrijf eerst je bericht.');return;}
-    const c=clients();const t=c.find(x=>x.id===zelfClientId);if(!t)return;
-    t.signalen=t.signalen||[];t.signalen.unshift({at:vandaagISO(),cat:def.cat,text:txt,done:false,door:'partner'});
-    saveClients(c);
-    toast(def.ic+' Verstuurd naar '+(clientAM()||'je accountmanager')+' — je krijgt hier antwoord terug.');
-    if(route==='pfeedback')VIEWS.pfeedback();else if(route==='zelf')VIEWS.zelf();else refresh();
+    if(def.cat==='Bezoek'){
+      /* Stap 2 voor bezoekaanvragen: gewenste datum (optioneel) — zo kan de AM meteen accepteren en inplannen. */
+      edOpen({titel:'📅 Gewenste datum (optioneel)',hint:'Wanneer komt het bezoek jou het beste uit? Formaat JJJJ-MM-DD — of laat leeg als elke dag goed is.',waarde:'',cb:function(d){
+        pBerichtSave(def,txt,{wensDatum:String(d||'').trim(),bezoekStatus:'aangevraagd'});
+      }});
+      return;}
+    pBerichtSave(def,txt,null);
   }});
+}
+function pBerichtSave(def,txt,extra){
+  const c=clients();const t=c.find(x=>x.id===zelfClientId);if(!t)return;
+  const s={at:vandaagISO(),cat:def.cat,text:txt,done:false,door:'partner'};
+  if(extra){s.bezoekStatus=extra.bezoekStatus;if(extra.wensDatum)s.wensDatum=extra.wensDatum;}
+  t.signalen=t.signalen||[];t.signalen.unshift(s);
+  saveClients(c);
+  toast(def.ic+' Verstuurd naar '+(clientAM()||'je accountmanager')+' — je krijgt hier antwoord terug.');
+  if(route==='pfeedback')VIEWS.pfeedback();else if(route==='zelf')VIEWS.zelf();else refresh();
 }
 function clientAM(){try{return Store.profile||'';}catch(e){return '';}}
 /* ---- PARTNER-GEGEVENS — de partner vult zijn eigen basisgegevens in; de AM ziet het direct (zelfde data). ---- */
@@ -3884,7 +3917,7 @@ VIEWS.kgame=()=>{
 };
 function alleKlantSignalen(){
   const out=[];(Store.listProfiles()||[]).forEach(p=>{(rawTappunten(p)||[]).forEach(t=>{(t.signalen||[]).forEach((s,idx)=>{
-    if(sigVoorPartner(s)||s.cat==='Kantoor'||s.cat==='Directie')out.push({am:p,cid:t.id,name:t.name||'—',idx,cat:s.cat||'Bericht',text:s.text||'',at:s.at||'',done:!!s.done,antwoord:s.antwoord||null,voorP:sigVoorPartner(s)});
+    if(sigVoorPartner(s)||s.cat==='Kantoor'||s.cat==='Directie')out.push({am:p,cid:t.id,name:t.name||'—',idx,cat:s.cat||'Bericht',text:s.text||'',at:s.at||'',done:!!s.done,antwoord:s.antwoord||null,voorP:sigVoorPartner(s),wensDatum:s.wensDatum||'',bezoekStatus:s.bezoekStatus||'',bezoekDatum:s.bezoekDatum||''});
   });});});
   return out.sort((a,b)=>(a.done!==b.done)?(a.done?1:-1):(a.at<b.at?1:a.at>b.at?-1:0));}
 function kBegeleidSignaal(am,cid,idx){const t=(rawTappunten(am)||[]).find(x=>x.id===cid);const winkel=t?t.name:'winkel';
@@ -3902,7 +3935,7 @@ function kSigDoneK(am,cid,idx){const ts=rawTappunten(am);const t=(ts||[]).find(x
   saveRawTappunten(am,ts);bLog('Klantsignaal afgehandeld bij '+(t.name||'?')+' ('+am+')');if(role==='kantoor'&&VIEWS[route])VIEWS[route]();}
 function klantSignalenSectieK(){const sig=alleKlantSignalen();const open=sig.filter(s=>!s.done);
   const catIc=c=>({Vraag:'❓',Bezoek:'📅',Probleem:'⚠️',Retour:'📦',Traject:'🚀',Refill:'🧴',Kantoor:'🏢',Directie:'🏢'}[c]||'💬');
-  const rij=s=>`<div class="listrow ${s.done?'':'coral'}" style="${s.done?'opacity:.6;':''}display:block"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="flex:1"><div class="nm">${catIc(s.cat)} ${esc(s.name)} <span style="font-weight:600;color:var(--grey);font-size:12px">· ${esc(s.am)}</span></div><div class="mo">${esc(s.text)}</div></div><div style="text-align:right;white-space:nowrap"><div class="when">${esc(s.at)}</div><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${s.done?'var(--soft)':'#FBE9C6'};color:${s.done?'var(--grey)':'#7A5B00'}">${s.done?'✓ afgehandeld':'⏳ open'}</span></div></div>${s.antwoord?`<div style="margin-top:6px;padding:6px 9px;background:var(--soft);border-radius:8px;font-size:12px"><b>AM-antwoord:</b> ${esc(s.antwoord.text)}</div>`:''}${s.done?'':`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${s.voorP?`<button class="btn coral sm" onclick="kSigAntwoordK('${escAttrJs(s.am)}','${s.cid}',${s.idx})">${s.antwoord?'Antwoord aanpassen':'💬 Antwoord de winkel'}</button>`:''}<button class="btn ghost sm" onclick="kBegeleidSignaal('${escAttrJs(s.am)}','${s.cid}',${s.idx})">🧭 Begeleid ${esc(s.am)}</button><button class="btn ghost sm" onclick="kSigDoneK('${escAttrJs(s.am)}','${s.cid}',${s.idx})">✓ Afgehandeld</button></div>`}</div>`;
+  const rij=s=>`<div class="listrow ${s.done?'':'coral'}" style="${s.done?'opacity:.6;':''}display:block"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="flex:1"><div class="nm">${catIc(s.cat)} ${esc(s.name)} <span style="font-weight:600;color:var(--grey);font-size:12px">· ${esc(s.am)}</span></div><div class="mo">${esc(s.text)}${s.cat==='Bezoek'&&s.wensDatum?` · gewenste datum: <b>${esc(s.wensDatum)}</b>`:''}</div></div><div style="text-align:right;white-space:nowrap"><div class="when">${esc(s.at)}</div>${s.cat==='Bezoek'&&s.bezoekStatus?bezoekChip(s):`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${s.done?'var(--soft)':'#FBE9C6'};color:${s.done?'var(--grey)':'#7A5B00'}">${s.done?'✓ afgehandeld':'⏳ open'}</span>`}</div></div>${s.antwoord?`<div style="margin-top:6px;padding:6px 9px;background:var(--soft);border-radius:8px;font-size:12px"><b>AM-antwoord:</b> ${esc(s.antwoord.text)}</div>`:''}${s.done?'':`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${s.voorP?`<button class="btn coral sm" onclick="kSigAntwoordK('${escAttrJs(s.am)}','${s.cid}',${s.idx})">${s.antwoord?'Antwoord aanpassen':'💬 Antwoord de winkel'}</button>`:''}<button class="btn ghost sm" onclick="kBegeleidSignaal('${escAttrJs(s.am)}','${s.cid}',${s.idx})">🧭 Begeleid ${esc(s.am)}</button><button class="btn ghost sm" onclick="kSigDoneK('${escAttrJs(s.am)}','${s.cid}',${s.idx})">✓ Afgehandeld</button></div>`}</div>`;
   return `<div class="sec-t" style="margin-top:24px">📨 Klantsignalen — hele netwerk ${open.length?`<span style="color:var(--coral-d);font-weight:700">· ${open.length} open</span>`:''}</div>
     <p class="note" style="margin:2px 0 10px">Elke vraag, bezoekaanvraag, probleemmelding en retour die winkels naar hun accountmanager sturen — over alle accountmanagers heen. Stuur desgewenst begeleiding naar de betreffende AM.</p>
     ${sig.length?sig.map(rij).join(''):'<div class="empty">Nog geen klantsignalen in het netwerk.</div>'}`;
