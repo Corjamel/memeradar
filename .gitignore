@@ -7,3 +7,6 @@ bot/wallet.json
 
 # systeem
 .DS_Store
+
+# Claude Code: tijdelijke agent-worktrees — nooit committen
+.claude/worktrees/
