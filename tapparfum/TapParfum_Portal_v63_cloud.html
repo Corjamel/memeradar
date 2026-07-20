@@ -517,7 +517,7 @@
   </aside>
   <div style="display:flex;flex-direction:column;min-width:0">
     <header class="topbar">
-      <div class="tb-title" id="tbTitle">Cockpit</div>
+      <div class="tb-title" id="tbTitle">Mijn winkels</div>
       <div class="tb-sp"></div>
       <button id="tbHelp" onclick="openUitleg()" title="Uitleg van dit scherm" aria-label="Uitleg van dit scherm" style="border:1.5px solid var(--line);background:#fff;border-radius:10px;width:34px;height:34px;font-weight:800;cursor:pointer;color:var(--coral-d)">?</button>
       <button id="tbSearch" onclick="openGS()" title="Zoeken (sneltoets: /)" aria-label="Zoeken" style="background:none;border:0;cursor:pointer;color:var(--grey);padding:7px;border-radius:8px;display:flex;align-items:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.9"/><path d="M16 16l4.2 4.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
@@ -686,12 +686,12 @@ const KENNIS=[
  {t:"Voorwaarden promodag",h:`<ul><li><b>1e promodag gratis</b> bij start met min. 160 geuren (anders € 500 / 4 uur).</li><li>Assortiment fris, testers vrij van oxidatie, stickers correct en zichtbaar.</li><li>Poster met datum prominent; vials voldoende gevuld; stand bij de ingang.</li></ul>`},
 ];
 const NAVGROUPS=[
- ["Werk",[["vandaag","vandaag","Vandaag"],["dashboard","dashboard","Cockpit"],["heractiveren","refresh","Trajecten"],["agenda","agenda","Agenda"],["inbox","inbox","Inbox"],["amacties","megafoon","Acties"],["bezoeken","bezoek","Bezoeken"],["bestellingen","bestellen","Bestellingen"]]],
+ ["Werk",[["vandaag","vandaag","Vandaag"],["dashboard","dashboard","Mijn winkels"],["heractiveren","refresh","Trajecten"],["agenda","agenda","Agenda"],["inbox","inbox","Inbox"],["amacties","megafoon","Acties"],["bezoeken","bezoek","Bezoeken"],["bestellingen","bestellen","Bestellingen"]]],
  ["Hulpmiddel",[["calculator","calculator","Calculator"],["pakketten","bestellen","Pakketten"]]],
  ["Naslag",[["proces","proces","Proces"],["kennisbank","kennis","Kennisbank"]]],
 ];
 /* Paginatitels voor de topbar */
-const PAGE_TITLES={dashboard:'Cockpit',tappunten:'Cockpit',heractiveren:'Trajecten',agenda:'Agenda',inbox:'Inbox',calculator:'Calculator',pakketten:'Pakketten',proces:'Proces',kennisbank:'Kennisbank',formulieren:'Formulieren',zelf:'Zelfservice',mijnplan:'Mijn plan',pbeloningen:'Beloningen',geurbib:'Geurbibliotheek',acties:'Acties',merk:'Merk & Assets',pacademy:'Academy',pcommunity:'Community',pbestellen:'Bestellen',pfeedback:'Feedback',kdash:'Kantoor-cockpit',kactiviteit:'Activiteit',kacties:'Acties & campagnes',kgame:'Sales Game',kproducten:'Nieuwe producten',beheer:'Beheer',kanalyse:'Analyse',kberichten:'Vragen & taken',amberichten:'Vragen & taken',amproducten:'Nieuwe producten',kteam:'Accountmanagers',amacties:'Acties',bezoeken:'Bezoeken & notities',bestellingen:'Bestellingen',vandaag:'Vandaag',ritten:'Mijn ritten'};
+const PAGE_TITLES={dashboard:'Mijn winkels',tappunten:'Mijn winkels',heractiveren:'Trajecten',agenda:'Agenda',inbox:'Inbox',calculator:'Calculator',pakketten:'Pakketten',proces:'Proces',kennisbank:'Kennisbank',formulieren:'Formulieren',zelf:'Zelfservice',mijnplan:'Mijn plan',pbeloningen:'Beloningen',geurbib:'Geurbibliotheek',acties:'Acties',merk:'Merk & Assets',pacademy:'Academy',pcommunity:'Community',pbestellen:'Bestellen',pfeedback:'Feedback',kdash:'Kantoor-cockpit',kactiviteit:'Activiteit',kacties:'Acties & campagnes',kgame:'Sales Game',kproducten:'Nieuwe producten',beheer:'Beheer',kanalyse:'Analyse',kberichten:'Vragen & taken',amberichten:'Vragen & taken',amproducten:'Nieuwe producten',kteam:'Accountmanagers',amacties:'Acties',bezoeken:'Bezoeken & notities',bestellingen:'Bestellingen',vandaag:'Vandaag',ritten:'Mijn ritten'};
 function iconFor(k){return ICON[k]||ICON.dashboard;}
 function updateTopbar(r){try{if(document.body)document.body.className='role-'+role;}catch(e){}const tt=document.getElementById('tbTitle');if(tt)tt.textContent=T('title.'+r,PAGE_TITLES[r]||'TapParfum');const who=Store.profile||'';const nameEl=document.getElementById('tbWho');const av=document.getElementById('tbAv');const rt=document.getElementById('tbRoleTxt');const partner=(role==='partner');const kantoor=(role==='kantoor');const dispName=partner?((clients().find(x=>x.id===zelfClientId)||{}).name||who):who;const roleLbl=partner?'Partner':(kantoor?'Kantoor':'Accountmanager');if(nameEl)nameEl.innerHTML=`${esc(dispName)}<small>${roleLbl}</small>`;if(av)av.textContent=(dispName||'?').trim().charAt(0).toUpperCase()||'?';if(rt)rt.textContent=roleLbl;const sb=document.getElementById('tbSearch');if(sb)sb.style.display=(role==='partner')?'none':'flex';try{openWelkom(false);}catch(e){}}
 const FORMS=[
@@ -1881,7 +1881,7 @@ function gameBlokAM(){const k=gameKlassement();if(!k)return '';
   const rows=mijn.map(({t,pos})=>{if(!pos)return '';
     if(pos.kl==='nietq')return `<div class="listrow amber"><div class="ai" onclick="openTappunt('${t.id}')"><div class="nm">${esc(t.name)}</div><div class="mo">${pos.reden==='punten'?`Nog <b>${pos.tekort} punten</b> tot kwalificatie — mooi belmoment!`:'Omzetbasis vorig jaar onder de drempel'}</div></div></div>`;
     return `<div class="listrow"><div class="ai" onclick="openTappunt('${t.id}')"><div class="nm">${pos.pos<=3?['🥇','🥈','🥉'][pos.pos-1]+' ':''}${esc(t.name)}</div><div class="mo">${pos.kl==='groei'?'Groei-klassement':'Nieuwkomers'} · <b>#${pos.pos}</b> van ${pos.van} landelijk${pos.sc.groeiPct!=null?' · groei '+(pos.sc.groeiPct>=0?'+':'')+pos.sc.groeiPct+'%':''} · ${pos.sc.acties} acties · score ${pos.sc.score}</div></div></div>`;}).join('');
-  return `<div class="card" style="${GAME_GRAD};margin-bottom:16px">${gameHeroKop(k.sg)}${gamePodium(k,new Set(clients().map(t=>t.id)))}</div><div class="card" style="border-left:4px solid var(--coral-d);margin-bottom:16px"><b>Jouw tappunten in de strijd</b><span style="color:var(--grey);font-size:13px"> — grootste gróéi wint; alleen traject-deelnemers doen mee.</span><div style="margin-top:8px">${rows||'<p class="note" style="margin:0">Nog geen traject-deelnemers in jouw cockpit.</p>'}</div></div>`;}
+  return `<div class="card" style="${GAME_GRAD};margin-bottom:16px">${gameHeroKop(k.sg)}${gamePodium(k,new Set(clients().map(t=>t.id)))}</div><div class="card" style="border-left:4px solid var(--coral-d);margin-bottom:16px"><b>Jouw tappunten in de strijd</b><span style="color:var(--grey);font-size:13px"> — grootste gróéi wint; alleen traject-deelnemers doen mee.</span><div style="margin-top:8px">${rows||'<p class="note" style="margin:0">Nog geen traject-deelnemers in Mijn winkels.</p>'}</div></div>`;}
 function gameCardP(t){if(!modAan('game'))return '';const k=gameKlassement();if(!k)return '';const pos=gamePositie(t.id);if(!pos)return '';
   let mijn='';
   if(pos.kl==='nietq')mijn=pos.reden==='punten'?`Nog <b>${pos.tekort} punten</b> tot jullie meedoen — punten haal je met acties, de Academy en je opstartstappen!`:'Jullie doen mee zodra de omzetbasis is opgebouwd.';
@@ -2033,7 +2033,7 @@ function openWelkom(force){const ov=document.getElementById('welk');if(!ov)retur
     +(kantoorRol==='beheer'?stap('⚙️','Beheer','Accounts, rechten, blokkades en AVG — achter jouw toegangscode.'):'');}
   else {naam=Store.profile||'';
     body=stap('☀️','Vandaag','Je werklijst: wie belt of bezoekt je vandaag? Begin hier, elke dag.')
-    +stap('👥','Cockpit','Al je klanten. Registreer elk bezoek, telefoontje en mailtje bij de klant — dat is je bewijs én je bonus.')
+    +stap('👥','Mijn winkels','Al je klanten. Registreer elk bezoek, telefoontje en mailtje bij de klant — dat is je bewijs én je bonus.')
     +stap('💶','Zo verdien je je bonus','Elke klant die jij het traject in helpt en die écht actief wordt, telt voor je maandbonus en de kwartaalstaffel. Je eigen score staat op Vandaag.')
     +stap('🏆','Sales Game','Help je tappunten groeien — jouw winkels op het podium is jouw succes.');}
   ov.onclick=function(e){if(e&&e.target===ov){ov.hidden=true;ov.style.display='none';}};
@@ -2126,7 +2126,7 @@ const HELP={
   ['🧴','Nieuwe producten','Elke lancering met tijdlijn en wie er al besteld heeft. Als ál jouw winkels de nieuwe geur op de plank hebben, ziet heel jouw regio hetzelfde merk — en tellen ze mee in jouw adoptiescore.']],
   d:['Bel nú de bovenste klant uit je lijst — niet straks, nu','Zet bij elk contact direct de volgende opvolgdatum: afspraak = afspraak','Open je score en kijk: hoeveel échte activaties sta je deze maand?'],
   p:'Wie elke dag zijn Vandaag-lijst leegwerkt, hoeft nooit achter zijn bonus aan te rennen — die komt vanzelf.'},
- 'am:dashboard':{t:'Cockpit — jouw klantenbestand',m:'Sterke winkels bouw je klant voor klant, contact voor contact. Hier staat alles van al jouw ondernemers: hun cijfers, hun geschiedenis, hun volgende stap. Dit is niet administratie — dit is jouw geheugen, jouw bewijs en jouw goudmijn in één.',o:[
+ 'am:dashboard':{t:'Mijn winkels — jouw klantenbestand',m:'Sterke winkels bouw je klant voor klant, contact voor contact. Hier staat alles van al jouw ondernemers: hun cijfers, hun geschiedenis, hun volgende stap. Dit is niet administratie — dit is jouw geheugen, jouw bewijs en jouw goudmijn in één.',o:[
   ['🔍','Filters','Filter op status (nieuw, groeit, stagneert, top) én op 🚀 In traject / 👤 Klanten. Die klanten-lijst is letterlijk je activatie-werkvoorraad: elke winkel daar is een maandbonus die nog niet verzilverd is. Combineer "Klanten + Stagneert" en je hebt je beste belkansen van de week.'],
   ['🗂️','Klantkaart','Registreer élk contact — bezoek, telefoon, mail — in twee tikken, direct na het gesprek. Waarom? Omdat wat geregistreerd is, meetelt voor je bonus, en omdat de volgende die deze klant helpt het hele verhaal kan lezen. Eén klant, één geschiedenis, één merk.'],
   ['📇','Gegevens','De teller laat zien welke klantdata nog mist. Volledige gegevens zijn geen formaliteit: een professioneel netwerk begint bij weten wie je klant is — en de partner kan het tegenwoordig ook zelf invullen.'],
@@ -2563,12 +2563,13 @@ VIEWS.dashboard=()=>{
      <img class="heroimg" src="assets/store_hero.jpg" alt="TapParfum-winkel met tapbar en geurwand" loading="lazy" onerror="this.style.display='none'">
      <div class="heroveil"></div>
      <div class="herobody">
-       <div class="hk">Accountmanager · Cockpit</div>
+       <div class="hk">Accountmanager · Mijn winkels</div>
        <h2>Welkom terug${Store.profile?', '+esc(Store.profile):''}</h2>
        <p>Je hele portfolio op één plek — stap de wereld van TapParfum binnen en stuur je tappunten van opstart naar groei.</p>
      </div>
    </div>
-   <div class="vhead"><div><h2>${ED('h2.'+route,`Cockpit`)}</h2><div class="sub">${ED('sub.'+route,`Je hele portfolio op één plek. Filter op situatie en werk per groep.`)}</div></div></div>
+   <div class="vhead"><div><h2>${ED('h2.'+route,`Mijn winkels`)}</h2><div class="sub">${ED('sub.'+route,`Al je tappunten — status, omzet en acties per winkel`)}</div></div></div>
+   <button class="btn ghost sm" style="margin-bottom:12px" onclick="go('vandaag')">☀️ Vandaag</button>
    ${navBack?`<button class="btn ghost sm" style="margin-bottom:12px" onclick="goBack()">← Terug naar ${esc(PAGE_TITLES[navBack]||navBack)}</button>`:''}
    ${actiesBanner}${backupBanner}
    <div class="kpirow">
@@ -2763,7 +2764,7 @@ VIEWS.agenda=()=>{
   const row=i=>`<div class="listrow ${i.diff==null?'amber':(i.diff<0?'red':(i.diff<=7?'coral':''))}">${i.chk?`<input type="checkbox" style="width:18px;height:18px;accent-color:var(--coral)" onchange="${i.chk}">`:''}<div class="ai" onclick="openTappunt('${i.cid}')"><div class="nm">${esc(i.name)} ${badge(i)}</div><div class="mo">${i.txt}${i.due?' · '+fmtDate(i.due):''}</div></div><div class="when ${i.diff!=null&&i.diff<0?'red':''}">${i.diff==null?'plannen':(i.diff<0?Math.abs(i.diff)+' dgn te laat':(i.diff===0?'vandaag':'over '+i.diff+' dgn'))}</div></div>`;
   const sec=(t,arr,col)=>arr.length?`<div class="sec-t" style="color:${col}">${t} (${arr.length})</div>${arr.map(row).join('')}`:'';
   V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Agenda`)}</h2><div class="sub">${ED('sub.'+route,`Alles wat opvolging vraagt op één stapel, gesorteerd op urgentie: eerst wat te laat is, dan vandaag, dan de rest. Vink af wat gedaan is; klik op een regel om het tappunt te openen.`)}</div></div></div>
-   ${clients().length===0?'<div class="empty">Nog geen tappunten. <a onclick="go(\'tappunten\')">Naar de Cockpit →</a></div>':`
+   ${clients().length===0?'<div class="empty">Nog geen tappunten. <a onclick="go(\'tappunten\')">Naar Mijn winkels →</a></div>':`
    <div class="kpirow" style="margin-bottom:18px">
      <div class="kpi"><div class="v ${telaat.length?'coral':''}">${telaat.length}</div><div class="l">Te laat</div></div>
      <div class="kpi"><div class="v">${vandaag.length}</div><div class="l">Vandaag</div></div>
@@ -2834,7 +2835,7 @@ VIEWS.heractiveren=()=>{
     return `<details class="trajg" id="traj-${tr.k}" open style="border-left:4px solid ${tr.col}"><summary><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${tr.col};flex-shrink:0"></span><span>${STATUS[tr.k].l}</span><span class="trajcount" style="background:${tr.col}">${items.length}</span><span class="trajfoc">${tr.foc}</span></summary><div class="trajbody"><p class="note" style="margin:6px 2px 10px">${tr.desc}</p>${items.length?items.map(x=>trajRow(x.t,tr,tdef)).join(''):'<div class="note" style="padding:6px 2px">Geen tappunten in dit traject.</div>'}</div></details>`;}).join('');
   V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Trajecten`)}</h2><div class="sub">${ED('sub.'+route,`Elk tappunt zit in één van vier trajecten, elk met een eigen kleur en aanpak. Klik op een tegel om naar dat traject te springen; leg per tappunt een actie + opvolgdatum vast — de opvolging verschijnt in de Agenda.`)}</div></div></div>
    ${gameBlokAM()}
-  ${cl.length===0?'<div class="empty">Nog geen tappunten. <a onclick="go(\'tappunten\')">Naar de Cockpit →</a></div>':tiles+groups}`;
+  ${cl.length===0?'<div class="empty">Nog geen tappunten. <a onclick="go(\'tappunten\')">Naar Mijn winkels →</a></div>':tiles+groups}`;
 };
 /* Spring vanaf de teltegels naar de bijbehorende trajectgroep. */
 function trajJump(k){var el=document.getElementById('traj-'+k);if(el){el.open=true;el.scrollIntoView({behavior:'smooth',block:'start'});}}
@@ -3378,7 +3379,7 @@ function pGegCard(t){const n=pGegIngevuld(t);const tot=PARTNER_GEG.length;const 
    ${koppel}</div>`;}
 VIEWS.zelf=()=>{
   const t=clients().find(x=>x.id===zelfClientId);
-  if(!t){V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Zelfservice`)}</h2></div></div><div class="empty">Geen tappunt geselecteerd. <a onclick="go('dashboard')">Naar Cockpit →</a></div>`;return;}
+  if(!t){V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Zelfservice`)}</h2></div></div><div class="empty">Geen tappunt geselecteerd. <a onclick="go('dashboard')">Naar Mijn winkels →</a></div>`;return;}
   if(!inTraject(t)){
     const _apz2=t.actiesGezienP||[];const _anw2=activeActies().filter(a=>_apz2.indexOf(a.id)<0);
     const ab2=_anw2.length?`<div class="card" style="border-left:4px solid var(--coral-d);margin-bottom:14px;cursor:pointer" onclick="go('acties')"><b>📣 ${_anw2.length===1?'Nieuwe actie':_anw2.length+' nieuwe acties'} van TapParfum!</b> <span style="color:var(--grey);font-size:13px">— bekijken →</span></div>`:'';
@@ -3529,7 +3530,7 @@ VIEWS.amacties=()=>{
       const resBlok=!on?'':(d.res
         ?`<div class="note" style="margin:2px 0 8px 26px">📊 ${d.res.werkte==='ja'?'👍 werkte goed':d.res.werkte==='deels'?'〰 werkte deels':'👎 werkte niet'}${d.res.tekst?' — '+esc(d.res.tekst):''}${d.punten?' · <b>+'+d.punten+' ptn</b>':''}${d.res.by==='partner'?' · door partner':''}</div>`
         :`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 8px 26px"><select id="ar-w-${a.id}-${t.id}" style="max-width:150px"><option value="">Resultaat…</option><option value="ja">👍 Werkte goed</option><option value="deels">〰 Werkte deels</option><option value="nee">👎 Werkte niet</option></select><input type="text" id="ar-t-${a.id}-${t.id}" placeholder="Kort: wat was het resultaat?" style="flex:1;min-width:160px"><button class="btn ghost sm" onclick="amResSave('${t.id}','${a.id}')">✔ Afronden</button></div>`);
-      return `<label class="chk ${on?'on':''}"><input type="checkbox" ${on?'checked':''} onchange="setDeelname('${t.id}','${a.id}',this.checked)"><span>${esc(t.name)}${on&&d&&d.by==='partner'?' <span style="color:var(--green);font-size:11px;font-weight:700">✓ zelf aangemeld</span>':''}</span></label>`+resBlok;}).join(''):'<div class="note">Nog geen tappunten in je cockpit.</div>';
+      return `<label class="chk ${on?'on':''}"><input type="checkbox" ${on?'checked':''} onchange="setDeelname('${t.id}','${a.id}',this.checked)"><span>${esc(t.name)}${on&&d&&d.by==='partner'?' <span style="color:var(--green);font-size:11px;font-weight:700">✓ zelf aangemeld</span>':''}</span></label>`+resBlok;}).join(''):'<div class="note">Nog geen tappunten in Mijn winkels.</div>';
     const pct=cl.length?Math.round(mee/cl.length*100):0;
     return `<div class="card" style="margin:10px 0;border-left:4px solid var(--coral)"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div style="flex:1;min-width:220px"><span style="color:var(--green);font-weight:800;font-size:12px">● Actief</span><div style="font-weight:800;font-size:16px;margin:3px 0">${esc(a.titel)}</div><span style="color:var(--grey);font-size:13px">${esc(a.desc||'')}</span><div class="note" style="margin-top:4px">${a.start?esc(a.start):''}${a.eind?' t/m '+esc(a.eind):''} · uitgezet door ${esc(a.by||'kantoor')}</div></div><div style="text-align:center;min-width:96px"><div style="font-size:22px;font-weight:800;color:var(--coral-d)">${mee}/${cl.length}</div><div style="font-size:10.5px;color:var(--grey);text-transform:uppercase;font-weight:700">doet mee</div><div class="rewbar" style="width:84px;margin:6px auto 0"><i style="width:${pct}%"></i></div></div></div>
     ${a.img?`<img src="${safeImgSrc(a.img)}" alt="" style="width:100%;max-height:170px;object-fit:cover;border-radius:12px;margin-top:10px">`:''}${videoEmbed(a.video)}
@@ -3556,7 +3557,7 @@ VIEWS.bezoeken=()=>{
   const ritme=cl.slice().map(t=>({t,d:dagenSindsBezoek(t)})).sort((a,b)=>(a.d==null?-1:(b.d==null?1:b.d-a.d))).slice(0,8);
   const worst=ritme.length?(ritme[0].d==null?'—':ritme[0].d+' dgn'):'—';
   const typeSeg=Object.keys(LOG_TYPES).map(k=>`<button data-k="${k}" class="${bezType===k?'on':''}" onclick="bezType='${k}';this.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k==='${k}'))">${LOG_TYPES[k].l}</button>`).join('');
-  const ritmeRows=cl.length?ritme.map(x=>{const warn=x.d==null||x.d>90;return `<div class="listrow ${warn?'amber':''}"><div class="ai" onclick="openTappunt('${x.t.id}')"><div class="nm">${esc(x.t.name)}</div><div class="mo">${x.d==null?'Nog nooit bezocht':'Laatste bezoek '+x.d+' dagen geleden'}${x.t.bezoekGepland?' · gepland: '+esc(x.t.bezoekGepland):''}</div></div><div class="when ${warn?'red':''}">${x.d==null?'plan in':(x.d>90?'⚠ '+x.d+' dgn':x.d+' dgn')}</div><button class="btn ghost sm" onclick="bezCheckin('${x.t.id}')" title="Aankomst registreren" aria-label="Check-in bij ${esc(x.t.name)}">📍 In</button>${x.t.tel?`<button class="btn ghost sm" onclick="belTappunt('${x.t.id}')">📞</button>`:''}<button class="btn ghost sm" onclick="bezQuickVisit('${x.t.id}')">Bezoek vastleggen</button></div>`;}).join(''):'<div class="empty">Nog geen tappunten. <a onclick="go(\'tappunten\')">Naar de Cockpit →</a></div>';
+  const ritmeRows=cl.length?ritme.map(x=>{const warn=x.d==null||x.d>90;return `<div class="listrow ${warn?'amber':''}"><div class="ai" onclick="openTappunt('${x.t.id}')"><div class="nm">${esc(x.t.name)}</div><div class="mo">${x.d==null?'Nog nooit bezocht':'Laatste bezoek '+x.d+' dagen geleden'}${x.t.bezoekGepland?' · gepland: '+esc(x.t.bezoekGepland):''}</div></div><div class="when ${warn?'red':''}">${x.d==null?'plan in':(x.d>90?'⚠ '+x.d+' dgn':x.d+' dgn')}</div><button class="btn ghost sm" onclick="bezCheckin('${x.t.id}')" title="Aankomst registreren" aria-label="Check-in bij ${esc(x.t.name)}">📍 In</button>${x.t.tel?`<button class="btn ghost sm" onclick="belTappunt('${x.t.id}')">📞</button>`:''}<button class="btn ghost sm" onclick="bezQuickVisit('${x.t.id}')">Bezoek vastleggen</button></div>`;}).join(''):'<div class="empty">Nog geen tappunten. <a onclick="go(\'tappunten\')">Naar Mijn winkels →</a></div>';
   let lg=allLog();
   if(bezTap!=='alle')lg=lg.filter(x=>x.t.id===bezTap);
   if(bezFilter!=='alle')lg=lg.filter(x=>x.e.type===bezFilter);
@@ -3699,7 +3700,8 @@ VIEWS.vandaag=()=>{
     return `<div class="listrow coral"><div class="ai" onclick="go('amacties')"><div class="nm">${i.ic} ${esc(i.t.titel)}</div><div class="mo" style="font-weight:600">${esc(i.lbl)}</div></div><button class="btn ghost sm" onclick="go('amacties')">→</button></div>`;};
   const nu=items.filter(i=>i.b==='nu'),week=items.filter(i=>i.b==='week'),ritme=items.filter(i=>i.b==='ritme');
   const groet=(h=>h<6?'Goedenacht':h<12?'Goedemorgen':h<18?'Goedemiddag':'Goedenavond')(new Date().getHours());
-  V().innerHTML=`<div class="vhead"><div><h2>${groet}, ${esc(Store.profile||'')} ☀️</h2><div class="sub">${items.length?`Je werklijst voor vandaag — ${nu.length?nu.length+' urgent, ':''}alles direct af te handelen vanuit deze lijst.`:'Alles bij — geen openstaande acties. Sterk!'}</div></div></div>
+  V().innerHTML=`<div class="vhead"><div><h2>${groet}, ${esc(Store.profile||'')} ☀️</h2><div class="sub">${ED('sub.'+route,`Je dagstart — wat nú aandacht vraagt`)}${items.length?` · ${nu.length?nu.length+' urgent, ':''}alles direct af te handelen vanuit deze lijst.`:' · alles bij — geen openstaande acties. Sterk!'}</div></div></div>
+   <button class="btn ghost sm" style="margin-bottom:12px" onclick="go('dashboard')">Mijn winkels →</button>
    ${wdBar()}${checkinBar()}${stripsVandaag()}${amEigenScore()}
    ${nu.length?`<div class="sec-t">🔥 Nu</div>${nu.map(row).join('')}`:''}
    ${week.length?`<div class="sec-t" style="margin-top:18px">📋 Deze week</div>${week.map(row).join('')}`:''}
