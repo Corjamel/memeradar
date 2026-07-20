@@ -35,6 +35,20 @@ aanmaken), daarna wire ik de app en testen we samen.
 > De **anon key** is veilig om in de app te zetten — die mag publiek. De
 > `service_role`-key deel je **nooit** en zet je nergens in de app.
 
+## Stap 2b — Extra beveiliging & isolatie draaien (jij, ~3 min)
+
+Draai in dezelfde **SQL Editor** (New query → alles plakken → Run) achter elkaar,
+**in deze volgorde**:
+
+1. `schema_am.sql` — elke accountmanager ziet alleen zijn eigen winkels.
+2. `storage_setup.sql` — privé-map per winkel voor documenten (Storage).
+3. `schema_guard.sql` — **kolom-bescherming**: een partner/AM kan zijn eigen
+   winkeldata opslaan, maar kan `geblokkeerd`, `snelstart` en `am_id` niet meer
+   wijzigen — ook niet via de browserconsole. Alleen kantoor (staff) mag dat.
+
+Alle drie zijn **idempotent**: veilig om nog eens te draaien als je twijfelt of
+het gelukt is. Je hoort telkens "Success" te zien.
+
 ## Stap 3 — Eerste kantoor-account = 'staff' (jij, ~2 min)
 
 Kantoor/AM moeten het hele netwerk kunnen zien; partners alleen hun eigen winkel.
