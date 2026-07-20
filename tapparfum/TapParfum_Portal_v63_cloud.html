@@ -555,7 +555,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v66c-cloud · game-kaart leesbaar (bg-fallback) + logo ingebouwd (geen extern bestand)';
+window.__TP_BUILD='v66d-cloud · pakketten klikbaar met inhoud + samenstelling';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -1086,7 +1086,7 @@ const TPCloud={
      Gevoelige namespaces (amAccounts/gebruikers/beheerPin/berichten/beheerLog/aiLog)
      blijven uitsluitend lokaal — PIN's en interne berichten mogen nooit in een
      wereld-leesbare tabel staan. Zelfde filter op pull (defense-in-depth). */
-  CENTRAL_SYNC:['acties','producten','brand','regels','flesMaten','margeFactor','shopUrl','teksten','modules','salesgame','layout'],
+  CENTRAL_SYNC:['acties','producten','brand','regels','flesMaten','margeFactor','shopUrl','teksten','modules','salesgame','layout','pakketInhoud'],
   _syncbaar:function(ns){return TPCloud.CENTRAL_SYNC.indexOf(ns)>=0;},
   pushCentral:function(ns,val){ if(!_tpCloudActief()||!TPCloud._syncbaar(ns))return; try{
     var r=window._tpSb.from('central').upsert({ns:ns,data:val},{onConflict:'ns'});
@@ -3040,14 +3040,30 @@ function jaarCalc(){
   const ja=document.getElementById("jAssump");if(ja)ja.textContent=`Aannames: ${calcSel.size} ml ${calcSel.type==='std'?'standaard':'Exclusive'}, 1 eerste fles (${eur(bottle)}) + ${refills} refills (${eur(refill)}) per klant. Flessen per dag = totaal ÷ 365.`;
 }
 /* ---- PAKKETTEN ---- */
+/* ---- Pakket-inhoud: klikbaar, met samenstelling + door kantoor in te vullen inhoud ---- */
+const PAK_INHOUD_DEFAULT='Per geur: een tapfles + tester. Inclusief geurnotenboek, promotiemateriaal (folders, poster, QR-code) en de TapParfum-uitstraling. Vanaf 160 geuren is de 1e promodag gratis. Bedragen zijn excl. btw; nabestellingen binnen 7 dagen na factuurdatum.';
+function pakBtw(v){return Math.round((+v||0)*1.21);}
+function pakSamenstelling(n){var mG=/(\d+)\s*geuren/i.exec(n),tot=mG?+mG[1]:null,mE=/(\d+)\s*Exclusive/i.exec(n),exc=mE?+mE[1]:0;return {tot:tot,exc:exc,reg:tot!=null?Math.max(tot-exc,0):null};}
+function pakInhoudMap(){return GStore.get('pakketInhoud',{});}
+function pakInhoudTekst(n){var m=pakInhoudMap();return (m[n]!=null&&String(m[n]).trim()!=='')?m[n]:PAK_INHOUD_DEFAULT;}
+function pakToggle(n){uiOpen['pak::'+n]=!uiOpen['pak::'+n];VIEWS.pakketten();}
+function pakInhoudSave(n,val){var m=pakInhoudMap();if(val&&val.trim())m[n]=val.trim();else delete m[n];GStore.set('pakketInhoud',m);toast('✓ Inhoud opgeslagen — zichtbaar voor iedereen.');}
+function pakRow(n,v,idx){var s=pakSamenstelling(n),op=!!uiOpen['pak::'+n],inhoud=pakInhoudTekst(n),eid='pakinh-'+idx,mag=(role==='kantoor'||role==='am');
+  return `<div class="listrow" style="display:block;cursor:pointer" onclick="pakToggle('${escAttrJs(n)}')" role="button" tabindex="0" onkeydown="chKey(event)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div class="nm">${lineDot(n)}${esc(n)}</div><div style="display:flex;align-items:center;gap:12px"><b>${eur0(v)}</b><span style="color:var(--grey)" aria-hidden="true">${op?'▾':'▸'}</span></div></div>
+    ${op?`<div onclick="event.stopPropagation()" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;font-weight:600;margin-bottom:10px">${s.tot!=null?`<span>🧴 <b>${s.tot}</b> geuren${s.exc?` · ${s.exc} Exclusive + ${s.reg} regulier`:''}</span>`:''}<span>💶 ${eur0(v)} excl. · <b>${eur0(pakBtw(v))}</b> incl. btw</span>${s.tot?`<span>≈ ${eur0(Math.round(v/s.tot))} per geur</span>`:''}</div>
+      <div class="fl" style="margin-top:0;margin-bottom:4px">📦 Wat zit erin</div>
+      ${mag?`<textarea id="${eid}" style="width:100%;min-height:66px;font-size:13px">${esc(inhoud)}</textarea><div style="margin-top:6px"><button class="btn ghost sm" onclick="pakInhoudSave('${escAttrJs(n)}',document.getElementById('${eid}').value)">Opslaan</button></div>`:`<p class="note" style="margin:0;white-space:pre-wrap">${esc(inhoud)}</p>`}
+    </div>`:''}</div>`;}
 VIEWS.pakketten=()=>{
   const PKGIMG=[['product_hero.jpg','Tapflessen op rij','Het assortiment'],['product_pour.jpg','Navullen','Refill-model'],['spray_display.jpg','TP-Spray display','Bijproduct'],['refill_graphic.jpg','Hervulbaar','Duurzaam']];
-  V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Pakketten`)}</h2><div class="sub">${ED('sub.'+route,`Promo 1e orders en bijproducten — investering excl. btw. Hulpmiddel voor het verkoopgesprek.`)}</div></div><button class="btn dark sm" onclick="go('calculator')">→ Calculator</button></div>
+  let _i=0;
+  V().innerHTML=`<div class="vhead"><div><h2>${ED('h2.'+route,`Pakketten`)}</h2><div class="sub">${ED('sub.'+route,`Klik een pakket open om de samenstelling en de inhoud te zien — investering excl. btw. Hulpmiddel voor het verkoopgesprek.`)}</div></div><button class="btn dark sm" onclick="go('calculator')">→ Calculator</button></div>
    <div class="imgstrip" style="margin-bottom:16px">${PKGIMG.map(p=>`<div class="imgcard"><img src="assets/${p[0]}" alt="${esc(p[1])}" loading="lazy" onerror="this.parentElement.style.display='none'"><div class="cap">${esc(p[1])}<small>${esc(p[2])}</small></div></div>`).join('')}</div>
-   <div class="card"><table class="tb"><thead><tr><th>Pakket</th><th>Investering (excl. btw)</th></tr></thead><tbody>
-   ${PAKKETTEN.map(s=>`<tr class="seg-row"><td colspan="2">${s.seg}</td></tr>`+s.items.map(([n,v])=>`<tr><td>${n}</td><td>${eur0(v)}</td></tr>`).join("")).join("")}</tbody></table></div>
-   <div class="card" style="margin-top:16px"><h2 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral);font-weight:800;margin-bottom:6px">Bijproducten (losse modules)</h2>
-   <table class="tb"><thead><tr><th>Module</th><th>Investering (excl. btw)</th></tr></thead><tbody>${BIJPRODUCTEN.map(([n,v])=>`<tr><td>${lineDot(n)}${n}</td><td>${eur0(v)}</td></tr>`).join("")}</tbody></table></div>`;
+   <div class="card">${PAKKETTEN.map(s=>`<div class="sec-t" style="margin:4px 0 8px">${esc(s.seg)}</div>`+s.items.map(([n,v])=>pakRow(n,v,_i++)).join("")).join("")}</div>
+   <div class="card" style="margin-top:16px"><div class="sec-t" style="margin:0 0 8px">Bijproducten (losse modules)</div>${BIJPRODUCTEN.map(([n,v])=>pakRow(n,v,_i++)).join("")}</div>
+   <p class="note" style="margin-top:10px">Klik een pakket open om de samenstelling en de inhoud te zien. De inhoud vul je één keer in — hij geldt netwerkbreed en wordt bij iedereen getoond.</p>`;
 };
 
 /* ---- FORMULIEREN ---- */
