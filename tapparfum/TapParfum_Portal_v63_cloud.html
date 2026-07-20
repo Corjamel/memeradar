@@ -555,7 +555,7 @@ function ensureSb(cb){
 </script>
 <script>
 /* Diagnose: maakt elke technische fout zichtbaar i.p.v. stil falen. */
-window.__TP_BUILD='v69-cloud · retour-bewijsfoto (partner uploadt, AM+kantoor zien)';
+window.__TP_BUILD='v70-cloud · documenten delen (Storage + lokale terugval)';
 window.onerror=function(msg,src,line,col){try{var b=document.getElementById('tp-err');
   if(!b){b=document.createElement('div');b.id='tp-err';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#B3261E;color:#fff;font:12px/1.5 -apple-system,Segoe UI,sans-serif;padding:10px 14px;white-space:pre-wrap;pointer-events:none';document.body.appendChild(b);}
   b.textContent='⚠ Technische fout — maak hier een foto van:\n'+msg+'\nregel '+line+':'+col+' · '+window.__TP_BUILD;}catch(e){}return false;};
@@ -3518,6 +3518,44 @@ function sigFotoAdd(cid,idx,ev){var f=ev.target&&ev.target.files&&ev.target.file
 function sigFotoBtn(cid,idx,label){return `<label class="btn ghost sm" style="cursor:pointer;margin:0">📷 ${esc(label||'Bewijsfoto')}<input type="file" accept="image/*" style="display:none" onchange="sigFotoAdd('${escAttrJs(String(cid))}',${idx},event)"></label>`;}
 function sigFotoView(s){return (s&&s.foto)?`<div style="margin-top:8px"><img src="${safeImgSrc(s.foto)}" alt="bewijsfoto" title="Klik om te vergroten" style="max-width:130px;max-height:130px;border-radius:8px;border:1px solid var(--line);cursor:zoom-in" onclick="event.stopPropagation();fotoGroot('${escAttrJs(s.foto)}')"></div>`:'';}
 function fotoGroot(url){if(!/^data:image\//i.test(String(url))&&!/^https?:\/\//i.test(String(url)))return;var d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out';d.onclick=function(){d.remove();};var img=document.createElement('img');img.src=url;img.style.cssText='max-width:96%;max-height:96%;border-radius:10px';d.appendChild(img);document.body.appendChild(d);}
+
+/* ====== 📎 DOCUMENTEN — delen tussen AM, klant en kantoor ======
+   Grote bestanden (PDF/offerte/foto) gaan naar Supabase Storage zodra je via de
+   cloud bent ingelogd; zonder cloud vallen kleine bestanden terug op lokale
+   opslag (data-URL, max 3 MB). De lijst leeft op het tappunt en synct mee. */
+var TP_DOC_BUCKET='tp-docs';
+function _docCloudAan(){return !!(window._tpSb&&window._tpCloudUser&&window._tpSb.storage);}
+function _tapFind(tid){if(role==='kantoor'){var ps=Store.listProfiles();for(var i=0;i<ps.length;i++){var t=(rawTappunten(ps[i])||[]).find(function(x){return x.id===tid;});if(t)return t;}return null;}return clients().find(function(x){return x.id===tid;})||null;}
+function _tapMut(tid,fn){if(role==='kantoor'){var ps=Store.listProfiles();for(var i=0;i<ps.length;i++){var ts=rawTappunten(ps[i]);var t=(ts||[]).find(function(x){return x.id===tid;});if(t){fn(t);saveRawTappunten(ps[i],ts);return true;}}return false;}var c=clients();var t2=c.find(function(x){return x.id===tid;});if(t2){fn(t2);saveClients(c);return true;}return false;}
+function _docWie(){if(role==='kantoor')return (kantoorNaam||'Kantoor')+' (kantoor)';if(role==='partner')return ((clients().find(function(x){return x.id===zelfClientId;})||{}).name||'Winkel');return (Store.profile||'Accountmanager')+' (AM)';}
+function _docSave(tid,doc){var ok=_tapMut(tid,function(t){t.docs=t.docs||[];t.docs.unshift(doc);});if(ok){toast('✓ Document toegevoegd — zichtbaar voor winkel, AM en kantoor.');refresh();}else toast('Kon document niet opslaan.');}
+function docUpload(tid,ev){var f=ev.target&&ev.target.files&&ev.target.files[0];if(!f)return;try{ev.target.value='';}catch(e){}
+  var doc={id:uid(),naam:f.name||'bestand',mime:f.type||'',size:f.size||0,at:vandaagISO(),door:_docWie()};
+  if(_docCloudAan()){var snel=((_tapFind(tid)||{}).snelstart)||tid;var path=String(snel).replace(/[^\w.\-]+/g,'_')+'/'+(''+Date.now())+'_'+String(f.name||'bestand').replace(/[^\w.\-]+/g,'_');
+    try{window._tpSb.storage.from(TP_DOC_BUCKET).upload(path,f,{upsert:true,contentType:f.type||undefined}).then(function(res){
+      if(res&&res.error){toast('Upload mislukt: '+res.error.message);return;}
+      doc.path=path;_docSave(tid,doc); /* privé bucket: geen vaste URL, we tekenen bij openen een signed URL */
+    });}catch(e){toast('Upload mislukt.');}
+    return;}
+  if((f.size||0)>3*1024*1024){toast('Bestand te groot voor lokale opslag (max 3 MB). Log in via de cloud voor grote bestanden.');return;}
+  var r=new FileReader();r.onload=function(){doc.data=String(r.result);_docSave(tid,doc);};r.onerror=function(){toast('Kon het bestand niet lezen.');};r.readAsDataURL(f);
+}
+function docOpen(tid,id){var t=_tapFind(tid);var d=t&&(t.docs||[]).find(function(x){return x.id===id;});if(!d)return;
+  if(d.path&&_docCloudAan()){ /* privé cloud-bestand: teken een tijdelijke signed URL */
+    try{window._tpSb.storage.from(TP_DOC_BUCKET).createSignedUrl(d.path,3600).then(function(r){var u=r&&r.data&&(r.data.signedUrl||r.data.signedURL);if(u)window.open(u,'_blank','noopener');else toast('Kon het document niet openen.');});}catch(e){toast('Kon het document niet openen.');}
+    return;}
+  var src=d.url||d.data||'';if(!src){toast('Geen bestand beschikbaar (staat in de cloud — log in via de cloud om het te openen).');return;}
+  if(/^data:image\//i.test(src)){fotoGroot(src);return;}
+  if(/^https?:/i.test(src)){window.open(src,'_blank','noopener');return;}
+  try{var a=document.createElement('a');a.href=src;a.download=d.naam||'document';document.body.appendChild(a);a.click();a.remove();}catch(e){toast('Kon het document niet openen.');}
+}
+function docDel(tid,id){edConfirm('Document verwijderen?','Dit verwijdert het uit de lijst.',function(){_tapMut(tid,function(t){t.docs=(t.docs||[]).filter(function(d){return d.id!==id;});});refresh();});}
+function _docIco(d){var m=(d.mime||'')+' '+(d.naam||'');if(/pdf/i.test(m))return '📄';if(/image|\.png|\.jpe?g|\.webp|\.gif/i.test(m))return '🖼️';if(/word|\.docx?/i.test(m))return '📝';if(/sheet|excel|\.xlsx?|\.csv/i.test(m))return '📊';return '📎';}
+function _docSize(n){n=+n||0;if(!n)return '';if(n<1024)return n+' B';if(n<1048576)return Math.round(n/1024)+' KB';return (Math.round(n/104857.6)/10)+' MB';}
+function docSectie(t){if(!t)return '';var docs=(t.docs||[]);
+  var rows=docs.length?docs.map(function(d){return `<div class="listrow" style="align-items:center"><div class="ai" style="cursor:pointer" onclick="docOpen('${escAttrJs(t.id)}','${escAttrJs(d.id)}')"><div class="nm">${_docIco(d)} ${esc(d.naam)}</div><div class="mo">${esc(d.door||'')} · ${esc(d.at||'')}${_docSize(d.size)?' · '+_docSize(d.size):''}${d.url?' · ☁ cloud':(d.data?' · lokaal':'')}</div></div><button class="btn ghost sm" onclick="docOpen('${escAttrJs(t.id)}','${escAttrJs(d.id)}')">Openen</button><button class="del" onclick="docDel('${escAttrJs(t.id)}','${escAttrJs(d.id)}')" style="margin-left:6px" title="Verwijderen">×</button></div>`;}).join(''):'<p class="note" style="margin:6px 0 0">Nog geen documenten. Upload een bestand — winkel, accountmanager én kantoor zien het.</p>';
+  return `<div class="card" style="margin-bottom:14px"><div class="zh">📎 Documenten</div><p class="note" style="margin:2px 0 8px">Deel bestanden heen en weer (PDF, offerte, foto…). ${_docCloudAan()?'Bestanden staan veilig in de cloud.':'<b>Lokaal</b> — log via de cloud in voor grote bestanden en delen tussen apparaten.'}</p>${rows}<div style="margin-top:10px"><label class="btn coral sm" style="cursor:pointer;margin:0">📎 Document uploaden<input type="file" style="display:none" onchange="docUpload('${escAttrJs(t.id)}',event)"></label></div></div>`;
+}
 /* ====== KLANT → ACCOUNTMANAGER: één duidelijke berichtlijn (vraag / bezoek / probleem / retour) ====== */
 const BERICHT_TYPES=[
   {cat:'Vraag',   ic:'❓', titel:'Stel een vraag',        hint:'Waar kunnen we je mee helpen?',                 ph:'Bijv. hoe bestel ik de nieuwe zomergeuren bij?'},
@@ -3588,7 +3626,7 @@ VIEWS.zelf=()=>{
      `<div class="card" style="margin-bottom:14px"><div class="zh">Jullie cijfers</div><p class="note" style="margin:4px 0">Inkoop bij TapParfum dit jaar: <b>${eur0(jaaromzet(t))}</b>${(()=>{const wi=winkelOmzetInfo(t);
        if(wi.bron!=='schatting')return ` · winkelverkoop <b>${eur0(wi.bedrag)}</b> <span style="font-size:11px">(echt · ${wi.bron==='kassa'?'kassa':'flessenteller'})</span>`;
        return margeFactor()>1?` · ≈ winkelomzet <b>${eur0(wi.bedrag)}</b> <span style="font-size:11px">(schatting ×${String(margeFactor()).replace('.',',')})</span>`:'';})()}${laatsteBestelling(t)?` · laatste bestelling ${esc(laatsteBestelling(t))}`:''}</p></div>`+
-     ab2+afspr2+pGegCard(t);
+     ab2+afspr2+pGegCard(t)+docSectie(t);
     return;}
   /* Drie fases: onboarding (inwerktraject loopt) → breakeven (terugverdienen) → existing (jaardoel). */
   const jo=jaaromzet(t);
@@ -3693,7 +3731,7 @@ VIEWS.zelf=()=>{
   const duo=(vooruit||spot)?`<div class="grid2" style="margin-top:14px">${vooruit}${spot.replace('margin-bottom:14px','margin-bottom:0')}</div>`:'';
   V().innerHTML=head+vier+hero+stats+berichtKnopKaart(t)+belStrip+nudge+actieBanner+fbBanner+blokTraject(t)+afsprCard+pGegCard(t)+
     `<div class="sec-t" style="margin-top:20px">Aan de slag</div>`+mid+duo+
-    `<div class="sec-t" style="margin-top:22px">Punten & administratie</div>`+punten+form+usp;
+    `<div class="sec-t" style="margin-top:22px">Punten & administratie</div>`+punten+form+usp+docSectie(t);
 };
 
 /* ---- ACTIES (AM) — centrale campagnes van kantoor + deelname per tappunt ---- */
