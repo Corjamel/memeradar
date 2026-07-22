@@ -7,6 +7,7 @@ import { useTappunten } from '../../tappunten/store.js'
 import { haalWinkelvragen } from '../../winkelvragen/api.js'
 import { haalAgenda } from '../../agenda/api.js'
 import { haalTreden, tredeVoor } from '../../beloningen/api.js'
+import { haalTaken } from '../../taken/api.js'
 import { haalAms } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
 
@@ -16,6 +17,7 @@ const vragen = ref([])
 const agenda = ref([])
 const ams = ref([])
 const treden = ref([])
+const taken = ref([])
 const fout = ref('')
 
 onMounted(async () => {
@@ -24,12 +26,14 @@ onMounted(async () => {
     ;[vragen.value, agenda.value] = await Promise.all([haalWinkelvragen(), haalAgenda()])
     if (auth.isKantoor) ams.value = await haalAms()
     if (auth.isPartner) treden.value = await haalTreden()
+    else taken.value = await haalTaken()
   } catch (e) { fout.value = 'Kon het overzicht niet volledig laden: ' + e.message }
 })
 
 const omzetTot = computed(() => st.items.reduce((s, t) => s + (Number(t.jaaromzet) || 0), 0))
 const blok = computed(() => st.items.filter(t => t.geblokkeerd).length)
 const openVragen = computed(() => vragen.value.filter(v => v.status === 'open').length)
+const openTaken = computed(() => taken.value.filter(t => !t.klaar).length)
 const komend = computed(() => agenda.value
   .filter(i => i.status === 'voorgesteld' || i.status === 'geaccepteerd')
   .sort((a, b) => (a.datum < b.datum ? -1 : 1)).slice(0, 3))
@@ -70,6 +74,10 @@ const mijnTrede = computed(() => eigen.value
         <div class="cijfer">{{ openVragen }}</div>
         <div class="lbl">open meldingen</div>
       </div>
+      <router-link v-if="!auth.isPartner" class="tegel klik" data-test="tile-taken" :to="{ name: 'taken' }">
+        <div class="cijfer">{{ openTaken }}</div>
+        <div class="lbl">open taken</div>
+      </router-link>
       <div v-if="auth.isKantoor" class="tegel" data-test="tile-blok">
         <div class="cijfer">{{ blok }}</div>
         <div class="lbl">geblokkeerd</div>
@@ -127,7 +135,8 @@ const mijnTrede = computed(() => eigen.value
 h1{margin:0 0 14px;font-size:22px}
 h2{margin:0 0 10px;font-size:15px}
 .tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-.tegel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.tegel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:inherit;text-decoration:none;display:block}
+.tegel.klik:hover{border-color:var(--coral)}
 .cijfer{font-size:22px;font-weight:800;color:var(--coral)}
 .lbl{font-size:12px;color:var(--grey);font-weight:700}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
