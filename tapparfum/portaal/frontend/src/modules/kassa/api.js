@@ -25,6 +25,14 @@ export async function bewaarFlesMaten(arr) {
   if (error) throw new Error(error.message)
 }
 
+// Modules aan/uit (central ns 'modules', v71-semantiek: !==false betekent aan).
+export async function haalModules() {
+  const { data, error } = await sb.from('central').select('ns,data').eq('ns', 'modules')
+  if (error) throw new Error(error.message)
+  const row = (data || [])[0]
+  return (row && row.data) || {}
+}
+
 // Kassatotalen over t.verkopen = { 'YYYY-MM-DD': { '15ml': n, ... } }
 export function vkTotaal(counts, maten) {
   const prijs = Object.fromEntries((maten || []).map(x => [x.m, +x.p || 0]))

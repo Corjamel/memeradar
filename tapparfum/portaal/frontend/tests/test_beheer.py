@@ -48,13 +48,15 @@ with sync_playwright() as p:
     ck("uitnodigen -> insert accountmanager (naam+email)", any(i[0]=='accountmanagers' and i[1]['naam']=='Marian' and i[1]['email']=='marian@tp.nl' for i in ins))
     ck("AM in lijst met status 'uitgenodigd'", pg.locator('[data-test=am-rij]').count()==1 and 'uitgenodigd' in (pg.text_content('[data-test=am-status]') or ''))
 
-    # winkel toewijzen aan de nieuwe AM
+    # winkel toewijzen aan de nieuwe AM (op de Winkels-tab)
     amid=pg.evaluate("window.__DB.accountmanagers[0].id")
+    pg.click('[data-test=tab-winkels]'); pg.wait_for_timeout(300)
     pg.select_option('[data-test=winkel-am]', amid); pg.wait_for_timeout(500)
     upd=pg.evaluate("window.__UPDATES")
     ck("toewijzen -> update tappunten.am_id", any(u[0]=='tappunten' and u[1].get('am_id')==amid for u in upd))
 
-    # verwijderen
+    # verwijderen (terug naar Mensen-tab)
+    pg.click('[data-test=tab-mensen]'); pg.wait_for_timeout(300)
     pg.click('[data-test=am-verwijder]'); pg.wait_for_timeout(200)
     pg.click('[data-test=am-verwijder]'); pg.wait_for_timeout(400)  # 2e klik = bevestigen
     dels=pg.evaluate("window.__DELETES")

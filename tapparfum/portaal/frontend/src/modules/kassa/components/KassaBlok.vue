@@ -6,7 +6,7 @@
 //  * de min-knop draait beide terug.
 import { computed, onMounted, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
-import { haalFlesMaten, vkTotaal, vkPeriode } from '../api.js'
+import { haalFlesMaten, haalModules, vkTotaal, vkPeriode } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
 
 const props = defineProps({ tappunt: { type: Object, required: true } })
@@ -15,11 +15,15 @@ const st = useTappunten()
 const maten = ref([])
 const fout = ref('')
 const bezig = ref(false)
+const zichtbaar = ref(true)      // kantoor kan de kassa-module netwerkbreed uitzetten
 const vandaag = new Date().toISOString().slice(0, 10)
 
 onMounted(async () => {
-  try { maten.value = await haalFlesMaten() }
-  catch (e) { fout.value = 'Kon kassaprijzen niet laden: ' + e.message }
+  try {
+    const mo = await haalModules()
+    zichtbaar.value = !mo || mo.kassa !== false
+    if (zichtbaar.value) maten.value = await haalFlesMaten()
+  } catch (e) { fout.value = 'Kon kassaprijzen niet laden: ' + e.message }
 })
 
 const dagCounts = computed(() => (props.tappunt.verkopen || {})[vandaag] || {})
@@ -65,7 +69,7 @@ async function min(maat) {
 </script>
 
 <template>
-  <section class="blok">
+  <section v-if="zichtbaar" class="blok">
     <h2>🧾 Kassa — tik elke verkoop</h2>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 

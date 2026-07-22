@@ -20,7 +20,7 @@
 | 9 | Bestellen-scherm partner (pakketten + shopUrl) | 1 | ontbreekt |
 | 10 | AM-Vandaag (7-bronnen-werklijst) | 1 | ontbreekt |
 | 11 | Logboek/bezoeken (t.logboek, types, afspraken, 90d-ritme) | 1 | deels |
-| 12 | Beheer-uitbreiding (rechten-matrix, AVG-export/anonimiseren, back-up) | 1 | deels |
+| 12 | Beheer-uitbreiding: tabs, winkels blokkeren, AVG-export/anonimiseren, back-up-export, modules aan/uit, audit-log ✅ · rechten-matrix per kantoor-gebruiker nog | 1 | grotendeels |
 | 13 | Instellingen (flesMaten, margeFactor, shopUrl ✅ · dagtypes nog) | 1 | grotendeels |
 | 14 | statusKey/levels/margeFactor/groei (rekenhart) | 1 | deels |
 | 15 | Partner-dashboard-fasering (onboarding→break-even→jaardoel) + nudges | 1 | deels |
