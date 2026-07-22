@@ -9,8 +9,8 @@
 
 | # | Onderdeel | Prio | Status |
 |---|-----------|------|--------|
-| 1 | Kassa (t.verkopen + flesMaten-prijzen + brug naar flesLog) | 1 | ontbreekt |
-| 2 | Calculator (break-even + jaardoel → t.be / t.goal) | 1 | ontbreekt |
+| 1 | Kassa (t.verkopen + flesMaten-prijzen + brug naar flesLog) | 1 | ✅ klaar |
+| 2 | Calculator (break-even + jaardoel → t.be / t.goal) | 1 | ✅ klaar |
 | 3 | Opstartchecklist/setup (t.setup, 6 fases, 18 acties) | 1 | ontbreekt |
 | 4 | Basispunten/bonuspunten (t.bp/t.bonus + claims) | 1 | ontbreekt |
 | 5 | Beloningen-engine (REWARDS + eisen + uitkering + vangnet) | 1 | deels |
@@ -21,7 +21,7 @@
 | 10 | AM-Vandaag (7-bronnen-werklijst) | 1 | ontbreekt |
 | 11 | Logboek/bezoeken (t.logboek, types, afspraken, 90d-ritme) | 1 | deels |
 | 12 | Beheer-uitbreiding (rechten-matrix, AVG-export/anonimiseren, back-up) | 1 | deels |
-| 13 | Instellingen (flesMaten, margeFactor, shopUrl, dagtypes) | 1 | ontbreekt |
+| 13 | Instellingen (flesMaten, margeFactor, shopUrl ✅ · dagtypes nog) | 1 | grotendeels |
 | 14 | statusKey/levels/margeFactor/groei (rekenhart) | 1 | deels |
 | 15 | Partner-dashboard-fasering (onboarding→break-even→jaardoel) + nudges | 1 | deels |
 | 16 | Actie-detail (deelname, feedback, punten, materialen) | 1 | deels |

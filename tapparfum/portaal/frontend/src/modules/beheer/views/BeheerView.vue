@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
-import { haalAms, voegAmToe, verwijderAm, zetWinkelAm } from '../api.js'
+import { haalAms, voegAmToe, verwijderAm, zetWinkelAm, haalCentral, bewaarCentral } from '../api.js'
+import { STANDAARD_MATEN } from '../../kassa/api.js'
 
 const st = useTappunten()
 const ams = ref([])
@@ -16,14 +17,31 @@ const AANTAL = computed(() => {
   return m
 })
 
+const inst = reactive({ maten: [], marge: 1, shopUrl: '' })
+const instMelding = ref('')
+
 async function laad() {
   fout.value = ''
   try {
     ams.value = await haalAms()
     if (!st.items.length) await st.laad()
+    const m = await haalCentral('flesMaten')
+    inst.maten = (Array.isArray(m) && m.length ? m : STANDAARD_MATEN).map(x => ({ ...x }))
+    inst.marge = Number(await haalCentral('margeFactor')) || 1
+    inst.shopUrl = String(await haalCentral('shopUrl') || '')
   } catch (e) { fout.value = 'Kon beheer niet laden: ' + e.message }
 }
 onMounted(laad)
+
+async function instellingenOpslaan() {
+  fout.value = ''; instMelding.value = ''
+  try {
+    await bewaarCentral('flesMaten', inst.maten.map(x => ({ m: x.m, p: Number(x.p) || 0 })))
+    await bewaarCentral('margeFactor', Number(inst.marge) || 1)
+    await bewaarCentral('shopUrl', inst.shopUrl.trim())
+    instMelding.value = '✓ Instellingen opgeslagen — direct actief voor het hele netwerk.'
+  } catch (e) { fout.value = 'Instellingen opslaan mislukt: ' + e.message }
+}
 
 async function toevoegen() {
   if (bezig.value) return
@@ -93,6 +111,29 @@ async function wijsToe(t, ev) {
         </select>
       </div>
       <p v-if="!st.items.length" class="stil">Nog geen winkels.</p>
+    </div>
+
+    <!-- Netwerk-instellingen -->
+    <div class="kaart">
+      <h2>⚙️ Netwerk-instellingen</h2>
+      <p class="note">Deze gelden direct voor alle winkels en accountmanagers.</p>
+      <div class="rij vorm">
+        <label v-for="(x, i) in inst.maten" :key="x.m">Kassaprijs {{ x.m }}
+          <input v-model="x.p" type="number" min="0" step="0.5" :data-test="'inst-prijs-' + i" />
+        </label>
+      </div>
+      <div class="rij vorm">
+        <label>Marge-factor (inkoop → winkelomzet)
+          <input v-model="inst.marge" type="number" min="0.1" step="0.1" data-test="inst-marge" />
+        </label>
+        <label>Bestelportaal-URL
+          <input v-model="inst.shopUrl" type="url" placeholder="https://bestel.tapparfum.nl…" data-test="inst-shopurl" />
+        </label>
+      </div>
+      <div class="rij">
+        <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>
+        <span v-if="instMelding" class="mo" role="status">{{ instMelding }}</span>
+      </div>
     </div>
   </div>
 </template>

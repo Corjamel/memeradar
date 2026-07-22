@@ -4,6 +4,7 @@ import { useTappunten } from '../store.js'
 import { useAuth } from '../../../stores/auth.js'
 import DocumentenBlok from '../../documenten/components/DocumentenBlok.vue'
 import ContactenBlok from '../../contacten/components/ContactenBlok.vue'
+import KassaBlok from '../../kassa/components/KassaBlok.vue'
 import VerkoopBlok from '../../verkoop/components/VerkoopBlok.vue'
 
 const props = defineProps({ code: { type: String, required: true } })
@@ -85,6 +86,7 @@ async function wisselBlokkade() {
       </form>
     </div>
 
+    <KassaBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <VerkoopBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <ContactenBlok :snelstart="bron.snelstart" />
     <DocumentenBlok :snelstart="bron.snelstart" />
