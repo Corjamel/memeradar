@@ -17,14 +17,14 @@
 | 6 | Producten + prodBesteld (lanceringen, fases, adoptie) | 1 | ✅ klaar (productfoto-upload volgt bij #28 merk & assets) |
 | 7 | Bestellingen-registratie (t.bestellingen + CSV + ritme) | 1 | ✅ klaar (zelfde importpoort als straks de B2B-API) |
 | 8 | Retour/probleem mét bewijsfoto + antwoord-flow | 1 | deels |
-| 9 | Bestellen-scherm partner (pakketten + shopUrl) | 1 | ontbreekt |
+| 9 | Bestellen-scherm partner (pakketten + shopUrl) | 1 | ✅ klaar (pakketInhoud-bewerken door kantoor kan later) |
 | 10 | AM-Vandaag (7-bronnen-werklijst) | 1 | ✅ klaar (werkdag/GPS-stempels volgen bij #19) |
 | 11 | Logboek/bezoeken (t.logboek, types, afspraken, 90d-ritme) | 1 | ✅ klaar (afspraken-popup bij openen winkel kan later) |
 | 12 | Beheer-uitbreiding: tabs, winkels blokkeren, AVG-export/anonimiseren, back-up-export, modules aan/uit, audit-log ✅ · rechten-matrix per kantoor-gebruiker nog | 1 | grotendeels |
 | 13 | Instellingen (flesMaten, margeFactor, shopUrl ✅ · dagtypes nog) | 1 | grotendeels |
 | 14 | statusKey/levels/margeFactor/groei (rekenhart) | 1 | ✅ klaar (cockpit-groepering op status volgt bij #15/#22) |
 | 15 | Partner-dashboard-fasering (onboarding→break-even→jaardoel) + nudges | 1 | deels |
-| 16 | Actie-detail (deelname, feedback, punten, materialen) | 1 | deels |
+| 16 | Actie-detail (deelname, feedback, punten, materialen) | 1 | ✅ klaar (bestelDeadline-veld kan later) |
 | 17 | Formulieren (7 stuks, t.forms) | 2 | ontbreekt |
 | 18 | Mail (compose + .eml-import) | 2 | ontbreekt |
 | 19 | Ritten/werkdag (GPS-momentopnames) | 2 | ontbreekt |
