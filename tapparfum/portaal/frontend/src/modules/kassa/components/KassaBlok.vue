@@ -8,6 +8,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
 import { haalFlesMaten, haalModules, vkTotaal, vkPeriode } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
+import { SALE_TYPES } from '../../rekenhart/logic.js'
+import { omzetPF } from '../../calculator/logic.js'
 
 const props = defineProps({ tappunt: { type: Object, required: true } })
 const emit = defineEmits(['bijgewerkt'])
@@ -50,6 +52,12 @@ async function plus(maat) {
   await bewaar({ ...t, verkopen, flesLog })
 }
 
+// v71-dagtype: het standaard verkooptype waarmee elke kassatik in de
+// flessenteller landt (t.dagType = index in SALE_TYPES).
+async function zetDagType(v) {
+  await bewaar({ ...props.tappunt, dagType: parseInt(v) || 0 })
+}
+
 async function min(maat) {
   if (bezig.value) return
   const t = props.tappunt
@@ -88,6 +96,13 @@ async function min(maat) {
       </div>
     </div>
 
+    <label class="dagtype">Standaardtype voor de flessenteller:
+      <select :value="tappunt.dagType ?? 1" :disabled="bezig" data-test="kassa-dagtype"
+              @change="zetDagType($event.target.value)">
+        <option v-for="(x, i) in SALE_TYPES" :key="i" :value="i">{{ x.label }} · {{ eur0(omzetPF(x.tp, x.md, x.sz)) }}</option>
+      </select>
+    </label>
+
     <div class="totalen">
       <div class="tot"><b data-test="kassa-vandaag">{{ eur0(totVandaag) }}</b><span>vandaag</span></div>
       <div class="tot"><b data-test="kassa-week">{{ eur0(week.tot) }}</b><span>deze week · {{ week.stuks }} st.</span></div>
@@ -106,6 +121,9 @@ h2{margin:0 0 12px;font-size:16px}
 .tik:disabled{opacity:.6}
 .prijs{font-size:11.5px;font-weight:700;opacity:.8}
 .onder{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:22px}
+.dagtype{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:12px;font-weight:700;color:var(--grey)}
+.dagtype select{padding:7px 9px;border:1.5px solid var(--line);border-radius:9px;font-size:12.5px;font-family:inherit;max-width:280px}
+.dagtype select:focus{border-color:var(--coral)}
 .n{font-size:12px;color:var(--grey);font-weight:700}
 .corr{background:none;border:1px solid var(--line);border-radius:6px;font-size:11px;font-weight:700;color:var(--grey);cursor:pointer;padding:1px 7px}
 .corr:hover{border-color:#b3261e;color:#b3261e}

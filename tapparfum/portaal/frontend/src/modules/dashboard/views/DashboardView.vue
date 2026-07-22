@@ -7,7 +7,11 @@ import { useTappunten } from '../../tappunten/store.js'
 import { haalWinkelvragen } from '../../winkelvragen/api.js'
 import { haalAgenda } from '../../agenda/api.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
-import { levelOf, jaaromzet } from '../../rekenhart/logic.js'
+import { levelOf, jaaromzet, beDone, flessenVerkocht } from '../../rekenhart/logic.js'
+import { setupComplete, setupCount, SETUP_TOTAL } from '../../setup/logic.js'
+import { haalActies, isActief } from '../../acties/api.js'
+import { haalProducten, actieveProducten } from '../../producten/api.js'
+import { doetMee, heeftRes } from '../../acties/logic.js'
 import { haalTaken } from '../../taken/api.js'
 import { haalAms } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
@@ -20,6 +24,8 @@ const agenda = ref([])
 const ams = ref([])
 const marge = ref(1)
 const taken = ref([])
+const acties = ref([])
+const producten = ref([])
 const fout = ref('')
 
 onMounted(async () => {
@@ -27,8 +33,10 @@ onMounted(async () => {
     if (!st.items.length) await st.laad()
     ;[vragen.value, agenda.value] = await Promise.all([haalWinkelvragen(), haalAgenda()])
     if (auth.isKantoor) ams.value = await haalAms()
-    if (auth.isPartner) marge.value = (await haalRekenConfig()).marge
-    else taken.value = await haalTaken()
+    if (auth.isPartner) {
+      marge.value = (await haalRekenConfig()).marge
+      ;[acties.value, producten.value] = await Promise.all([haalActies().catch(() => []), haalProducten().catch(() => [])])
+    } else taken.value = await haalTaken()
   } catch (e) { fout.value = 'Kon het overzicht niet volledig laden: ' + e.message }
 })
 
@@ -54,6 +62,51 @@ const topWinkels = computed(() => [...st.items]
   .sort((a, b) => (Number(b.jaaromzet) || 0) - (Number(a.jaaromzet) || 0)).slice(0, 5))
 const eigen = computed(() => st.items[0] || null)
 const mijnNiveau = computed(() => eigen.value ? levelOf(jaaromzet(eigen.value), marge.value) : null)
+
+/* v71-fasering: waar zit de winkel in de reis? onboarding -> terugverdienen ->
+   jaardoel. De faseringskaart toont per fase precies één duidelijke opdracht. */
+const fase = computed(() => {
+  const t = eigen.value
+  if (!auth.isPartner || !t) return null
+  if (!setupComplete(t)) {
+    return { key: 'onboarding', titel: '🚀 Opstartfase', n: setupCount(t), tot: SETUP_TOTAL,
+             pct: Math.round(setupCount(t) / SETUP_TOTAL * 100),
+             tekst: `Nog ${SETUP_TOTAL - setupCount(t)} stappen tot een vliegende start — werk de checklist af met je accountmanager.` }
+  }
+  if (t.be && !beDone(t)) {
+    const sold = flessenVerkocht(t)
+    return { key: 'breakeven', titel: '📈 Terugverdienfase', n: sold, tot: t.be.bottles,
+             pct: Math.min(100, Math.round(sold / t.be.bottles * 100)),
+             tekst: `${sold} van ${t.be.bottles} flessen — nog ${Math.max(0, t.be.bottles - sold)} tot je investering eruit is (plan: ±${t.be.perWk} per week).` }
+  }
+  const doel = (t.goal && t.goal.doel > 0) ? t.goal.doel : (Number(t.doel) || 0)
+  if (doel > 0) {
+    const jo = jaaromzet(t)
+    return { key: 'jaardoel', titel: '🎯 Jaardoel', n: jo, tot: doel,
+             pct: Math.min(100, Math.round(jo / doel * 100)),
+             tekst: jo >= doel ? 'Jaardoel gehaald — bespreek een nieuw doel met je accountmanager! 🎉'
+               : `${eur0(jo)} van ${eur0(doel)}${t.goal && t.goal.flWeek ? ` · richttempo ${t.goal.flWeek} flessen per week` : ''}.` }
+  }
+  return { key: 'doel-ontbreekt', titel: '🎯 Jaardoel', n: 0, tot: 0, pct: null,
+           tekst: 'Er staat nog geen jaardoel — vraag je accountmanager om samen het doel te zetten.' }
+})
+
+/* Nudges (v71: banners voor nieuw & openstaand) — klikbaar, verdwijnen vanzelf. */
+const nudges = computed(() => {
+  const t = eigen.value
+  if (!auth.isPartner || !t) return []
+  const uit = []
+  const vd = new Date().toISOString().slice(0, 10)
+  const nA = acties.value.filter(a => isActief(a) && !(t.actiesGezienP || []).includes(a.id)).length
+  if (nA) uit.push({ ic: '📣', txt: nA === 1 ? 'Nieuwe actie van TapParfum' : `${nA} nieuwe acties van TapParfum`, naar: 'acties' })
+  const nP = actieveProducten(producten.value).filter(p => !(t.prodGezienP || []).includes(p.id)).length
+  if (nP) uit.push({ ic: '🧴', txt: nP === 1 ? 'Nieuw product onderweg — bekijk de tijdlijn' : `${nP} nieuwe producten onderweg`, naar: 'producten' })
+  const fb = acties.value.filter(a => !a.archived && a.eind && a.eind < vd && doetMee(t, a.id) && !heeftRes(t, a.id)).length
+  if (fb) uit.push({ ic: '📊', txt: 'Actie afgelopen — vertel kort of het werkte (en verdien punten)', naar: 'acties' })
+  const afspr = (t.afspraken || []).filter(a => !a.done).length
+  if (afspr) uit.push({ ic: '📌', txt: `${afspr} open afspra${afspr === 1 ? 'ak' : 'ken'} met je accountmanager`, naar: 'winkel' })
+  return uit
+})
 const datum = new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
 // Vulmeter (signatuur): voortgang naar het jaardoel, anders naar het volgende niveau.
 const meterPct = computed(() => {
@@ -105,6 +158,22 @@ const meterLabel = computed(() => {
         <div class="cijfer">{{ blok }}</div>
         <div class="lbl">geblokkeerd</div>
       </div>
+    </div>
+
+    <!-- Partner: nudges -->
+    <router-link v-for="n in nudges" :key="n.txt" class="nudge" data-test="nudge"
+                 :to="n.naar === 'winkel' ? { name: 'winkel', params: { code: eigen.snelstart } } : { name: n.naar }">
+      <span class="ic">{{ n.ic }}</span><span class="ntxt">{{ n.txt }}</span><span class="pijl">→</span>
+    </router-link>
+
+    <!-- Partner: fase-kaart (onboarding -> terugverdienen -> jaardoel) -->
+    <div v-if="fase" class="kaart fasekaart" :data-test="'fase-' + fase.key">
+      <div class="kop"><h2>{{ fase.titel }}</h2>
+        <b v-if="fase.pct != null" class="pct">{{ fase.pct }}%</b>
+      </div>
+      <div v-if="fase.pct != null" class="balk"><div class="vul" :style="{ width: fase.pct + '%' }"></div></div>
+      <p class="regel">{{ fase.tekst }}</p>
+      <router-link v-if="eigen" class="link" :to="{ name: 'winkel', params: { code: eigen.snelstart } }">→ Naar je winkelpagina</router-link>
     </div>
 
     <!-- Partner: eigen winkel + niveau -->
@@ -165,6 +234,12 @@ h2{margin:0 0 10px;font-size:15px}
 .cijfer{font-size:22px;font-weight:800;color:var(--coral)}
 .lbl{font-size:12px;color:var(--grey);font-weight:700}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.nudge{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--coral);border-radius:12px;padding:10px 14px;margin-bottom:8px;color:inherit;text-decoration:none;font-size:13.5px;font-weight:600}
+.nudge:hover{border-color:var(--coral)}
+.nudge .ntxt{flex:1}
+.nudge .pijl{color:var(--coral-d);font-weight:800}
+.fasekaart{border-left:4px solid var(--coral)}
+.fasekaart .pct{margin-left:auto;color:var(--coral-d);font-size:18px;font-variant-numeric:tabular-nums}
 .kop{display:flex;align-items:center;gap:10px}
 .code{color:var(--grey);font-size:12.5px}
 .regel{margin:6px 0;font-size:14px}

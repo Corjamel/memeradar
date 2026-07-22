@@ -32,6 +32,8 @@ const wis = ref(null)            // twee-staps: AM verwijderen
 const anon = ref(null)           // twee-staps: winkel anonimiseren
 const inst = reactive({ maten: [], marge: 1, shopUrl: '' })
 const mod = reactive({ game: true, kassa: true, producten: true })
+const rechten = ref({})          // rechten-matrix kantoor-accounts (v71)
+const rechtNieuw = reactive({ email: '', rol: 'kantoor' })
 
 const wie = () => auth.user?.email || 'kantoor'
 const AANTAL = computed(() => {
@@ -51,6 +53,7 @@ async function laad() {
     inst.shopUrl = String(await haalCentral('shopUrl') || '')
     const mo = await haalCentral('modules') || {}
     mod.game = mo.game !== false; mod.kassa = mo.kassa !== false; mod.producten = mo.producten !== false
+    rechten.value = (await haalCentral('kantoorRechten')) || {}
     logboek.value = await haalLog()
   } catch (e) { fout.value = 'Kon beheer niet laden: ' + e.message }
 }
@@ -80,6 +83,43 @@ async function weg(a) {
     await verwijderAm(a.id)
     await log(wie(), `AM verwijderd: ${a.naam}`)
     await laad()
+  } catch (e) { fout.value = 'Verwijderen mislukt: ' + e.message }
+}
+
+// ---- Rechten-matrix kantoor-accounts (central ns 'kantoorRechten') -----
+async function rechtToevoegen() {
+  const mail = rechtNieuw.email.trim().toLowerCase()
+  if (!mail || bezig.value) return
+  bezig.value = true; fout.value = ''
+  try {
+    const m = { ...rechten.value, [mail]: rechtNieuw.rol === 'beheer' ? { rol: 'beheer' } : { rol: 'kantoor', acties: true, producten: true } }
+    await bewaarCentral('kantoorRechten', m)
+    rechten.value = m
+    await log(wie(), `Rechten vastgelegd: ${mail} = ${rechtNieuw.rol}`)
+    meld(`✓ Rechten voor ${mail} vastgelegd.`)
+    rechtNieuw.email = ''
+  } catch (e) { fout.value = 'Vastleggen mislukt: ' + e.message }
+  bezig.value = false
+}
+
+async function rechtZet(mail, k, v) {
+  try {
+    const m = { ...rechten.value, [mail]: { ...rechten.value[mail], [k]: !!v } }
+    await bewaarCentral('kantoorRechten', m)
+    rechten.value = m
+    await log(wie(), `Rechten gewijzigd: ${mail} · ${k}=${v ? 'aan' : 'uit'}`)
+  } catch (e) { fout.value = 'Wijzigen mislukt: ' + e.message }
+}
+
+async function rechtWeg(mail) {
+  if (wis.value !== mail) { wis.value = mail; return }
+  wis.value = null
+  try {
+    const m = { ...rechten.value }
+    delete m[mail]
+    await bewaarCentral('kantoorRechten', m)
+    rechten.value = m
+    await log(wie(), `Rechten-regel verwijderd: ${mail}`)
   } catch (e) { fout.value = 'Verwijderen mislukt: ' + e.message }
 }
 
@@ -195,9 +235,37 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
         <p v-if="!ams.length" class="stil">Nog geen accountmanagers uitgenodigd.</p>
       </div>
       <div class="kaart">
-        <h2>Kantoor-collega's</h2>
+        <h2>Kantoor-collega's & rechten</h2>
         <p class="note">Extra kantoor-logins maak je (nog) in Supabase: Authentication → Add user → daarna App metadata
           <code>{"role":"staff"}</code>. Vraag je beheerder of gebruik het account-script.</p>
+        <p class="note">Hieronder de <b>rechten-matrix</b> (v71): rol <b>beheer</b> ziet en mag alles; rol <b>kantoor</b>
+          krijgt alleen de aangevinkte onderdelen in het menu. Een account zonder regel = volledige rechten.</p>
+
+        <form class="rij vorm" @submit.prevent="rechtToevoegen">
+          <label>E-mailadres kantoor-account<input v-model="rechtNieuw.email" type="email" required placeholder="collega@retail-brands.nl" data-test="recht-email" /></label>
+          <label>Rol
+            <select v-model="rechtNieuw.rol" data-test="recht-rol">
+              <option value="beheer">beheer (alles)</option>
+              <option value="kantoor">kantoor (matrix)</option>
+            </select>
+          </label>
+          <button class="knop" type="submit" :disabled="bezig" data-test="recht-toevoegen">+ Vastleggen</button>
+        </form>
+
+        <div v-for="(r, mail) in rechten" :key="mail" class="rij item" data-test="recht-rij">
+          <b>{{ mail }}</b>
+          <span class="badge" :class="r.rol === 'beheer' ? 'groen' : 'wacht'">{{ r.rol }}</span>
+          <template v-if="r.rol !== 'beheer'">
+            <label class="vink"><input type="checkbox" :checked="r.acties !== false" :data-test="'recht-acties-' + mail"
+                   @change="rechtZet(mail, 'acties', $event.target.checked)" /> acties</label>
+            <label class="vink"><input type="checkbox" :checked="r.producten !== false" :data-test="'recht-producten-' + mail"
+                   @change="rechtZet(mail, 'producten', $event.target.checked)" /> producten</label>
+          </template>
+          <span class="spacer"></span>
+          <button class="weg" :class="{ zeker: wis === mail }" type="button" :data-test="'recht-weg-' + mail"
+                  aria-label="Rechten-regel verwijderen" @click="rechtWeg(mail)">{{ wis === mail ? 'Zeker?' : '✕' }}</button>
+        </div>
+        <p v-if="!Object.keys(rechten).length" class="stil">Nog geen rechten-regels — elk staff-account heeft nu volledige rechten.</p>
       </div>
     </template>
 
@@ -334,4 +402,6 @@ input:focus,select:focus{border-color:var(--coral)}
 .fout{color:#b3261e}
 .ok{color:#2c5a12;background:#f4faf0;border-radius:8px;padding:8px 10px;font-size:13.5px}
 .stil{color:var(--grey);font-size:13px}
+.vink{display:flex;flex-direction:row;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);cursor:pointer;min-width:0;flex:none}
+.vink input{width:15px;height:15px;accent-color:var(--coral)}
 </style>

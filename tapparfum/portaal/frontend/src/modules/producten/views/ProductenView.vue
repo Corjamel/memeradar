@@ -118,7 +118,7 @@ async function archiveer(p) {
     <p v-if="melding" class="melding" role="status">{{ melding }}</p>
 
     <!-- Kantoor: toevoegen / bewerken -->
-    <form v-if="auth.isKantoor" class="kaart vorm" @submit.prevent="opslaan">
+    <form v-if="auth.magProductenBeheren" class="kaart vorm" @submit.prevent="opslaan">
       <h2>{{ bewerkId ? 'Product bewerken' : 'Nieuwe lancering' }}</h2>
       <div class="rij">
         <label>Naam<input v-model="vorm.naam" required data-test="prod-naam" /></label>
@@ -143,7 +143,7 @@ async function archiveer(p) {
         <b class="naam">{{ p.naam }}</b>
         <span v-if="p.artnr" class="mo">#{{ p.artnr }}</span>
         <span v-if="p.archived" class="badge grijs">gearchiveerd</span>
-        <template v-if="auth.isKantoor">
+        <template v-if="auth.magProductenBeheren">
           <button class="klein" type="button" :aria-label="'Fase terug: ' + p.naam" @click="faseStap(p, -1)">◀</button>
           <button class="klein" type="button" :data-test="'fase-plus-' + p.id" :aria-label="'Fase vooruit: ' + p.naam" @click="faseStap(p, 1)">▶</button>
           <button class="klein" type="button" @click="startBewerk(p)">Bewerk</button>

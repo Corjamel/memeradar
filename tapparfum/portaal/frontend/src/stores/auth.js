@@ -17,6 +17,7 @@ export const useAuth = defineStore('auth', {
     user: null,
     role: null,        // 'kantoor' | 'am' | 'partner'
     amId: null,        // gezet als de gebruiker een accountmanager is
+    rechten: null,     // kantoor: rechten-matrix uit central 'kantoorRechten' (null = alles)
     ready: false,      // eerste sessie-check afgerond
     error: ''
   }),
@@ -24,12 +25,27 @@ export const useAuth = defineStore('auth', {
     ingelogd: (s) => !!s.user,
     isKantoor: (s) => s.role === 'kantoor',
     isAm: (s) => s.role === 'am',
-    isPartner: (s) => s.role === 'partner'
+    isPartner: (s) => s.role === 'partner',
+    // Rechten-matrix (v71 ALLE_RECHTEN): rol 'beheer' heeft alles; een entry
+    // met rol 'kantoor' krijgt alleen de aangevinkte onderdelen. Net als in
+    // v71 filtert dit het MENU — de data-beveiliging blijft RLS (staff).
+    magBeheer: (s) => s.role === 'kantoor' && (!s.rechten || s.rechten.rol === 'beheer'),
+    magActiesBeheren: (s) => s.role === 'kantoor' && (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.acties !== false),
+    magProductenBeheren: (s) => s.role === 'kantoor' && (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.producten !== false)
   },
   actions: {
     async _bepaalRol(user) {
       const meta = (user && user.app_metadata) || {}
-      if (meta.role === 'staff') { this.role = 'kantoor'; this.amId = null; return }
+      if (meta.role === 'staff') {
+        this.role = 'kantoor'; this.amId = null
+        // Rechten-matrix ophalen voor dit kantoor-account (geen entry = alles).
+        try {
+          const { data } = await sb.from('central').select('ns,data').eq('ns', 'kantoorRechten')
+          const matrix = (data && data[0] && data[0].data) || {}
+          this.rechten = matrix[String(user.email || '').toLowerCase()] || null
+        } catch (e) { this.rechten = null }
+        return
+      }
       // AM? -> zoek koppeling (RLS geeft alleen de eigen rij terug)
       try {
         const { data } = await sb.from('accountmanagers')
@@ -125,7 +141,7 @@ export const useAuth = defineStore('auth', {
 
     async signOut() {
       try { await sb.auth.signOut() } catch (e) {}
-      this.user = null; this.role = null; this.amId = null
+      this.user = null; this.role = null; this.amId = null; this.rechten = null
     }
   }
 })

@@ -3,7 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { haalBerichten, haalAccountmanagers, stuurBericht, beantwoord } from '../api.js'
-import { haalWinkelvragen, stuurWinkelvraag, beantwoordWinkelvraag } from '../../winkelvragen/api.js'
+import { haalWinkelvragen, stuurWinkelvraag, beantwoordWinkelvraag, fotoLink } from '../../winkelvragen/api.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -16,6 +16,7 @@ const antwoorden = reactive({})     // bericht-id -> concept (AM)
 const vraagAntwoorden = reactive({})// vraag-id -> concept (AM/kantoor)
 const nieuw = reactive({ aan_am: '', type: 'vraag', txt: '' })
 const nieuweVraag = reactive({ type: 'vraag', txt: '' })
+const nieuweFoto = ref(null)          // bewijsfoto bij retour/probleem
 
 const TYPE_LABEL = { vraag: '❓ Vraag', probleem: '⚠️ Probleem', retour: '↩️ Retour' }
 const AM_NAAM = () => Object.fromEntries(ams.value.map(a => [a.id, a.naam]))
@@ -59,10 +60,16 @@ async function meldVraag() {
   if (!nieuweVraag.txt.trim()) { fout.value = 'Typ eerst je bericht.'; return }
   bezig.value = true; fout.value = ''
   try {
-    await stuurWinkelvraag({ tappunt_snelstart: eigen.snelstart, type: nieuweVraag.type, txt: nieuweVraag.txt.trim() })
-    nieuweVraag.txt = ''; await laad()
+    await stuurWinkelvraag({ tappunt_snelstart: eigen.snelstart, type: nieuweVraag.type, txt: nieuweVraag.txt.trim(), foto: nieuweFoto.value })
+    nieuweVraag.txt = ''; nieuweFoto.value = null; await laad()
   } catch (e) { fout.value = 'Versturen mislukt: ' + e.message }
   bezig.value = false
+}
+
+// Bewijsfoto openen via een tijdelijke (signed) link.
+async function openFoto(v) {
+  try { window.open(await fotoLink(v.foto_pad), '_blank', 'noopener,noreferrer') }
+  catch (e) { fout.value = 'Foto openen mislukt: ' + e.message }
 }
 
 // -- AM/kantoor: winkelvraag beantwoorden --
@@ -94,6 +101,10 @@ async function beantwoordVraagItem(v) {
       </div>
       <label>Bericht
         <textarea v-model="nieuweVraag.txt" rows="3" required placeholder="Beschrijf je vraag, probleem of retour…" data-test="vraag-txt"></textarea>
+      </label>
+      <label v-if="nieuweVraag.type !== 'vraag'">Bewijsfoto (aangeraden bij retour)
+        <input type="file" accept="image/*" data-test="vraag-foto"
+               @change="nieuweFoto = $event.target.files[0] || null" />
       </label>
       <button class="btn" type="submit" :disabled="bezig" data-test="vraag-verstuur">{{ bezig ? 'Bezig…' : 'Versturen' }}</button>
     </form>
@@ -130,6 +141,7 @@ async function beantwoordVraagItem(v) {
         <span class="status" :class="v.status">{{ v.status === 'beantwoord' ? '✓ beantwoord' : 'open' }}</span>
       </div>
       <p class="txt">{{ v.txt }}</p>
+      <button v-if="v.foto_pad" class="fotoknop" type="button" data-test="vraag-foto-knop" @click="openFoto(v)">📷 Bekijk bewijsfoto</button>
       <p v-if="v.antwoord" class="antwoord" data-test="vraag-antwoord">↳ {{ v.antwoord }}<span v-if="v.antwoord_door" class="meta"> — {{ v.antwoord_door }}</span></p>
       <div v-if="!auth.isPartner && v.status === 'open'" class="beantwoord">
         <textarea v-model="vraagAntwoorden[v.id]" rows="2" placeholder="Typ je antwoord aan de winkel…" data-test="vraag-antwoord-veld"></textarea>
@@ -180,6 +192,9 @@ select:focus,textarea:focus{border-color:var(--coral)}
 .antwoord{margin:8px 0 0;font-size:13.5px;color:#2c5a12;background:#f4faf0;border-radius:8px;padding:8px 10px}
 .beantwoord{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
 .beantwoord textarea{flex:1}
+.fotoknop{align-self:flex-start;background:none;border:1.5px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12.5px;font-weight:700;color:var(--grey);cursor:pointer;margin-top:8px}
+.fotoknop:hover{border-color:var(--coral);color:var(--coral-d)}
+input[type=file]{padding:7px;border:1.5px dashed var(--line);border-radius:10px;font-size:13px}
 .fout{color:#b3261e}
 .stil{color:var(--grey)}
 </style>

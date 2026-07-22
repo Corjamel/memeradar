@@ -114,7 +114,7 @@ function video(a) { return videoEmbedUrl(a.video) }
     <p v-if="melding" class="melding" role="status" data-test="actie-melding">{{ melding }}</p>
 
     <!-- Kantoor: nieuwe actie -->
-    <form v-if="auth.isKantoor" class="kaart nieuw" @submit.prevent="toevoegen">
+    <form v-if="auth.magActiesBeheren" class="kaart nieuw" @submit.prevent="toevoegen">
       <label>Titel<input v-model="nieuw.titel" required placeholder="Bijv. Zomeractie 2026" data-test="actie-titel" /></label>
       <label>Omschrijving<textarea v-model="nieuw.omschrijving" rows="2" placeholder="Wat houdt de actie in?"></textarea></label>
       <div class="rij">
@@ -172,7 +172,7 @@ function video(a) { return videoEmbedUrl(a.video) }
         <span v-if="+a.punten > 0" class="chip" data-test="actie-chip-punten">+{{ a.punten }} punten</span>
         <span class="meta" v-if="a.start || a.eind">{{ a.start || '…' }} t/m {{ a.eind || '…' }}</span>
         <span v-if="!auth.isPartner" class="meta" data-test="actie-mee">{{ meeTelling(a) }}/{{ st.items.length }} doen mee</span>
-        <button v-if="auth.isKantoor" class="archief" type="button" data-test="actie-archiveer" @click="archiveer(a)">archiveer</button>
+        <button v-if="auth.magActiesBeheren" class="archief" type="button" data-test="actie-archiveer" @click="archiveer(a)">archiveer</button>
       </div>
       <p v-if="a.omschrijving" class="txt">{{ a.omschrijving }}</p>
       <p v-if="a.materialen" class="mo">🧰 Materialen: {{ a.materialen }}</p>
