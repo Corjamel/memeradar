@@ -14,6 +14,7 @@ import {
   dagenSindsBezoek, planBezoek, visitOpenClaims, dagenTot
 } from '../../logboek/logic.js'
 import { dagenSindsBestelling } from '../../bestellingen/logic.js'
+import { reactOpenLijst, reactDone } from '../../trajecten/logic.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -50,6 +51,15 @@ const items = computed(() => {
     if (o.diff < 0) uit.push({ b: 'nu', p: o.diff / 1000, ic: '⏰', kind: 'lognext', t: o.t, e: o.e, lbl, laat: true })
     else if (o.diff === 0) uit.push({ b: 'nu', p: 1, ic: '📅', kind: 'lognext', t: o.t, e: o.e, lbl })
     else if (o.diff <= 7) uit.push({ b: 'week', p: 10 + o.diff, ic: '📅', kind: 'lognext', t: o.t, e: o.e, lbl })
+  })
+
+  // 2b. Heractivatie-opvolgingen (v71 reactOpen) → zelfde cadans als agenda-items
+  reactOpenLijst(cl).forEach(o => {
+    const lbl = o.diff < 0 ? `heractivatie · ${Math.abs(o.diff)} dgn te laat` : (o.diff === 0 ? 'heractivatie · vandaag' : `heractivatie · over ${o.diff} dgn`)
+    const extra = o.goalW ? ` · doel ≈ ${o.goalW} flessen/week` : ''
+    if (o.diff < 0) uit.push({ b: 'nu', p: o.diff / 1000, ic: '🔁', kind: 'react', t: o.t, r: o.r, idx: o.idx, lbl: lbl + extra, laat: true })
+    else if (o.diff === 0) uit.push({ b: 'nu', p: 1, ic: '🔁', kind: 'react', t: o.t, r: o.r, idx: o.idx, lbl: lbl + extra })
+    else if (o.diff <= 7) uit.push({ b: 'week', p: 10 + o.diff, ic: '🔁', kind: 'react', t: o.t, r: o.r, idx: o.idx, lbl: lbl + extra })
   })
 
   // 3. Open winkelvragen (de berichtlijn) → nu
@@ -102,6 +112,7 @@ async function bewaar(t2) {
 }
 async function vinkFU(i, v) { await bewaar(markFU(i.f.t, i.f.k, v)) }
 async function vinkNext(i, v) { await bewaar(logNextDone(i.t, i.e.id, v)) }
+async function vinkReact(i, v) { await bewaar(reactDone(i.t, i.idx, v)) }
 async function vinkAfspraak(i, v) { await bewaar(afspraakDone(i.t, i.a.id, v, 'am')) }
 async function plan(i) {
   if (!planDatum.value) return
@@ -127,6 +138,7 @@ async function plan(i) {
         <!-- afvinkbaar -->
         <input v-if="i.kind === 'fu'" type="checkbox" :disabled="bezig" :data-test="'vink-fu-' + i.f.k" @change="vinkFU(i, $event.target.checked)" />
         <input v-else-if="i.kind === 'lognext'" type="checkbox" :disabled="bezig" @change="vinkNext(i, $event.target.checked)" />
+        <input v-else-if="i.kind === 'react'" type="checkbox" :disabled="bezig" :data-test="'vink-react-' + i.t.snelstart" @change="vinkReact(i, $event.target.checked)" />
         <input v-else-if="i.kind === 'afspraak'" type="checkbox" :disabled="bezig" @change="vinkAfspraak(i, $event.target.checked)" />
         <span v-else class="ic">{{ i.ic }}</span>
 
@@ -137,6 +149,7 @@ async function plan(i) {
           <span class="lbl">
             <template v-if="i.kind === 'fu' && i.f.tgt">{{ i.f.tgt }} · </template>
             <template v-if="i.kind === 'lognext'">{{ i.e.txt.slice(0, 90) }} · </template>
+            <template v-if="i.kind === 'react'">{{ i.r.actie }} · </template>
             <template v-if="i.kind === 'afspraak'">{{ i.a.txt }} · </template>
             <template v-if="i.kind === 'vraag'">{{ i.v.txt }} · </template>
             {{ i.lbl }}

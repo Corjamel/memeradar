@@ -31,10 +31,10 @@
 | 20 | Vieringen + milestones (checkMilestones) | 2 | ✅ klaar (bij omzet-, flessen- en kassamutaties + dashboard-banners) |
 | 21 | Geurbibliotheek + refill-bestellen | 2 | ontbreekt |
 | 22 | Kantoor-analyse/activiteit/team (kanalyse ✅ · kactFeed/kteam nog) | 2 | grotendeels |
-| 23 | Globale zoekfunctie | 2 | ontbreekt |
+| 23 | Globale zoekfunctie | 2 | ✅ klaar (winkels/notities/afspraken/bestellingen, AM+kantoor) |
 | 24 | Academy (6 cursussen, 28 lessen, t.academy) | 2 | ✅ klaar (gekoppeld aan de beloningen-engine) |
 | 25 | Sales Game (klassementen, podium) | 2/3 | ontbreekt |
-| 26 | Heractiveren (t.react) | 2 | ontbreekt |
+| 26 | Heractiveren (t.react) | 2 | ✅ klaar (4 trajecten + heractivatie-acties, opvolging in Vandaag) |
 | 27 | Community | 3 | ontbreekt |
 | 28 | Welkom/rondleiding, SPOTLIGHT, merk & assets, teksten-editor, layout-regie | 3 | ontbreekt |
 
