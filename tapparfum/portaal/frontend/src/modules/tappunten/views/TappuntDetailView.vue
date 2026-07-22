@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useTappunten } from '../store.js'
 import { useAuth } from '../../../stores/auth.js'
 import DocumentenBlok from '../../documenten/components/DocumentenBlok.vue'
@@ -18,7 +18,11 @@ const props = defineProps({ code: { type: String, required: true } })
 const st = useTappunten()
 const auth = useAuth()
 
-const vorm = reactive({ snelstart: '', name: '', contact: '', tel: '', email: '', adres: '', plaats: '' })
+// Volledige v71-gegevensset (GEG_VELDEN).
+const GEG = ['name', 'contact', 'tel', 'email', 'adres', 'postcode', 'plaats', 'land', 'type', 'display', 'bezoekmoment', 'web', 'jarig']
+const WINKELTYPES = ['', 'Drogisterij', 'Kapper', 'Beauty / nagelsalon', 'Cadeau / boetiek', 'Kleding', 'Supermarkt / gemak', 'Tankstation', 'Overig']
+const DISPLAYS = ['', 'Tapbar groot', 'Tapbar klein', 'Strip / hoekelement', 'Anders']
+const vorm = reactive({ snelstart: '', name: '', contact: '', tel: '', email: '', adres: '', postcode: '', plaats: '', land: '', type: '', display: '', bezoekmoment: '', web: '', jarig: '' })
 const bron = ref(null)
 const melding = ref('')
 const bezig = ref(false)
@@ -26,11 +30,11 @@ const marge = ref(1)
 
 function vulVorm(t) {
   bron.value = t
-  Object.assign(vorm, {
-    snelstart: t.snelstart || '', name: t.name || '', contact: t.contact || '',
-    tel: t.tel || '', email: t.email || '', adres: t.adres || '', plaats: t.plaats || ''
-  })
+  vorm.snelstart = t.snelstart || ''
+  GEG.forEach(k => { vorm[k] = t[k] || '' })
 }
+// Compleetheid: hoeveel van de 13 velden zijn ingevuld?
+const gegVol = computed(() => GEG.filter(k => String((bron.value || {})[k] || '').trim()).length)
 
 onMounted(async () => {
   if (!st.items.length) await st.laad()
@@ -44,7 +48,11 @@ async function opslaan() {
   bezig.value = true; melding.value = ''
   try {
     // beschermde velden (geblokkeerd/am_id) blijven van de bron — api stuurt ze nooit mee
-    const t = { ...bron.value, ...vorm, snelstart: bron.value.snelstart }
+    let t = { ...bron.value, ...vorm, snelstart: bron.value.snelstart }
+    // v71: bij een partner-wijziging een logboekregel achterlaten voor de AM.
+    if (auth.isPartner) {
+      t = { ...t, logboek: [{ id: 'l' + Date.now().toString(36), at: new Date().toISOString().slice(0, 10), type: 'notitie', txt: '📇 Partner heeft de winkelgegevens bijgewerkt', nextDate: '', nextDone: false }, ...(t.logboek || [])] }
+    }
     await st.bewaar(t)
     bron.value = t
     melding.value = '✓ Opgeslagen'
@@ -77,13 +85,29 @@ async function wisselBlokkade() {
         <span v-if="bron.geblokkeerd" class="badge" data-test="blok-badge">geblokkeerd</span>
       </div>
 
+      <p class="geg-teller" data-test="geg-teller">📇 Gegevens · {{ gegVol }}/13 ingevuld</p>
       <form class="vorm" @submit.prevent="opslaan">
-        <label>Winkelnaam<input v-model="vorm.name" required /></label>
-        <label>Contactpersoon<input v-model="vorm.contact" /></label>
+        <label>Winkelnaam<input v-model="vorm.name" required data-test="geg-name" /></label>
+        <label>Contactpersoon<input v-model="vorm.contact" data-test="geg-contact" /></label>
         <label>Telefoon<input v-model="vorm.tel" type="tel" /></label>
         <label>E-mail<input v-model="vorm.email" type="email" /></label>
         <label>Adres<input v-model="vorm.adres" /></label>
+        <label>Postcode<input v-model="vorm.postcode" data-test="geg-postcode" /></label>
         <label>Plaats<input v-model="vorm.plaats" /></label>
+        <label>Land<input v-model="vorm.land" placeholder="NL" /></label>
+        <label>Winkeltype
+          <select v-model="vorm.type" data-test="geg-type">
+            <option v-for="o in WINKELTYPES" :key="o" :value="o">{{ o || '— kies —' }}</option>
+          </select>
+        </label>
+        <label>Presentatie / display
+          <select v-model="vorm.display">
+            <option v-for="o in DISPLAYS" :key="o" :value="o">{{ o || '— kies —' }}</option>
+          </select>
+        </label>
+        <label>Beste bezoekmoment<input v-model="vorm.bezoekmoment" placeholder="di/do-ochtend, niet za" /></label>
+        <label>Website / Instagram<input v-model="vorm.web" placeholder="@winkel of url" /></label>
+        <label>Verjaardag eigenaar<input v-model="vorm.jarig" type="date" data-test="geg-jarig" /></label>
 
         <div class="acties">
           <button class="btn" type="submit" :disabled="bezig">{{ bezig ? 'Bezig…' : 'Opslaan' }}</button>
@@ -118,7 +142,9 @@ h1{margin:0;font-size:20px}
 .vorm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey)}
 input{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
-input:focus{border-color:var(--coral)}
+select{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit}
+input:focus,select:focus{border-color:var(--coral)}
+.geg-teller{margin:0 0 12px;font-size:12.5px;font-weight:700;color:var(--grey)}
 .acties{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
 .btn{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer}
 .btn.donker{background:#333}
