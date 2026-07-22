@@ -87,13 +87,9 @@ with sync_playwright() as p:
     pg.locator('[data-test=actie]:has-text("Zomeractie 2026") >> [data-test=actie-archiveer]').click(); pg.wait_for_timeout(500)
     ck("archiveren -> weer 1 lopende actie", pg.locator('[data-test=actie]').count()==1)
 
-    # Beloningen: overzicht + treden aanpassen
+    # Beloningen: kantoor-overzicht met v71-niveaus per winkel
     pg.click('nav >> text=Beloningen'); pg.wait_for_timeout(500)
-    ck("kantoor ziet treden per winkel (3 rijen)", pg.locator('[data-test=winkel-trede]').count()==3)
-    pg.fill('[data-test=trede-drempel-0]','3000')
-    pg.click('[data-test=treden-opslaan]'); pg.wait_for_timeout(500)
-    ups=pg.evaluate("window.__UPSERTS")
-    ck("opslaan -> upsert central ns 'beloningen' met drempel 3000", any(u[0]=='central' and u[1]['ns']=='beloningen' and u[1]['data'][0]['drempel']==3000 for u in ups))
+    ck("kantoor ziet niveaus per winkel (3 rijen)", pg.locator('[data-test=winkel-niveau]').count()==3)
     uitloggen(pg)
 
     # ===== AM (Marian) =====
@@ -107,17 +103,17 @@ with sync_playwright() as p:
     ck("AM ziet lopende actie, GEEN beheer-formulier", pg.locator('[data-test=actie]').count()==1 and pg.locator('[data-test=actie-toevoegen]').count()==0)
     uitloggen(pg)
 
-    # ===== PARTNER (omzet 6000 -> Zilver bij standaardtreden) =====
+    # ===== PARTNER (omzet 6000 -> niveau C bij marge-factor 1) =====
     pg.evaluate("""window.__DB.tappunten=[{snelstart:'kl-9',name:'Eigen Winkel',email:null,geblokkeerd:false,am_id:'am-1',data:{snelstart:'kl-9',name:'Eigen Winkel',jaaromzet:6000}}];
       window.__DB.central=window.__DB.central.filter(function(r){return r.ns!=='beloningen';});
       window.__MOCK.signin={data:{user:{id:'u-p',app_metadata:{}}},error:null};""")
     login(pg,"winkel@tp.nl")
     ck("partner-dashboard: eigen winkelkaart", pg.locator('[data-test=eigen-kaart]').count()==1)
-    ck("partner-dashboard: trede = Zilver (standaardladder)", 'Zilver' in (pg.text_content('[data-test=trede-naam]') or ''))
+    ck("partner-dashboard: niveau C (6000 bij factor 1)", (pg.text_content('[data-test=niveau-naam]') or '').strip()=='C')
     pg.click('nav >> text=Beloningen'); pg.wait_for_timeout(500)
-    ck("partner: huidige trede Zilver", 'Zilver' in (pg.text_content('[data-test=mijn-trede]') or ''))
-    ck("partner: 4 treden op de ladder", pg.locator('[data-test=trede]').count()==4)
-    ck("partner: GEEN treden-beheer", pg.locator('[data-test=treden-opslaan]').count()==0)
+    ck("partner: niveau-badge C", (pg.text_content('[data-test=niveau-badge]') or '').strip()=='C')
+    ck("partner: 5 spaarcadeaus zichtbaar", all(pg.locator(f'[data-test=rew-{k}]').count()==1 for k in ['vials','home','kaarsen','bodymist','promodag']))
+    ck("partner: GEEN winkel-overzicht (alleen eigen winkel)", pg.locator('[data-test=winkel-niveau]').count()==0)
 
     ck("geen pageerrors", len(errs)==0)
     for e in errs[:5]: print("   XX", e)

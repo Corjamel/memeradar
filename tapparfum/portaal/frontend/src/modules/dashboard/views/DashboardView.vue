@@ -6,7 +6,8 @@ import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { haalWinkelvragen } from '../../winkelvragen/api.js'
 import { haalAgenda } from '../../agenda/api.js'
-import { haalTreden, tredeVoor } from '../../beloningen/api.js'
+import { haalRekenConfig } from '../../beloningen/api.js'
+import { levelOf, jaaromzet } from '../../rekenhart/logic.js'
 import { haalTaken } from '../../taken/api.js'
 import { haalAms } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
@@ -17,7 +18,7 @@ const st = useTappunten()
 const vragen = ref([])
 const agenda = ref([])
 const ams = ref([])
-const treden = ref([])
+const marge = ref(1)
 const taken = ref([])
 const fout = ref('')
 
@@ -26,7 +27,7 @@ onMounted(async () => {
     if (!st.items.length) await st.laad()
     ;[vragen.value, agenda.value] = await Promise.all([haalWinkelvragen(), haalAgenda()])
     if (auth.isKantoor) ams.value = await haalAms()
-    if (auth.isPartner) treden.value = await haalTreden()
+    if (auth.isPartner) marge.value = (await haalRekenConfig()).marge
     else taken.value = await haalTaken()
   } catch (e) { fout.value = 'Kon het overzicht niet volledig laden: ' + e.message }
 })
@@ -52,21 +53,22 @@ const perAm = computed(() => {
 const topWinkels = computed(() => [...st.items]
   .sort((a, b) => (Number(b.jaaromzet) || 0) - (Number(a.jaaromzet) || 0)).slice(0, 5))
 const eigen = computed(() => st.items[0] || null)
-const mijnTrede = computed(() => eigen.value
-  ? tredeVoor(Number(eigen.value.jaaromzet) || 0, treden.value) : null)
+const mijnNiveau = computed(() => eigen.value ? levelOf(jaaromzet(eigen.value), marge.value) : null)
 const datum = new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
-// Vulmeter (signatuur): voortgang naar het jaardoel, anders naar de volgende trede.
+// Vulmeter (signatuur): voortgang naar het jaardoel, anders naar het volgende niveau.
 const meterPct = computed(() => {
   if (!auth.isPartner || !eigen.value) return null
   const jo = Number(eigen.value.jaaromzet) || 0
   const doel = Number(eigen.value.doel) || 0
   if (doel > 0) return Math.min(100, (jo / doel) * 100)
-  return mijnTrede.value && mijnTrede.value.volgende ? mijnTrede.value.pct : null
+  const lv = mijnNiveau.value
+  if (!lv || !lv.nextMin) return null
+  return Math.max(0, Math.min(100, ((jo * marge.value - lv.min) / (lv.nextMin - lv.min)) * 100))
 })
 const meterLabel = computed(() => {
   if (!eigen.value) return ''
   return (Number(eigen.value.doel) || 0) > 0 ? 'van jullie jaardoel'
-    : (mijnTrede.value && mijnTrede.value.volgende ? 'naar ' + mijnTrede.value.volgende.naam : '')
+    : (mijnNiveau.value && mijnNiveau.value.next ? 'naar niveau ' + mijnNiveau.value.next : '')
 })
 </script>
 
@@ -105,16 +107,16 @@ const meterLabel = computed(() => {
       </div>
     </div>
 
-    <!-- Partner: eigen winkel + beloningstrede -->
+    <!-- Partner: eigen winkel + niveau -->
     <div v-if="auth.isPartner && eigen" class="kaart" data-test="eigen-kaart">
       <div class="kop"><h2>{{ eigen.name }}</h2><span class="code">code {{ eigen.snelstart }}</span></div>
       <p class="regel">Jaaromzet: <b>{{ eur0(eigen.jaaromzet) }}</b></p>
-      <template v-if="mijnTrede">
-        <p class="regel">Beloningstrede:
-          <b data-test="trede-naam">{{ mijnTrede.huidig ? mijnTrede.huidig.naam : 'nog geen' }}</b>
-          <template v-if="mijnTrede.volgende"> · nog {{ eur0(Math.max(0, mijnTrede.volgende.drempel - (eigen.jaaromzet || 0))) }} tot {{ mijnTrede.volgende.naam }}</template>
+      <template v-if="mijnNiveau">
+        <p class="regel">Niveau:
+          <b data-test="niveau-naam">{{ mijnNiveau.k }}</b> — {{ mijnNiveau.r }}
+          <template v-if="mijnNiveau.next"> · nog {{ eur0(mijnNiveau.gap) }} tot niveau {{ mijnNiveau.next }}</template>
         </p>
-        <div v-if="mijnTrede.volgende" class="balk"><div class="vul" :style="{ width: mijnTrede.pct + '%' }"></div></div>
+        <div v-if="mijnNiveau.next && meterPct != null" class="balk"><div class="vul" :style="{ width: meterPct + '%' }"></div></div>
       </template>
       <router-link class="link" :to="{ name: 'winkel', params: { code: eigen.snelstart } }">→ Mijn winkelpagina</router-link>
     </div>

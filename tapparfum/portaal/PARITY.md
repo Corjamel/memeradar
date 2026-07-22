@@ -13,7 +13,7 @@
 | 2 | Calculator (break-even + jaardoel → t.be / t.goal) | 1 | ✅ klaar |
 | 3 | Opstartchecklist/setup (t.setup, 6 fases, 19 acties) | 1 | ✅ klaar (SETUPFORM-formulierkoppeling volgt bij #17) |
 | 4 | Basispunten/bonuspunten (t.bp/t.bonus + claims) | 1 | ✅ klaar (bezoek-gating van claims volgt bij #11) |
-| 5 | Beloningen-engine (REWARDS + eisen + uitkering + vangnet) | 1 | deels |
+| 5 | Beloningen-engine (REWARDS + eisen + uitkering + vangnet) | 1 | ✅ klaar (Academy-les-UI volgt bij #24; engine leest t.academy al) |
 | 6 | Producten + prodBesteld (lanceringen, fases, adoptie) | 1 | ontbreekt |
 | 7 | Bestellingen-registratie (t.bestellingen + CSV + ritme) | 1 | deels |
 | 8 | Retour/probleem mét bewijsfoto + antwoord-flow | 1 | deels |
@@ -22,7 +22,7 @@
 | 11 | Logboek/bezoeken (t.logboek, types, afspraken, 90d-ritme) | 1 | deels |
 | 12 | Beheer-uitbreiding: tabs, winkels blokkeren, AVG-export/anonimiseren, back-up-export, modules aan/uit, audit-log ✅ · rechten-matrix per kantoor-gebruiker nog | 1 | grotendeels |
 | 13 | Instellingen (flesMaten, margeFactor, shopUrl ✅ · dagtypes nog) | 1 | grotendeels |
-| 14 | statusKey/levels/margeFactor/groei (rekenhart) | 1 | deels |
+| 14 | statusKey/levels/margeFactor/groei (rekenhart) | 1 | ✅ klaar (cockpit-groepering op status volgt bij #15/#22) |
 | 15 | Partner-dashboard-fasering (onboarding→break-even→jaardoel) + nudges | 1 | deels |
 | 16 | Actie-detail (deelname, feedback, punten, materialen) | 1 | deels |
 | 17 | Formulieren (7 stuks, t.forms) | 2 | ontbreekt |
