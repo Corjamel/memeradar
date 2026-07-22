@@ -10,12 +10,16 @@ EXTRA = r"""
 window.__MOCK.signup={data:null,error:{message:'x'}};
 window.__RPC={data:null,error:null};
 window.__resetCalled=null; window.__lastRpc=null; window.__lastSignup=null;
-window.__TP_SUPABASE_MOCK.rpc=function(name,args){window.__lastRpc={name:name,args:args};
-  if(name==='claim_tappunt'&&!(__RPC.error)){
-    window.__DB.tappunten=[{snelstart:args.p_snelstart,name:'Nieuwe Winkel',email:null,geblokkeerd:false,am_id:null,
-      data:{snelstart:args.p_snelstart,name:'Nieuwe Winkel',jaaromzet:0,flesLog:[]}}];
+window.__TP_SUPABASE_MOCK.rpc=function(name,args){
+  if(name==='claim_tappunt'){
+    window.__lastRpc={name:name,args:args};
+    if(!(__RPC.error)){
+      window.__DB.tappunten=[{snelstart:args.p_snelstart,name:'Nieuwe Winkel',email:null,geblokkeerd:false,am_id:null,
+        data:{snelstart:args.p_snelstart,name:'Nieuwe Winkel',jaaromzet:0,flesLog:[]}}];
+    }
+    return Promise.resolve(window.__RPC);
   }
-  return Promise.resolve(window.__RPC);};
+  return Promise.resolve(window.__KOPPEL||{data:null,error:null});};
 window.__TP_SUPABASE_MOCK.auth.signUp=function(c){window.__lastSignup=c;return Promise.resolve(window.__MOCK.signup);};
 window.__TP_SUPABASE_MOCK.auth.resetPasswordForEmail=function(e){window.__resetCalled=e;return Promise.resolve({error:null});};
 """

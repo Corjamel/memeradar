@@ -10,7 +10,7 @@ const bezig = ref(false)
 const melding = ref('')
 
 const vorm = reactive({ email: '', wachtwoord: '' })
-const nieuw = reactive({ code: '', email: '', wachtwoord: '', wachtwoord2: '' })
+const nieuw = reactive({ soort: 'winkel', code: '', email: '', wachtwoord: '', wachtwoord2: '' })
 const reset = reactive({ email: '' })
 
 function wissel(m) { modus.value = m; melding.value = ''; auth.error = '' }
@@ -28,13 +28,15 @@ async function maakAccount() {
   if (nieuw.wachtwoord.length < 8) { auth.error = 'Kies een wachtwoord van minimaal 8 tekens.'; return }
   if (nieuw.wachtwoord !== nieuw.wachtwoord2) { auth.error = 'De wachtwoorden zijn niet gelijk.'; return }
   bezig.value = true; auth.error = ''
-  const res = await auth.signUpMetCode({
-    email: nieuw.email.trim(), wachtwoord: nieuw.wachtwoord, code: nieuw.code.trim()
-  })
+  const res = nieuw.soort === 'am'
+    ? await auth.signUpAm({ email: nieuw.email.trim(), wachtwoord: nieuw.wachtwoord })
+    : await auth.signUpMetCode({ email: nieuw.email.trim(), wachtwoord: nieuw.wachtwoord, code: nieuw.code.trim() })
   bezig.value = false
   if (res === 'ingelogd') router.push({ name: 'home' })
   else if (res === 'bevestig') {
-    melding.value = '✓ Bijna klaar! Check je mailbox en klik op de bevestigingslink. Log daarna hier in — je winkel koppelt dan automatisch.'
+    melding.value = nieuw.soort === 'am'
+      ? '✓ Bijna klaar! Check je mailbox en klik op de bevestigingslink. Log daarna hier in — je wordt automatisch gekoppeld als accountmanager.'
+      : '✓ Bijna klaar! Check je mailbox en klik op de bevestigingslink. Log daarna hier in — je winkel koppelt dan automatisch.'
     modus.value = 'in'; vorm.email = nieuw.email
   }
 }
@@ -71,13 +73,22 @@ async function stuurReset() {
       </div>
     </form>
 
-    <!-- Eerste keer: winkel maakt eigen account met snelstartcode -->
+    <!-- Eerste keer: winkel (snelstartcode) of uitgenodigde accountmanager -->
     <form v-else-if="modus === 'nieuw'" class="card" @submit.prevent="maakAccount">
       <div class="brand">TAPPARFUM</div>
-      <h1>Winkel-account aanmaken</h1>
-      <p class="uitleg">Vul de <b>snelstartcode</b> in die je van je accountmanager kreeg — je winkel koppelt automatisch aan je nieuwe account.</p>
-      <label>Snelstartcode
-        <input v-model="nieuw.code" required placeholder="bijv. kl-123" data-test="su-code" />
+      <h1>Account aanmaken</h1>
+      <div class="soortkeuze">
+        <label class="soort" :class="{ aan: nieuw.soort === 'winkel' }">
+          <input v-model="nieuw.soort" type="radio" value="winkel" data-test="soort-winkel" />🏬 Ik ben een winkel
+        </label>
+        <label class="soort" :class="{ aan: nieuw.soort === 'am' }">
+          <input v-model="nieuw.soort" type="radio" value="am" data-test="soort-am" />🚗 Ik ben accountmanager
+        </label>
+      </div>
+      <p v-if="nieuw.soort === 'winkel'" class="uitleg">Vul de <b>snelstartcode</b> in die je van je accountmanager kreeg — je winkel koppelt automatisch aan je nieuwe account.</p>
+      <p v-else class="uitleg">Gebruik het <b>e-mailadres waarop kantoor je heeft uitgenodigd</b> — je wordt dan automatisch gekoppeld.</p>
+      <label v-if="nieuw.soort === 'winkel'">Snelstartcode
+        <input v-model="nieuw.code" :required="nieuw.soort === 'winkel'" placeholder="bijv. kl-123" data-test="su-code" />
       </label>
       <label>E-mail
         <input v-model="nieuw.email" type="email" autocomplete="username" required placeholder="winkel@voorbeeld.nl" data-test="su-email" />
@@ -123,4 +134,8 @@ input:focus{outline:none;border-color:var(--coral)}
 .links{display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .links a{color:var(--coral);font-weight:700;font-size:13px;cursor:pointer}
 .links a:hover{text-decoration:underline}
+.soortkeuze{display:flex;gap:8px}
+.soort{flex:1;flex-direction:row;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:13px;cursor:pointer}
+.soort.aan{border-color:var(--coral);background:#fdeee7;color:var(--ink)}
+.soort input{width:16px;height:16px;accent-color:var(--coral)}
 </style>

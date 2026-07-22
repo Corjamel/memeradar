@@ -36,6 +36,13 @@ export const useAuth = defineStore('auth', {
           .select('id').eq('auth_user_id', user.id).limit(1)
         if (data && data.length) { this.role = 'am'; this.amId = data[0].id; return }
       } catch (e) { /* val terug op partner */ }
+      // Nog niet gekoppeld: misschien is dit een uitgenodigde AM (kantoor heeft
+      // zijn e-mail in Beheer gezet). De server koppelt alleen bij exacte
+      // e-mailmatch op een nog-vrije rij (RPC tp_koppel_am, migratie 009).
+      try {
+        const r = await sb.rpc('tp_koppel_am')
+        if (r && !r.error && r.data) { this.role = 'am'; this.amId = r.data; return }
+      } catch (e) { /* geen AM-uitnodiging */ }
       this.role = 'partner'; this.amId = null
     },
 
@@ -92,6 +99,23 @@ export const useAuth = defineStore('auth', {
       // koppelt de winkel automatisch (zie signIn).
       try { localStorage.setItem('tp_pending_claim::' + String(email).toLowerCase(), code) } catch (e) {}
       return 'bevestig'
+    },
+
+    // Eerste keer (accountmanager, uitgenodigd door kantoor): account aanmaken
+    // zonder code — de koppeling loopt server-side op e-mailmatch (tp_koppel_am).
+    async signUpAm({ email, wachtwoord }) {
+      this.error = ''
+      const { data, error } = await sb.auth.signUp({ email, password: wachtwoord })
+      if (error || !data || !data.user) {
+        this.error = 'Account aanmaken mislukt' + (error && error.message ? ': ' + error.message : '.')
+        return 'fout'
+      }
+      if (data.session && data.user) {
+        this.user = data.user
+        await this._bepaalRol(data.user)   // koppelt op e-mail als er een uitnodiging is
+        return 'ingelogd'
+      }
+      return 'bevestig'                    // e-mail bevestigen; koppeling volgt bij eerste login
     },
 
     async wachtwoordVergeten(email) {

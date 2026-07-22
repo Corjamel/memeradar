@@ -27,6 +27,7 @@ async function uitloggen() {
         <router-link :to="{ name: 'beloningen' }">Beloningen</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'deals' }">Deals</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'taken' }">Taken</router-link>
+        <router-link v-if="auth.role === 'kantoor'" :to="{ name: 'beheer' }">Beheer</router-link>
       </nav>
       <span class="spacer"></span>
       <span class="rol">{{ ROL_LABEL[auth.role] || auth.role }}</span>

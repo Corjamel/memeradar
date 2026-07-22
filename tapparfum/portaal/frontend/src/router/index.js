@@ -13,6 +13,7 @@ import ActiesView from '../modules/acties/views/ActiesView.vue'
 import BeloningenView from '../modules/beloningen/views/BeloningenView.vue'
 import DealsView from '../modules/deals/views/DealsView.vue'
 import TakenView from '../modules/taken/views/TakenView.vue'
+import BeheerView from '../modules/beheer/views/BeheerView.vue'
 
 const ALLE_ROLLEN = ['kantoor', 'am', 'partner']
 
@@ -27,6 +28,7 @@ const routes = [
   { path: '/beloningen', name: 'beloningen', component: BeloningenView, meta: { roles: ALLE_ROLLEN } },
   { path: '/deals', name: 'deals', component: DealsView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/taken', name: 'taken', component: TakenView, meta: { roles: ['kantoor', 'am'] } },
+  { path: '/beheer', name: 'beheer', component: BeheerView, meta: { roles: ['kantoor'] } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
