@@ -20,6 +20,7 @@ async function uitloggen() {
       <span class="brand" translate="no">TAPPARFUM</span>
       <nav class="mainnav" aria-label="Hoofdmenu">
         <router-link :to="{ name: 'home' }">Start</router-link>
+        <router-link v-if="auth.role !== 'partner'" :to="{ name: 'vandaag' }">Vandaag</router-link>
         <router-link :to="{ name: 'winkels' }">Winkels</router-link>
         <router-link :to="{ name: 'agenda' }">Agenda</router-link>
         <router-link :to="{ name: 'berichten' }">Berichten</router-link>

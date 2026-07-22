@@ -9,6 +9,7 @@ import SetupBlok from '../../setup/components/SetupBlok.vue'
 import PuntenBlok from '../../punten/components/PuntenBlok.vue'
 import BeloningBlok from '../../beloningen/components/BeloningBlok.vue'
 import BestellingenBlok from '../../bestellingen/components/BestellingenBlok.vue'
+import LogboekBlok from '../../logboek/components/LogboekBlok.vue'
 import VerkoopBlok from '../../verkoop/components/VerkoopBlok.vue'
 
 const props = defineProps({ code: { type: String, required: true } })
@@ -96,6 +97,7 @@ async function wisselBlokkade() {
     <PuntenBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <BeloningBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <BestellingenBlok :tappunt="bron" @bijgewerkt="bron = $event" />
+    <LogboekBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <ContactenBlok :snelstart="bron.snelstart" />
     <DocumentenBlok :snelstart="bron.snelstart" />
   </div>

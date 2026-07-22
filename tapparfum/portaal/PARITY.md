@@ -18,8 +18,8 @@
 | 7 | Bestellingen-registratie (t.bestellingen + CSV + ritme) | 1 | ✅ klaar (zelfde importpoort als straks de B2B-API) |
 | 8 | Retour/probleem mét bewijsfoto + antwoord-flow | 1 | deels |
 | 9 | Bestellen-scherm partner (pakketten + shopUrl) | 1 | ontbreekt |
-| 10 | AM-Vandaag (7-bronnen-werklijst) | 1 | ontbreekt |
-| 11 | Logboek/bezoeken (t.logboek, types, afspraken, 90d-ritme) | 1 | deels |
+| 10 | AM-Vandaag (7-bronnen-werklijst) | 1 | ✅ klaar (werkdag/GPS-stempels volgen bij #19) |
+| 11 | Logboek/bezoeken (t.logboek, types, afspraken, 90d-ritme) | 1 | ✅ klaar (afspraken-popup bij openen winkel kan later) |
 | 12 | Beheer-uitbreiding: tabs, winkels blokkeren, AVG-export/anonimiseren, back-up-export, modules aan/uit, audit-log ✅ · rechten-matrix per kantoor-gebruiker nog | 1 | grotendeels |
 | 13 | Instellingen (flesMaten, margeFactor, shopUrl ✅ · dagtypes nog) | 1 | grotendeels |
 | 14 | statusKey/levels/margeFactor/groei (rekenhart) | 1 | ✅ klaar (cockpit-groepering op status volgt bij #15/#22) |
