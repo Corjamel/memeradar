@@ -21,7 +21,8 @@ async function uitloggen() {
       <nav class="mainnav">
         <router-link :to="{ name: 'home' }">Start</router-link>
         <router-link :to="{ name: 'winkels' }">Winkels</router-link>
-        <router-link v-if="auth.role !== 'partner'" :to="{ name: 'berichten' }">Berichten</router-link>
+        <router-link :to="{ name: 'agenda' }">Agenda</router-link>
+        <router-link :to="{ name: 'berichten' }">Berichten</router-link>
       </nav>
       <span class="spacer"></span>
       <span class="rol">{{ ROL_LABEL[auth.role] || auth.role }}</span>

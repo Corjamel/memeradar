@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useTappunten } from '../store.js'
 import { useAuth } from '../../../stores/auth.js'
+import DocumentenBlok from '../../documenten/components/DocumentenBlok.vue'
 
 const props = defineProps({ code: { type: String, required: true } })
 const st = useTappunten()
@@ -81,6 +82,8 @@ async function wisselBlokkade() {
         </div>
       </form>
     </div>
+
+    <DocumentenBlok :snelstart="bron.snelstart" />
   </div>
 </template>
 

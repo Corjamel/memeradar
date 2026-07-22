@@ -165,13 +165,13 @@ apps lezen dezelfde tabellen.
 
 ## 10. Roadmap naar volwaardig CRM
 
-| Fase | Modules |
-|------|---------|
-| 0 (nu) | Fundering: auth + rollen + rechten (server-afgedwongen) |
-| 1 | Tappunten (winkels): lijst, detail, bewerken |
-| 2 | Berichten + agenda + documenten |
-| 3 | Dashboards per rol, acties, beloningen |
-| 4 | CRM-uitbreiding: contacten, deals, pijplijn, taken |
-| 5 | Koppelingen: WooCommerce (bestellingen), Microsoft 365 (mailtracking) |
+| Fase | Modules | Status |
+|------|---------|--------|
+| 0 | Fundering: auth + rollen + rechten (server-afgedwongen) | ✅ klaar |
+| 1 | Tappunten (winkels): lijst, detail, bewerken, blokkeren | ✅ klaar |
+| 2 | Berichten (kantoor↔AM), winkelvragen (partner→AM/kantoor), agenda (plannen + accepteren/afwijzen), documenten (privé Storage) | ✅ klaar |
+| 3 | Dashboards per rol, acties, beloningen | ⏳ volgende |
+| 4 | CRM-uitbreiding: contacten, deals, pijplijn, taken | |
+| 5 | Koppelingen: WooCommerce (bestellingen), Microsoft 365 (mailtracking) | |
 
 Elke fase = losse modules op dezelfde fundering. Niets hoeft in één keer af.

@@ -7,7 +7,7 @@ def ck(n,c):
 # Mock-Supabase met een mini-database. RLS simuleren we door __DB per rol te vullen
 # (de echte scoping is server-side bewezen met de PG16-gedragstesten).
 INIT = r"""
-window.__DB = { tappunten: [], accountmanagers: [], berichten: [] };
+window.__DB = { tappunten: [], accountmanagers: [], berichten: [], agenda: [], winkelvragen: [] };
 window.__UPSERTS=[]; window.__INSERTS=[]; window.__UPDATES=[];
 window.__MOCK = { session:null, signin:{data:null,error:{message:'x'}} };
 function _q(table){
@@ -119,7 +119,7 @@ with sync_playwright() as p:
     pg.click('nav >> text=Winkels'); pg.wait_for_timeout(600)
     ck("partner -> direct op eigen winkel-detail", 'Eigen Winkel' in (pg.text_content('h1') or ''))
     ck("partner ziet GEEN blokkeer-knop", pg.locator('[data-test=blok-knop]').count()==0)
-    ck("partner ziet GEEN Berichten-tab", pg.locator('nav >> text=Berichten').count()==0)
+    ck("partner ziet WEL een Berichten-tab (winkelvragen)", pg.locator('nav >> text=Berichten').count()==1)
 
     ck("geen pageerrors", len(errs)==0)
     for e in errs[:5]: print("   XX", e)
