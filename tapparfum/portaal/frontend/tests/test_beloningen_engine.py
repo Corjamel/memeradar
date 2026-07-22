@@ -81,7 +81,7 @@ with sync_playwright() as p:
     ck("AM-overzicht: 2 winkels met niveau", pg.locator('[data-test=winkel-niveau]').count()==2)
     ck("AM-overzicht: statusbadges Nieuw + Stagneert", 'Nieuw' in (pg.text_content('.kaart') or '') and 'Stagneert' in (pg.text_content('.kaart') or ''))
     pg.click('nav >> text=Winkels'); pg.wait_for_timeout(400)
-    pg.locator('[data-test=tappunt-rij]').first.click(); pg.wait_for_timeout(800)
+    pg.locator('[data-test=tappunt-rij]', has_text='Nieuwe Winkel').click(); pg.wait_for_timeout(800)
     ck("winkel zonder afgeronde checklist: status Nieuw", 'Nieuw' in (pg.text_content('[data-test=status-badge]') or ''))
     ck("winkel-detail: niveau D (omzet 500)", (pg.text_content('[data-test=niveau-badge]') or '').strip()=='D')
 

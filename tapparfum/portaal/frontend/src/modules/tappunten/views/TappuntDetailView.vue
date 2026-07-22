@@ -10,6 +10,8 @@ import PuntenBlok from '../../punten/components/PuntenBlok.vue'
 import BeloningBlok from '../../beloningen/components/BeloningBlok.vue'
 import BestellingenBlok from '../../bestellingen/components/BestellingenBlok.vue'
 import LogboekBlok from '../../logboek/components/LogboekBlok.vue'
+import SituatieBlok from '../components/SituatieBlok.vue'
+import { haalRekenConfig } from '../../beloningen/api.js'
 import VerkoopBlok from '../../verkoop/components/VerkoopBlok.vue'
 
 const props = defineProps({ code: { type: String, required: true } })
@@ -20,6 +22,7 @@ const vorm = reactive({ snelstart: '', name: '', contact: '', tel: '', email: ''
 const bron = ref(null)
 const melding = ref('')
 const bezig = ref(false)
+const marge = ref(1)
 
 function vulVorm(t) {
   bron.value = t
@@ -33,6 +36,7 @@ onMounted(async () => {
   if (!st.items.length) await st.laad()
   const t = st.byCode(props.code)
   if (t) vulVorm(t)
+  try { marge.value = (await haalRekenConfig()).marge } catch { /* factor 1 */ }
 })
 
 async function opslaan() {
@@ -91,6 +95,7 @@ async function wisselBlokkade() {
       </form>
     </div>
 
+    <SituatieBlok v-if="!auth.isPartner" :tappunt="bron" :marge="marge" @bijgewerkt="bron = $event" />
     <SetupBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <KassaBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <VerkoopBlok :tappunt="bron" @bijgewerkt="bron = $event" />
