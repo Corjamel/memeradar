@@ -56,7 +56,46 @@ export const useAuth = defineStore('auth', {
         return false
       }
       this.user = data.user
+      // Eerste-keer-flow met e-mailbevestiging: als er nog een snelstartcode
+      // klaarligt voor dit adres, koppel de winkel alsnog (claim_tappunt is
+      // server-side beveiligd: werkt alleen op een nog-ongekoppelde winkel).
+      try {
+        const k = 'tp_pending_claim::' + String(email).toLowerCase()
+        const pend = localStorage.getItem(k)
+        if (pend) {
+          const r = await sb.rpc('claim_tappunt', { p_snelstart: pend, p_user: email })
+          if (!r || !r.error) localStorage.removeItem(k)
+        }
+      } catch (e) { /* koppeling kan later alsnog */ }
       await this._bepaalRol(data.user)
+      return true
+    },
+
+    // Eerste keer (winkel): account aanmaken + winkel koppelen via snelstartcode.
+    // De server (RPC claim_tappunt, migratie 001) bewaakt dat de code klopt en
+    // de winkel nog vrij is — de browser wordt ook hier niet vertrouwd.
+    async signUpMetCode({ email, wachtwoord, code }) {
+      this.error = ''
+      const { data, error } = await sb.auth.signUp({ email, password: wachtwoord })
+      if (error || !data || !data.user) {
+        this.error = 'Account aanmaken mislukt' + (error && error.message ? ': ' + error.message : '.')
+        return 'fout'
+      }
+      if (data.session && data.user) {
+        this.user = data.user
+        const r = await sb.rpc('claim_tappunt', { p_snelstart: code, p_user: email })
+        if (r && r.error) this.error = 'Winkel koppelen mislukt: ' + r.error.message
+        await this._bepaalRol(data.user)
+        return 'ingelogd'
+      }
+      // E-mailbevestiging staat aan: onthoud de code; na de eerste login
+      // koppelt de winkel automatisch (zie signIn).
+      try { localStorage.setItem('tp_pending_claim::' + String(email).toLowerCase(), code) } catch (e) {}
+      return 'bevestig'
+    },
+
+    async wachtwoordVergeten(email) {
+      try { await sb.auth.resetPasswordForEmail(email) } catch (e) { /* stil: geen adres-lek */ }
       return true
     },
 
