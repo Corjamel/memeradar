@@ -4,19 +4,25 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '../stores/auth.js'
 
 import LoginView from '../modules/auth/views/LoginView.vue'
-import HomeView from '../modules/tappunten/views/HomeView.vue'
+import DashboardView from '../modules/dashboard/views/DashboardView.vue'
 import TappuntenListView from '../modules/tappunten/views/TappuntenListView.vue'
 import TappuntDetailView from '../modules/tappunten/views/TappuntDetailView.vue'
 import BerichtenView from '../modules/berichten/views/BerichtenView.vue'
 import AgendaView from '../modules/agenda/views/AgendaView.vue'
+import ActiesView from '../modules/acties/views/ActiesView.vue'
+import BeloningenView from '../modules/beloningen/views/BeloningenView.vue'
+
+const ALLE_ROLLEN = ['kantoor', 'am', 'partner']
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { publiek: true } },
-  { path: '/', name: 'home', component: HomeView, meta: { roles: ['kantoor', 'am', 'partner'] } },
-  { path: '/winkels', name: 'winkels', component: TappuntenListView, meta: { roles: ['kantoor', 'am', 'partner'] } },
-  { path: '/winkels/:code', name: 'winkel', component: TappuntDetailView, props: true, meta: { roles: ['kantoor', 'am', 'partner'] } },
-  { path: '/berichten', name: 'berichten', component: BerichtenView, meta: { roles: ['kantoor', 'am', 'partner'] } },
-  { path: '/agenda', name: 'agenda', component: AgendaView, meta: { roles: ['kantoor', 'am', 'partner'] } },
+  { path: '/', name: 'home', component: DashboardView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/winkels', name: 'winkels', component: TappuntenListView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/winkels/:code', name: 'winkel', component: TappuntDetailView, props: true, meta: { roles: ALLE_ROLLEN } },
+  { path: '/berichten', name: 'berichten', component: BerichtenView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/agenda', name: 'agenda', component: AgendaView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/acties', name: 'acties', component: ActiesView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/beloningen', name: 'beloningen', component: BeloningenView, meta: { roles: ALLE_ROLLEN } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 

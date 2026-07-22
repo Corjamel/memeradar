@@ -48,7 +48,7 @@ with sync_playwright() as p:
     pg.evaluate("window.__MOCK.signin={data:{user:{id:'u-staff',app_metadata:{role:'staff'}}},error:null}")
     login(pg, "kantoor@tp.nl","goed")
     ck("staff -> ingelogd als kantoor", pg.evaluate("!!document.querySelector('.rol')") and 'Kantoor' in (pg.text_content('.rol') or ''))
-    ck("kantoor ziet welkom-home", 'kantoor' in (pg.text_content('.rolregel') or ''))
+    ck("kantoor ziet dashboard (cockpit)", 'Kantoor-cockpit' in (pg.text_content('h1') or ''))
 
     # uitloggen
     pg.click('button:has-text("Uitloggen")'); pg.wait_for_timeout(300)
