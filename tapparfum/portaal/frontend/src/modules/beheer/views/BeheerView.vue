@@ -8,6 +8,7 @@ const ams = ref([])
 const fout = ref('')
 const bezig = ref(false)
 const nieuw = reactive({ naam: '', email: '' })
+const wis = ref(null)          // twee-staps verwijderen (AM weggooien is ingrijpend)
 
 const AANTAL = computed(() => {
   const m = {}
@@ -37,6 +38,8 @@ async function toevoegen() {
 }
 
 async function weg(a) {
+  if (wis.value !== a) { wis.value = a; return }   // bevestiging: tweede klik voert uit
+  wis.value = null
   try { await verwijderAm(a.id); await laad() }
   catch (e) { fout.value = 'Verwijderen mislukt: ' + e.message }
 }
@@ -72,7 +75,8 @@ async function wijsToe(t, ev) {
           {{ a.auth_user_id ? '✓ gekoppeld' : 'uitgenodigd' }}
         </span>
         <span class="mo">{{ AANTAL[a.id] || 0 }} winkel{{ (AANTAL[a.id] || 0) === 1 ? '' : 's' }}</span>
-        <button class="weg" type="button" data-test="am-verwijder" title="Verwijderen" @click="weg(a)">✕</button>
+        <button class="weg" :class="{ zeker: wis === a }" type="button" data-test="am-verwijder"
+                aria-label="Accountmanager verwijderen" @click="weg(a)">{{ wis === a ? 'Zeker?' : '✕' }}</button>
       </div>
       <p v-if="!ams.length" class="stil">Nog geen accountmanagers uitgenodigd.</p>
     </div>
@@ -83,7 +87,7 @@ async function wijsToe(t, ev) {
       <div v-for="t in st.items" :key="t.snelstart" class="rij item" data-test="winkel-rij">
         <b>{{ t.name }}</b>
         <span class="mo">{{ t.snelstart }}</span>
-        <select class="amsel" :value="t.am_id || ''" data-test="winkel-am" @change="wijsToe(t, $event)">
+        <select class="amsel" :value="t.am_id || ''" :aria-label="'Accountmanager voor ' + t.name" data-test="winkel-am" @change="wijsToe(t, $event)">
           <option value="">— geen AM —</option>
           <option v-for="a in ams" :key="a.id" :value="a.id">{{ a.naam }}</option>
         </select>
@@ -102,7 +106,7 @@ h2{margin:0 0 12px;font-size:16px}
 .vorm{align-items:flex-end;margin-bottom:8px}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);flex:1;min-width:160px}
 input,select{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit}
-input:focus,select:focus{outline:none;border-color:var(--coral)}
+input:focus,select:focus{border-color:var(--coral)}
 .knop{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer}
 .knop:disabled{opacity:.6}
 .note{font-size:12.5px;color:var(--grey);background:#faf7f2;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 10px}
@@ -115,6 +119,7 @@ input:focus,select:focus{outline:none;border-color:var(--coral)}
 .amsel{margin-left:auto;max-width:200px}
 .weg{background:none;border:0;color:var(--grey);cursor:pointer;font-size:14px}
 .weg:hover{color:#b3261e}
+.weg.zeker{color:#b3261e;font-weight:800}
 .fout{color:#b3261e}
 .stil{color:var(--grey);font-size:13px}
 </style>

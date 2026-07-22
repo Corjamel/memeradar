@@ -53,11 +53,11 @@ onMounted(async () => {
 .kop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 h1{margin:0;font-size:22px}
 .zoek{flex:1;min-width:220px;max-width:340px;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
-.zoek:focus{outline:none;border-color:var(--coral)}
+.zoek:focus{border-color:var(--coral)}
 .rows{display:flex;flex-direction:column;gap:8px}
 .row{display:flex;align-items:center;gap:10px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;font-size:14px}
 .row:hover{border-color:var(--coral)}
-.nm{font-weight:700}
+.nm{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mo{color:var(--grey);font-size:12.5px}
 .badge{margin-left:auto;background:#333;color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px}
 .fout{color:#b3261e}

@@ -15,6 +15,7 @@ const vandaag = new Date().toISOString().slice(0, 10)
 const fout = ref('')
 const melding = ref('')
 const bezig = ref(false)
+const wis = ref(null)          // twee-staps verwijderen: eerste klik = 'Zeker?'
 const omzet = reactive({ jaaromzet: props.tappunt.jaaromzet || '', doel: props.tappunt.doel || '' })
 const reg = reactive({ datum: vandaag, aantal: 1 })
 
@@ -49,6 +50,8 @@ async function registreer() {
 
 async function verwijder(e) {
   if (bezig.value) return
+  if (wis.value !== e) { wis.value = e; return }   // bevestiging: tweede klik voert uit
+  wis.value = null
   const t2 = { ...props.tappunt, flesLog: log.value.filter(x => x !== e) }
   await bewaar(t2, 'Regel verwijderd')
 }
@@ -83,9 +86,10 @@ async function verwijder(e) {
         <button class="knop" type="button" :disabled="bezig" data-test="fles-registreer" @click="registreer">+ Registreer</button>
       </div>
       <div v-if="laatste.length" class="loglijst">
-        <div v-for="e in laatste" :key="e.at + '-' + e.n + '-' + Math.random()" class="logrij" data-test="fles-regel">
+        <div v-for="(e, i) in laatste" :key="e.at + '-' + i" class="logrij" data-test="fles-regel">
           <span>{{ e.at }}</span><b>{{ e.n }} fles{{ e.n === 1 ? '' : 'sen' }}</b>
-          <button class="weg" type="button" data-test="fles-verwijder" title="Verwijderen" @click="verwijder(e)">✕</button>
+          <button class="weg" :class="{ zeker: wis === e }" type="button" data-test="fles-verwijder"
+                  aria-label="Verkoopregel verwijderen" @click="verwijder(e)">{{ wis === e ? 'Zeker?' : '✕' }}</button>
         </div>
       </div>
     </div>
@@ -99,7 +103,7 @@ h2{margin:0 0 12px;font-size:16px}
 .rij{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);flex:1;min-width:140px}
 input{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit}
-input:focus{outline:none;border-color:var(--coral)}
+input:focus{border-color:var(--coral)}
 .knop{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer}
 .knop:disabled{opacity:.6}
 .teller{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
@@ -113,6 +117,7 @@ input:focus{outline:none;border-color:var(--coral)}
 .logrij b{flex:1}
 .weg{background:none;border:0;color:var(--grey);cursor:pointer;font-size:13px}
 .weg:hover{color:#b3261e}
+.weg.zeker{color:#b3261e;font-weight:800}
 .fout{color:#b3261e;font-size:13px}
 .ok{color:#2c5a12;font-size:13px;margin:8px 0 0}
 </style>

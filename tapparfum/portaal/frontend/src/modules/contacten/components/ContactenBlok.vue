@@ -10,6 +10,7 @@ const contacten = ref([])
 const fout = ref('')
 const bezig = ref(false)
 const toon = ref(false)
+const wis = ref(null)          // twee-staps verwijderen
 const nieuw = reactive({ naam: '', functie: '', tel: '', email: '' })
 
 async function laad() {
@@ -32,6 +33,8 @@ async function toevoegen() {
 }
 
 async function weg(c) {
+  if (wis.value !== c) { wis.value = c; return }   // bevestiging: tweede klik voert uit
+  wis.value = null
   try { await verwijderContact(c.id); await laad() }
   catch (e) { fout.value = 'Verwijderen mislukt: ' + e.message }
 }
@@ -61,7 +64,8 @@ async function weg(c) {
         <template v-if="c.tel"> · {{ c.tel }}</template>
         <template v-if="c.email"> · {{ c.email }}</template>
       </span>
-      <button v-if="!auth.isPartner" class="weg" type="button" data-test="contact-verwijder" title="Verwijderen" @click="weg(c)">✕</button>
+      <button v-if="!auth.isPartner" class="weg" :class="{ zeker: wis === c }" type="button" data-test="contact-verwijder"
+              aria-label="Contact verwijderen" @click="weg(c)">{{ wis === c ? 'Zeker?' : '✕' }}</button>
     </div>
   </section>
 </template>
@@ -75,12 +79,13 @@ h2{margin:0;font-size:16px;flex:1}
 .knop:disabled{opacity:.6}
 .vorm{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 input{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;font-family:inherit}
-input:focus{outline:none;border-color:var(--coral)}
+input:focus{border-color:var(--coral)}
 .rij{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
 .rij:last-child{border-bottom:0}
 .mo{color:var(--grey);font-size:12.5px;flex:1}
 .weg{background:none;border:0;color:var(--grey);cursor:pointer;font-size:14px;padding:2px 6px}
 .weg:hover{color:#b3261e}
+.weg.zeker{color:#b3261e;font-weight:800}
 .fout{color:#b3261e;font-size:13px}
 .stil{color:var(--grey);font-size:13px;margin:10px 0 0}
 @media (max-width:640px){ .vorm{grid-template-columns:1fr} }

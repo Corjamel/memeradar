@@ -115,7 +115,7 @@ h2{margin:0 0 10px;font-size:15px}
 .beheer summary{cursor:pointer;font-weight:800;font-size:14px;margin-bottom:10px}
 .bewerkrij{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 input{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;font-family:inherit}
-input:focus{outline:none;border-color:var(--coral)}
+input:focus{border-color:var(--coral)}
 .kort{width:130px}
 .lang{flex:1;min-width:220px}
 .acties{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}

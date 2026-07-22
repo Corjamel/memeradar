@@ -1,10 +1,44 @@
-:root { --coral:#e2694f; --ink:#21343f; --line:#e7e2da; --grey:#8a8178; }
+/* ============================================================
+   TapParfum Portaal — designtokens & basis
+   Merk: TAPPARFUM-woordmerk (geen beeldmerk), koraal op warm crème.
+   Signatuur: de parfumfles-vulmeter (FlesMeter.vue) voor voortgang.
+   ============================================================ */
+:root {
+  --coral: #E2694F;        /* merkkoraal */
+  --coral-d: #C9503B;      /* donker koraal — tekst op licht */
+  --ink: #21343F;          /* hoofdtekst */
+  --grey: #8A8178;         /* secundaire tekst */
+  --cream: #FAF6F1;        /* pagina-achtergrond */
+  --card: #FFFFFF;
+  --line: #EBE3D8;         /* randen */
+  --soft: #FDEEE7;         /* koraal-tint vlakken */
+  --mist: #DCE8EC;         /* koele accent (bodymist) */
+  --green: #5B8C3E;
+  --green-soft: #E7F3D9;
+  --amber: #E8B04B;
+}
+
 * { box-sizing: border-box; }
+html { color-scheme: light; }
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
-  background: #faf7f2;
+  background: var(--cream);
+  -webkit-tap-highlight-color: transparent;
 }
-button { font-family: inherit; }
-input { font-family: inherit; }
+button, a, input, select, textarea, label { touch-action: manipulation; }
+button, input, select, textarea { font-family: inherit; }
+
+/* Zichtbare focus voor toetsenbord, rust voor muis/tik */
+:focus { outline: none; }
+:focus-visible { outline: 2.5px solid var(--coral-d); outline-offset: 2px; border-radius: 6px; }
+
+h1, h2, h3 { text-wrap: balance; }
+
+/* Cijfers lijnen netjes uit in kolommen en tegels */
+.bedrag, .cijfer, .totaal, .tegel b, .pct b { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

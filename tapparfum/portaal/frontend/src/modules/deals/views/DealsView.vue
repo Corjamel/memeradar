@@ -80,7 +80,7 @@ async function fase(d, ev) {
           <b class="dt">{{ d.titel }}</b>
           <span class="mo">{{ WINKEL[d.tappunt_snelstart] || d.tappunt_snelstart }}</span>
           <span class="mo">{{ eur0(d.waarde) }}<template v-if="d.verwacht"> · {{ d.verwacht }}</template></span>
-          <select class="fasesel" :value="d.fase" data-test="deal-fase" @change="fase(d, $event)">
+          <select class="fasesel" :value="d.fase" :aria-label="'Fase van deal ' + d.titel" data-test="deal-fase" @change="fase(d, $event)">
             <option v-for="[fk, flbl] in FASEN" :key="fk" :value="fk">{{ flbl }}</option>
           </select>
         </div>
@@ -98,7 +98,7 @@ h1{margin:0 0 4px;font-size:22px}
 .rij{display:flex;gap:12px;flex-wrap:wrap}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);flex:1;min-width:140px}
 select,input{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit}
-select:focus,input:focus{outline:none;border-color:var(--coral)}
+select:focus,input:focus{border-color:var(--coral)}
 .btn{align-self:flex-start;background:var(--coral);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer}
 .btn:disabled{opacity:.6}
 .pijplijn{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}

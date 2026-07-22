@@ -115,7 +115,8 @@ with sync_playwright() as p:
     ck("contact toegevoegd -> insert bij kl-1", any(i[0]=='contacten' and i[1]['tappunt_snelstart']=='kl-1' and i[1]['naam']=='Anja de Vries' for i in ins))
     ck("contact in de lijst", pg.locator('[data-test=contact-item]').count()==1)
     ck("AM heeft verwijderknop", pg.locator('[data-test=contact-verwijder]').count()==1)
-    pg.click('[data-test=contact-verwijder]'); pg.wait_for_timeout(400)
+    pg.click('[data-test=contact-verwijder]'); pg.wait_for_timeout(200)
+    pg.click('[data-test=contact-verwijder]'); pg.wait_for_timeout(400)  # 2e klik = bevestigen
     dels=pg.evaluate("window.__DELETES")
     ck("verwijderen -> delete-call", any(d[0]=='contacten' for d in dels))
     uitloggen(pg)

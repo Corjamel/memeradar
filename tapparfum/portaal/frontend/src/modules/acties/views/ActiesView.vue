@@ -77,7 +77,7 @@ h1{margin:0 0 4px;font-size:22px}
 .rij{display:flex;gap:12px;flex-wrap:wrap}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);flex:1;min-width:140px}
 input,textarea{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit}
-input:focus,textarea:focus{outline:none;border-color:var(--coral)}
+input:focus,textarea:focus{border-color:var(--coral)}
 .btn{align-self:flex-start;background:var(--coral);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer}
 .btn:disabled{opacity:.6}
 .itemkop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

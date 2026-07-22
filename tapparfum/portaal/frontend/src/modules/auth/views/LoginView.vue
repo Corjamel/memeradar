@@ -68,8 +68,8 @@ async function stuurReset() {
       <p v-if="auth.error" class="err" role="alert">{{ auth.error }}</p>
       <button class="btn" type="submit" :disabled="bezig">{{ bezig ? 'Bezig…' : 'Inloggen' }}</button>
       <div class="links">
-        <a role="button" tabindex="0" data-test="naar-nieuw" @click="wissel('nieuw')" @keydown.enter="wissel('nieuw')">🏬 Eerste keer? Winkel-account aanmaken</a>
-        <a role="button" tabindex="0" data-test="naar-reset" @click="wissel('reset')" @keydown.enter="wissel('reset')">Wachtwoord vergeten?</a>
+        <button type="button" data-test="naar-nieuw" @click="wissel('nieuw')">🏬 Eerste keer? Account aanmaken</button>
+        <button type="button" data-test="naar-reset" @click="wissel('reset')">Wachtwoord vergeten?</button>
       </div>
     </form>
 
@@ -88,7 +88,7 @@ async function stuurReset() {
       <p v-if="nieuw.soort === 'winkel'" class="uitleg">Vul de <b>snelstartcode</b> in die je van je accountmanager kreeg — je winkel koppelt automatisch aan je nieuwe account.</p>
       <p v-else class="uitleg">Gebruik het <b>e-mailadres waarop kantoor je heeft uitgenodigd</b> — je wordt dan automatisch gekoppeld.</p>
       <label v-if="nieuw.soort === 'winkel'">Snelstartcode
-        <input v-model="nieuw.code" :required="nieuw.soort === 'winkel'" placeholder="bijv. kl-123" data-test="su-code" />
+        <input v-model="nieuw.code" :required="nieuw.soort === 'winkel'" placeholder="bijv. kl-123" autocomplete="off" spellcheck="false" data-test="su-code" />
       </label>
       <label>E-mail
         <input v-model="nieuw.email" type="email" autocomplete="username" required placeholder="winkel@voorbeeld.nl" data-test="su-email" />
@@ -101,7 +101,7 @@ async function stuurReset() {
       </label>
       <p v-if="auth.error" class="err" role="alert">{{ auth.error }}</p>
       <button class="btn" type="submit" :disabled="bezig" data-test="su-maak">{{ bezig ? 'Bezig…' : 'Account aanmaken →' }}</button>
-      <div class="links"><a role="button" tabindex="0" @click="wissel('in')" @keydown.enter="wissel('in')">← Terug naar inloggen</a></div>
+      <div class="links"><button type="button" @click="wissel('in')">← Terug naar inloggen</button></div>
     </form>
 
     <!-- Wachtwoord vergeten -->
@@ -110,10 +110,10 @@ async function stuurReset() {
       <h1>Wachtwoord vergeten</h1>
       <p class="uitleg">Vul je e-mailadres in; je krijgt een mail met een link om een nieuw wachtwoord in te stellen.</p>
       <label>E-mail
-        <input v-model="reset.email" type="email" required placeholder="jij@voorbeeld.nl" data-test="reset-email" />
+        <input v-model="reset.email" type="email" required placeholder="jij@voorbeeld.nl" autocomplete="email" data-test="reset-email" />
       </label>
       <button class="btn" type="submit" :disabled="bezig" data-test="reset-stuur">{{ bezig ? 'Bezig…' : 'Stuur resetmail →' }}</button>
-      <div class="links"><a role="button" tabindex="0" @click="wissel('in')" @keydown.enter="wissel('in')">← Terug naar inloggen</a></div>
+      <div class="links"><button type="button" @click="wissel('in')">← Terug naar inloggen</button></div>
     </form>
   </div>
 </template>
@@ -126,14 +126,14 @@ h1{margin:0;font-size:22px}
 .uitleg{margin:0;font-size:13px;color:var(--grey)}
 label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;color:var(--grey)}
 input{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:15px}
-input:focus{outline:none;border-color:var(--coral)}
+input:focus{border-color:var(--coral)}
 .err{color:#b3261e;font-size:13px;margin:0}
 .okmsg{color:#2c5a12;font-size:13px;margin:0;background:#f4faf0;border-radius:8px;padding:8px 10px}
 .btn{margin-top:6px;background:var(--coral);color:#fff;border:0;border-radius:10px;padding:11px;font-weight:800;font-size:15px;cursor:pointer}
 .btn:disabled{opacity:.6;cursor:default}
 .links{display:flex;flex-direction:column;gap:6px;margin-top:4px}
-.links a{color:var(--coral);font-weight:700;font-size:13px;cursor:pointer}
-.links a:hover{text-decoration:underline}
+.links button{background:none;border:0;padding:0;text-align:left;color:var(--coral);font-weight:700;font-size:13px;cursor:pointer}
+.links button:hover{text-decoration:underline}
 .soortkeuze{display:flex;gap:8px}
 .soort{flex:1;flex-direction:row;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:13px;cursor:pointer}
 .soort.aan{border-color:var(--coral);background:#fdeee7;color:var(--ink)}

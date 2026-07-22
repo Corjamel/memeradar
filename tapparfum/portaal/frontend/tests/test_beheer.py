@@ -55,7 +55,8 @@ with sync_playwright() as p:
     ck("toewijzen -> update tappunten.am_id", any(u[0]=='tappunten' and u[1].get('am_id')==amid for u in upd))
 
     # verwijderen
-    pg.click('[data-test=am-verwijder]'); pg.wait_for_timeout(400)
+    pg.click('[data-test=am-verwijder]'); pg.wait_for_timeout(200)
+    pg.click('[data-test=am-verwijder]'); pg.wait_for_timeout(400)  # 2e klik = bevestigen
     dels=pg.evaluate("window.__DELETES")
     ck("verwijderen -> delete accountmanager", any(d[0]=='accountmanagers' for d in dels))
     uitloggen(pg)

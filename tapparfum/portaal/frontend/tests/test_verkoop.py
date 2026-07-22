@@ -57,7 +57,8 @@ with sync_playwright() as p:
     ck("beschermde velden ook hier NIET meegestuurd", all(not ({'geblokkeerd','am_id','auth_user_id'} & set(u[1].keys())) for u in ups if u[0]=='tappunten'))
 
     # regel verwijderen
-    pg.locator('[data-test=fles-verwijder]').first.click(); pg.wait_for_timeout(500)
+    pg.locator('[data-test=fles-verwijder]').first.click(); pg.wait_for_timeout(200)
+    pg.locator('[data-test=fles-verwijder]').first.click(); pg.wait_for_timeout(500)  # 2e klik = bevestigen
     ck("na verwijderen 1 regel over", pg.locator('[data-test=fles-regel]').count()==1)
     uitloggen(pg)
 

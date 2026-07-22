@@ -10,6 +10,7 @@ import { haalTreden, tredeVoor } from '../../beloningen/api.js'
 import { haalTaken } from '../../taken/api.js'
 import { haalAms } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
+import FlesMeter from '../../../components/FlesMeter.vue'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -53,11 +54,31 @@ const topWinkels = computed(() => [...st.items]
 const eigen = computed(() => st.items[0] || null)
 const mijnTrede = computed(() => eigen.value
   ? tredeVoor(Number(eigen.value.jaaromzet) || 0, treden.value) : null)
+const datum = new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
+// Vulmeter (signatuur): voortgang naar het jaardoel, anders naar de volgende trede.
+const meterPct = computed(() => {
+  if (!auth.isPartner || !eigen.value) return null
+  const jo = Number(eigen.value.jaaromzet) || 0
+  const doel = Number(eigen.value.doel) || 0
+  if (doel > 0) return Math.min(100, (jo / doel) * 100)
+  return mijnTrede.value && mijnTrede.value.volgende ? mijnTrede.value.pct : null
+})
+const meterLabel = computed(() => {
+  if (!eigen.value) return ''
+  return (Number(eigen.value.doel) || 0) > 0 ? 'van jullie jaardoel'
+    : (mijnTrede.value && mijnTrede.value.volgende ? 'naar ' + mijnTrede.value.volgende.naam : '')
+})
 </script>
 
 <template>
   <div>
-    <h1>{{ auth.isKantoor ? 'Kantoor-cockpit' : (auth.isAm ? 'Mijn overzicht' : 'Welkom') }}</h1>
+    <header class="held">
+      <div>
+        <p class="eyebrow">TapParfum Portaal · {{ datum }}</p>
+        <h1>{{ auth.isKantoor ? 'Kantoor-cockpit' : (auth.isAm ? 'Mijn overzicht' : 'Welkom') }}</h1>
+      </div>
+      <FlesMeter v-if="meterPct != null" :pct="meterPct" :label="meterLabel" />
+    </header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
     <!-- Tegels -->
@@ -132,7 +153,9 @@ const mijnTrede = computed(() => eigen.value
 </template>
 
 <style scoped>
-h1{margin:0 0 14px;font-size:22px}
+.held{display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(115deg,var(--soft),#fff 72%);border:1px solid var(--line);border-radius:18px;padding:18px 22px;margin-bottom:14px}
+.eyebrow{margin:0 0 3px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--coral-d)}
+h1{margin:0;font-size:24px}
 h2{margin:0 0 10px;font-size:15px}
 .tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
 .tegel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:inherit;text-decoration:none;display:block}

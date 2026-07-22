@@ -101,7 +101,7 @@ h1{margin:0;font-size:20px}
 .vorm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey)}
 input{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
-input:focus{outline:none;border-color:var(--coral)}
+input:focus{border-color:var(--coral)}
 .acties{grid-column:1 / -1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
 .btn{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer}
 .btn.donker{background:#333}
