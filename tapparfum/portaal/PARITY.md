@@ -11,8 +11,8 @@
 |---|-----------|------|--------|
 | 1 | Kassa (t.verkopen + flesMaten-prijzen + brug naar flesLog) | 1 | ✅ klaar |
 | 2 | Calculator (break-even + jaardoel → t.be / t.goal) | 1 | ✅ klaar |
-| 3 | Opstartchecklist/setup (t.setup, 6 fases, 18 acties) | 1 | ontbreekt |
-| 4 | Basispunten/bonuspunten (t.bp/t.bonus + claims) | 1 | ontbreekt |
+| 3 | Opstartchecklist/setup (t.setup, 6 fases, 19 acties) | 1 | ✅ klaar (SETUPFORM-formulierkoppeling volgt bij #17) |
+| 4 | Basispunten/bonuspunten (t.bp/t.bonus + claims) | 1 | ✅ klaar (bezoek-gating van claims volgt bij #11) |
 | 5 | Beloningen-engine (REWARDS + eisen + uitkering + vangnet) | 1 | deels |
 | 6 | Producten + prodBesteld (lanceringen, fases, adoptie) | 1 | ontbreekt |
 | 7 | Bestellingen-registratie (t.bestellingen + CSV + ritme) | 1 | deels |
@@ -47,7 +47,7 @@ Op het tappunt-record (`tappunten.data` JSONB):
 - `be{inv,rev,perWk,days,bottles}` + `beDone`, `beDoneAt`
 - `goal{doel,klanten,flWeek,flJaar,flDag,refills}`
 - `bp{key:bool}` / `bpClaim` / `bonus` / `bonusClaim` — puntenchecklists (BASIS 16 items = 70 pt, BONUS_MANUAL 8 items = 35 pt)
-- `setup{done:{'si-ai':bool}, skipped}` — 6 fases, 18 acties; formulier-gekoppeld via SETUPFORM
+- `setup{done:{'si-ai':bool}, skipped}` — 6 fases, 19 acties; formulier-gekoppeld via SETUPFORM
 - `academy{cursusKey:{lesIndex:bool}}` — 6 cursussen, 28 lessen
 - `beloond{rewardKey:datumISO}` — eenmalige uitkering
 - `vieringen[{type:'level'|'doel'|'be'|'beloning',…,at}]`
