@@ -172,6 +172,17 @@ apps lezen dezelfde tabellen.
 | 2 | Berichten (kantoor↔AM), winkelvragen (partner→AM/kantoor), agenda (plannen + accepteren/afwijzen), documenten (privé Storage) | ✅ klaar |
 | 3 | Dashboards per rol (kantoor-cockpit, AM-overzicht, partner-start), acties (central), beloningsladder (central, kantoor beheert) | ✅ klaar |
 | 4 | CRM-uitbreiding: contactpersonen per winkel, deals-pijplijn (AM/kantoor), taken met kantoor-toewijzing | ✅ klaar |
+| 4b | Verkoop & omzet: flessenteller + jaaromzet/jaardoel op de winkelpagina — **1-op-1 datacompatibel met v71** (t.jaaromzet, t.doel, t.flesLog {at,n,ti}); beide apps zien dezelfde cijfers | ✅ klaar |
 | 5 | Koppelingen: WooCommerce (bestellingen), Microsoft 365 (mailtracking) — wacht op keys/app-registratie van de eigenaar | ⏳ volgende |
+
+### Nog te porten uit v71 (parity-lijst, in volgorde van belang)
+
+1. **Kassa-dagverkopen** (`t.verkopen` per datum) — winkelverkoop naast de inkoop.
+2. **Calculator** (jaardoel → klanten/flessen-tempo) + break-even-traject (`t.be`, `t.goal`).
+3. **Pakketten** met inhoud (PAK_BOM) en bestellen-scherm.
+4. **Academy** (cursussen + voortgang), **Community**, **Sales Game** (klassement).
+5. **Retour-foto's**, formulieren, geurbibliotheek, merk & assets.
+
+v71 blijft de hoofdapp tot deze lijst leeg is (strangler, §9).
 
 Elke fase = losse modules op dezelfde fundering. Niets hoeft in één keer af.
