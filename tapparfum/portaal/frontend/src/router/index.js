@@ -26,6 +26,7 @@ import ProcesView from '../modules/kennis/views/ProcesView.vue'
 import SalesGameView from '../modules/salesgame/views/SalesGameView.vue'
 import GeurbibView from '../modules/geurbib/views/GeurbibView.vue'
 import TeamView from '../modules/team/views/TeamView.vue'
+import FormulierenView from '../modules/formulieren/views/FormulierenView.vue'
 import BestellingenView from '../modules/bestellingen/views/BestellingenView.vue'
 
 const ALLE_ROLLEN = ['kantoor', 'am', 'partner']
@@ -53,6 +54,7 @@ const routes = [
   { path: '/game', name: 'game', component: SalesGameView, meta: { roles: ALLE_ROLLEN } },
   { path: '/geuren', name: 'geuren', component: GeurbibView, meta: { roles: ALLE_ROLLEN } },
   { path: '/team', name: 'team', component: TeamView, meta: { roles: ['kantoor', 'am'] } },
+  { path: '/formulieren', name: 'formulieren', component: FormulierenView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/beheer', name: 'beheer', component: BeheerView, meta: { roles: ['kantoor'] } },
   { path: '/calculator', name: 'calculator', component: CalculatorView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
