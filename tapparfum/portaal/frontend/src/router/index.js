@@ -23,6 +23,7 @@ import AnalyseView from '../modules/analyse/views/AnalyseView.vue'
 import TrajectenView from '../modules/trajecten/views/TrajectenView.vue'
 import KennisView from '../modules/kennis/views/KennisView.vue'
 import ProcesView from '../modules/kennis/views/ProcesView.vue'
+import SalesGameView from '../modules/salesgame/views/SalesGameView.vue'
 import BestellingenView from '../modules/bestellingen/views/BestellingenView.vue'
 
 const ALLE_ROLLEN = ['kantoor', 'am', 'partner']
@@ -47,6 +48,7 @@ const routes = [
   { path: '/trajecten', name: 'trajecten', component: TrajectenView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/kennisbank', name: 'kennisbank', component: KennisView, meta: { roles: ALLE_ROLLEN } },
   { path: '/proces', name: 'proces', component: ProcesView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/game', name: 'game', component: SalesGameView, meta: { roles: ALLE_ROLLEN } },
   { path: '/beheer', name: 'beheer', component: BeheerView, meta: { roles: ['kantoor'] } },
   { path: '/calculator', name: 'calculator', component: CalculatorView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
