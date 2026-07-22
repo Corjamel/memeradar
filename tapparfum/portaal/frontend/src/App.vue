@@ -25,6 +25,8 @@ async function uitloggen() {
         <router-link :to="{ name: 'berichten' }">Berichten</router-link>
         <router-link :to="{ name: 'acties' }">Acties</router-link>
         <router-link :to="{ name: 'beloningen' }">Beloningen</router-link>
+        <router-link :to="{ name: 'producten' }">Producten</router-link>
+        <router-link v-if="auth.role !== 'partner'" :to="{ name: 'bestellingen' }">Bestellingen</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'deals' }">Deals</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'taken' }">Taken</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'calculator' }">Calculator</router-link>

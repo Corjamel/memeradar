@@ -15,6 +15,8 @@ import DealsView from '../modules/deals/views/DealsView.vue'
 import TakenView from '../modules/taken/views/TakenView.vue'
 import BeheerView from '../modules/beheer/views/BeheerView.vue'
 import CalculatorView from '../modules/calculator/views/CalculatorView.vue'
+import ProductenView from '../modules/producten/views/ProductenView.vue'
+import BestellingenView from '../modules/bestellingen/views/BestellingenView.vue'
 
 const ALLE_ROLLEN = ['kantoor', 'am', 'partner']
 
@@ -29,6 +31,8 @@ const routes = [
   { path: '/beloningen', name: 'beloningen', component: BeloningenView, meta: { roles: ALLE_ROLLEN } },
   { path: '/deals', name: 'deals', component: DealsView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/taken', name: 'taken', component: TakenView, meta: { roles: ['kantoor', 'am'] } },
+  { path: '/producten', name: 'producten', component: ProductenView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/bestellingen', name: 'bestellingen', component: BestellingenView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/beheer', name: 'beheer', component: BeheerView, meta: { roles: ['kantoor'] } },
   { path: '/calculator', name: 'calculator', component: CalculatorView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
