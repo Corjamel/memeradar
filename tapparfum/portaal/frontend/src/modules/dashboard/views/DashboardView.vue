@@ -91,6 +91,22 @@ const fase = computed(() => {
            tekst: 'Er staat nog geen jaardoel — vraag je accountmanager om samen het doel te zetten.' }
 })
 
+/* Vieringen (v71): mijlpalen die de engine schreef — tonen tot ze weggeklikt
+   worden (dismissViering). */
+const vieringen = computed(() => auth.isPartner && eigen.value ? (eigen.value.vieringen || []).slice(-3).reverse() : [])
+function vierTekst(v) {
+  if (v.type === 'level') return `Niveau ${v.k} bereikt — ${v.r}`
+  if (v.type === 'doel') return `Jaardoel van ${eur0(v.doel)} gehaald!`
+  if (v.type === 'be') return 'Break-even gehaald — jullie investering is terugverdiend!'
+  if (v.type === 'beloning') return `Beloning vrijgespeeld: ${v.r}`
+  return 'Mijlpaal bereikt'
+}
+async function wisViering(v) {
+  const t = eigen.value
+  const t2 = { ...t, vieringen: (t.vieringen || []).filter(x => x !== v) }
+  try { await st.bewaar(t2); st.items[0] = t2 } catch (e) { fout.value = 'Opslaan mislukt: ' + e.message }
+}
+
 /* Nudges (v71: banners voor nieuw & openstaand) — klikbaar, verdwijnen vanzelf. */
 const nudges = computed(() => {
   const t = eigen.value
@@ -158,6 +174,12 @@ const meterLabel = computed(() => {
         <div class="cijfer">{{ blok }}</div>
         <div class="lbl">geblokkeerd</div>
       </div>
+    </div>
+
+    <!-- Partner: vieringen (mijlpalen) -->
+    <div v-for="(v, i) in vieringen" :key="'v' + i" class="viering" role="status" data-test="viering-banner">
+      <span class="ic">🎉</span><span class="ntxt">{{ vierTekst(v) }}</span>
+      <button class="dicht" type="button" aria-label="Viering sluiten" :data-test="'viering-weg-' + i" @click="wisViering(v)">×</button>
     </div>
 
     <!-- Partner: nudges -->
@@ -234,6 +256,9 @@ h2{margin:0 0 10px;font-size:15px}
 .cijfer{font-size:22px;font-weight:800;color:var(--coral)}
 .lbl{font-size:12px;color:var(--grey);font-weight:700}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.viering{display:flex;align-items:center;gap:10px;background:var(--green-soft);border:1px solid #bcd9a0;color:#2c5a12;border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:13.5px;font-weight:600}
+.viering .ntxt{flex:1}
+.dicht{background:none;border:0;color:#2c5a12;font-size:17px;font-weight:800;cursor:pointer;line-height:1}
 .nudge{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--coral);border-radius:12px;padding:10px 14px;margin-bottom:8px;color:inherit;text-decoration:none;font-size:13.5px;font-weight:600}
 .nudge:hover{border-color:var(--coral)}
 .nudge .ntxt{flex:1}

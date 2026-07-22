@@ -3,14 +3,40 @@
 // datacompatibel met v71: t.jaaromzet (inkoop bij TapParfum), t.doel en
 // t.flesLog met regels {at:'YYYY-MM-DD', n:aantal, ti:type}. Beide apps lezen
 // en schrijven dezelfde JSON, dus de cijfers blijven overal gelijk.
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { eur0 } from '../../../lib/format.js'
+import { checkMilestones } from '../../beloningen/logic.js'
+import { haalRekenConfig } from '../../beloningen/api.js'
+import { stuurWinkelvraag } from '../../winkelvragen/api.js'
 
 const props = defineProps({ tappunt: { type: Object, required: true } })
 const emit = defineEmits(['bijgewerkt'])
+const auth = useAuth()
 const st = useTappunten()
 const vandaag = new Date().toISOString().slice(0, 10)
+const marge = ref(1)
+const mijlpaal = ref('')
+
+onMounted(async () => {
+  try { marge.value = (await haalRekenConfig()).marge } catch { /* factor 1 */ }
+})
+
+/* v71 checkMilestones: elke omzet-/flessenmutatie kan een niveau, het jaardoel
+   of break-even kruisen — vier het en meld het op de berichtlijn. */
+async function metMijlpalen(t2, joVoor) {
+  const res = checkMilestones(t2, joVoor, marge.value)
+  if (!res) return t2
+  mijlpaal.value = res.meldingen.join(' · ')
+  if (auth.isPartner || auth.isKantoor) {
+    for (const m of res.meldingen) {
+      try { await stuurWinkelvraag({ tappunt_snelstart: t2.snelstart, type: 'mijlpaal', txt: m }) }
+      catch { /* melding is een extraatje */ }
+    }
+  }
+  return res.t2
+}
 
 const fout = ref('')
 const melding = ref('')
@@ -35,7 +61,9 @@ async function bewaar(t2, ok) {
 
 async function omzetOpslaan() {
   if (bezig.value) return
-  const t2 = { ...props.tappunt, jaaromzet: Number(omzet.jaaromzet) || 0, doel: Number(omzet.doel) || 0 }
+  const joVoor = Number(props.tappunt.jaaromzet) || 0
+  let t2 = { ...props.tappunt, jaaromzet: Number(omzet.jaaromzet) || 0, doel: Number(omzet.doel) || 0 }
+  t2 = await metMijlpalen(t2, joVoor)
   await bewaar(t2, '✓ Omzet & doel bijgewerkt')
 }
 
@@ -43,7 +71,9 @@ async function registreer() {
   if (bezig.value) return
   const n = Math.max(parseInt(reg.aantal) || 0, 1)
   const entry = { at: reg.datum || vandaag, n, ti: 1 }
-  const t2 = { ...props.tappunt, flesLog: [...log.value, entry].sort((a, b) => (a.at < b.at ? -1 : 1)) }
+  const joVoor = Number(props.tappunt.jaaromzet) || 0
+  let t2 = { ...props.tappunt, flesLog: [...log.value, entry].sort((a, b) => (a.at < b.at ? -1 : 1)) }
+  t2 = await metMijlpalen(t2, joVoor)
   await bewaar(t2, `✓ ${n} fles${n === 1 ? '' : 'sen'} geregistreerd`)
   reg.aantal = 1; reg.datum = vandaag
 }
@@ -61,6 +91,7 @@ async function verwijder(e) {
   <section class="blok">
     <h2>🧾 Verkoop & omzet</h2>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
+    <p v-if="mijlpaal" class="mijlpaal" role="status" data-test="mijlpaal">🎉 {{ mijlpaal }}</p>
 
     <!-- Jaaromzet + doel (drijft niveaus en beloningen) -->
     <div class="rij vorm">
@@ -119,5 +150,6 @@ input:focus{border-color:var(--coral)}
 .weg:hover{color:#b3261e}
 .weg.zeker{color:#b3261e;font-weight:800}
 .fout{color:#b3261e;font-size:13px}
+.mijlpaal{background:var(--green-soft);border:1px solid #bcd9a0;color:#2c5a12;border-radius:10px;padding:8px 12px;font-size:13px;margin:8px 0}
 .ok{color:#2c5a12;font-size:13px;margin:8px 0 0}
 </style>

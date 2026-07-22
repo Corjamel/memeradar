@@ -2,8 +2,8 @@
 // vijf spaarcadeaus (REWARDS) met harde eisen + verplichte Academy-training,
 // en de eenmalige uitkering in t.beloond { rewardKey: 'YYYY-MM-DD' }.
 // Drempels bewust niet makkelijk; bijstellen kan hier (besluit kantoor).
-import { BASIS_MAX, basisScore, totaalScore, omzetGroei } from '../punten/logic.js'
-import { LEVELS, jaaromzet, winkelOmzet, groeiTxt } from '../rekenhart/logic.js'
+import { BASIS_MAX, basisScore, totaalScore, omzetGroei, effDoel } from '../punten/logic.js'
+import { LEVELS, jaaromzet, winkelOmzet, levelOf, flessenVerkocht, groeiTxt } from '../rekenhart/logic.js'
 import { eur0 } from '../../lib/format.js'
 
 // ---- Academy-koppeling (cursusdata uit v71; de lesinhoud volgt bij PARITY #24) ----
@@ -122,4 +122,35 @@ export function checkBeloningen(t, marge) {
   })
   if (!nieuw.length) return null
   return { t2: { ...t, beloond, vieringen }, nieuw }
+}
+
+/* Mijlpaal-detectie op één plek (v71 r.3301-3309) — aanroepen vanuit elke
+   mutatie die omzet of flessen raakt. Vergelijkt de situatie vóór (joVoor)
+   met nu en viert niveau-, doel- en break-even-mijlpalen. Puur: geeft de
+   bijgewerkte kopie + meldteksten terug; sluit af met de beloningen-check. */
+export function checkMilestones(t, joVoor, marge) {
+  const today = new Date().toISOString().slice(0, 10)
+  const vieringen = [...(t.vieringen || [])]
+  const meldingen = []
+  let t2 = { ...t, vieringen }
+  const mijlpaal = (v, txt) => { vieringen.push({ ...v, at: today }); meldingen.push(txt) }
+
+  const joNa = jaaromzet(t2)
+  const lvNa = levelOf(joNa, marge)
+  if (lvNa.idx > levelOf(joVoor, marge).idx) {
+    mijlpaal({ type: 'level', k: lvNa.k, r: lvNa.r },
+      'Niveau ' + lvNa.k + ' bereikt (' + eur0(joNa) + ') — geef het tappunt een compliment')
+  }
+  const doel = effDoel(t2)
+  if (doel > 0 && joVoor < doel && joNa >= doel) {
+    mijlpaal({ type: 'doel', doel }, 'Jaardoel van ' + eur0(doel) + ' behaald — bespreek een nieuw doel')
+  }
+  if (t2.be && !t2.beDone && flessenVerkocht(t2) >= t2.be.bottles) {
+    t2 = { ...t2, beDone: true, beDoneAt: today }
+    mijlpaal({ type: 'be' }, 'Investering terugverdiend — break-even gehaald! Plan het jaardoel-gesprek.')
+  }
+  const bel = checkBeloningen(t2, marge)
+  if (bel) { t2 = bel.t2; bel.nieuw.forEach(n => meldingen.push('Beloning vrijgespeeld (' + n.bron + '): ' + n.r + ' — regel de uitkering.')) }
+  if (!meldingen.length) return null
+  return { t2, meldingen }
 }

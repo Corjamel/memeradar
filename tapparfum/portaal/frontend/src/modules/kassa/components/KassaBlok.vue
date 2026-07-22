@@ -5,18 +5,25 @@
 //    (de flessenteller blijft leidend voor break-even/jaardoel);
 //  * de min-knop draait beide terug.
 import { computed, onMounted, ref } from 'vue'
+import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { haalFlesMaten, haalModules, vkTotaal, vkPeriode } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
 import { SALE_TYPES } from '../../rekenhart/logic.js'
 import { omzetPF } from '../../calculator/logic.js'
+import { checkMilestones } from '../../beloningen/logic.js'
+import { haalRekenConfig } from '../../beloningen/api.js'
+import { stuurWinkelvraag } from '../../winkelvragen/api.js'
 
 const props = defineProps({ tappunt: { type: Object, required: true } })
 const emit = defineEmits(['bijgewerkt'])
+const auth = useAuth()
 const st = useTappunten()
 const maten = ref([])
 const fout = ref('')
 const bezig = ref(false)
+const marge = ref(1)
+const mijlpaal = ref('')
 const zichtbaar = ref(true)      // kantoor kan de kassa-module netwerkbreed uitzetten
 const vandaag = new Date().toISOString().slice(0, 10)
 
@@ -24,7 +31,10 @@ onMounted(async () => {
   try {
     const mo = await haalModules()
     zichtbaar.value = !mo || mo.kassa !== false
-    if (zichtbaar.value) maten.value = await haalFlesMaten()
+    if (zichtbaar.value) {
+      maten.value = await haalFlesMaten()
+      marge.value = (await haalRekenConfig()).marge
+    }
   } catch (e) { fout.value = 'Kon kassaprijzen niet laden: ' + e.message }
 })
 
@@ -49,7 +59,20 @@ async function plus(maat) {
   verkopen[vandaag] = dag
   const flesLog = [...(t.flesLog || []), { at: vandaag, n: 1, ti: (t.dagType ?? 1), src: 'kassa' }]
     .sort((a, b) => (a.at < b.at ? -1 : 1))
-  await bewaar({ ...t, verkopen, flesLog })
+  // v71 checkMilestones: een kassatik kan break-even (of een beloning) kruisen.
+  let t2 = { ...t, verkopen, flesLog }
+  const res = checkMilestones(t2, Number(t.jaaromzet) || 0, marge.value)
+  if (res) {
+    t2 = res.t2
+    mijlpaal.value = res.meldingen.join(' · ')
+    if (auth.isPartner || auth.isKantoor) {
+      for (const m of res.meldingen) {
+        try { await stuurWinkelvraag({ tappunt_snelstart: t2.snelstart, type: 'mijlpaal', txt: m }) }
+        catch { /* melding is een extraatje */ }
+      }
+    }
+  }
+  await bewaar(t2)
 }
 
 // v71-dagtype: het standaard verkooptype waarmee elke kassatik in de
@@ -80,6 +103,7 @@ async function min(maat) {
   <section v-if="zichtbaar" class="blok">
     <h2>🧾 Kassa — tik elke verkoop</h2>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
+    <p v-if="mijlpaal" class="mijlpaal" role="status" data-test="kassa-mijlpaal">🎉 {{ mijlpaal }}</p>
 
     <div class="maten">
       <div v-for="x in maten" :key="x.m" class="maat" data-test="kassa-maat">
@@ -132,4 +156,5 @@ h2{margin:0 0 12px;font-size:16px}
 .tot b{font-size:17px;color:var(--coral-d)}
 .tot span{font-size:11.5px;color:var(--grey);font-weight:700}
 .fout{color:#b3261e;font-size:13px}
+.mijlpaal{background:var(--green-soft);border:1px solid #bcd9a0;color:#2c5a12;border-radius:10px;padding:8px 12px;font-size:13px;margin:0 0 10px}
 </style>

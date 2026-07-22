@@ -19,6 +19,7 @@ import ProductenView from '../modules/producten/views/ProductenView.vue'
 import VandaagView from '../modules/vandaag/views/VandaagView.vue'
 import BestellenView from '../modules/bestellen/views/BestellenView.vue'
 import AcademyView from '../modules/academy/views/AcademyView.vue'
+import AnalyseView from '../modules/analyse/views/AnalyseView.vue'
 import BestellingenView from '../modules/bestellingen/views/BestellingenView.vue'
 
 const ALLE_ROLLEN = ['kantoor', 'am', 'partner']
@@ -39,6 +40,7 @@ const routes = [
   { path: '/bestellingen', name: 'bestellingen', component: BestellingenView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/bestellen', name: 'bestellen', component: BestellenView, meta: { roles: ALLE_ROLLEN } },
   { path: '/academy', name: 'academy', component: AcademyView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/analyse', name: 'analyse', component: AnalyseView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/beheer', name: 'beheer', component: BeheerView, meta: { roles: ['kantoor'] } },
   { path: '/calculator', name: 'calculator', component: CalculatorView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/:pathMatch(.*)*', redirect: '/' }

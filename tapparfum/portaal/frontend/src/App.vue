@@ -33,6 +33,7 @@ async function uitloggen() {
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'deals' }">Deals</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'taken' }">Taken</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'calculator' }">Calculator</router-link>
+        <router-link v-if="auth.role !== 'partner'" :to="{ name: 'analyse' }">Analyse</router-link>
         <router-link v-if="auth.magBeheer" :to="{ name: 'beheer' }">Beheer</router-link>
       </nav>
       <span class="spacer"></span>

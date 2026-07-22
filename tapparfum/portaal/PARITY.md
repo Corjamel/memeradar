@@ -28,9 +28,9 @@
 | 17 | Formulieren (7 stuks, t.forms) | 2 | ontbreekt |
 | 18 | Mail (compose + .eml-import) | 2 | ontbreekt |
 | 19 | Ritten/werkdag (GPS-momentopnames) | 2 | ontbreekt |
-| 20 | Vieringen + milestones (checkMilestones) | 2 | ontbreekt |
+| 20 | Vieringen + milestones (checkMilestones) | 2 | ✅ klaar (bij omzet-, flessen- en kassamutaties + dashboard-banners) |
 | 21 | Geurbibliotheek + refill-bestellen | 2 | ontbreekt |
-| 22 | Kantoor-analyse/activiteit/team (kanalyse, kactFeed, kteam) | 2 | deels |
+| 22 | Kantoor-analyse/activiteit/team (kanalyse ✅ · kactFeed/kteam nog) | 2 | grotendeels |
 | 23 | Globale zoekfunctie | 2 | ontbreekt |
 | 24 | Academy (6 cursussen, 28 lessen, t.academy) | 2 | ✅ klaar (gekoppeld aan de beloningen-engine) |
 | 25 | Sales Game (klassementen, podium) | 2/3 | ontbreekt |
