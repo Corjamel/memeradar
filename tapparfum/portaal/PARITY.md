@@ -32,7 +32,7 @@
 | 21 | Geurbibliotheek + refill-bestellen | 2 | ontbreekt |
 | 22 | Kantoor-analyse/activiteit/team (kanalyse, kactFeed, kteam) | 2 | deels |
 | 23 | Globale zoekfunctie | 2 | ontbreekt |
-| 24 | Academy (6 cursussen, 28 lessen, t.academy) | 2 | ontbreekt |
+| 24 | Academy (6 cursussen, 28 lessen, t.academy) | 2 | ✅ klaar (gekoppeld aan de beloningen-engine) |
 | 25 | Sales Game (klassementen, podium) | 2/3 | ontbreekt |
 | 26 | Heractiveren (t.react) | 2 | ontbreekt |
 | 27 | Community | 3 | ontbreekt |
