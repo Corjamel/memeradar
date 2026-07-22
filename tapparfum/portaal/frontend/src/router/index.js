@@ -5,10 +5,16 @@ import { useAuth } from '../stores/auth.js'
 
 import LoginView from '../modules/auth/views/LoginView.vue'
 import HomeView from '../modules/tappunten/views/HomeView.vue'
+import TappuntenListView from '../modules/tappunten/views/TappuntenListView.vue'
+import TappuntDetailView from '../modules/tappunten/views/TappuntDetailView.vue'
+import BerichtenView from '../modules/berichten/views/BerichtenView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { publiek: true } },
   { path: '/', name: 'home', component: HomeView, meta: { roles: ['kantoor', 'am', 'partner'] } },
+  { path: '/winkels', name: 'winkels', component: TappuntenListView, meta: { roles: ['kantoor', 'am', 'partner'] } },
+  { path: '/winkels/:code', name: 'winkel', component: TappuntDetailView, props: true, meta: { roles: ['kantoor', 'am', 'partner'] } },
+  { path: '/berichten', name: 'berichten', component: BerichtenView, meta: { roles: ['kantoor', 'am'] } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
