@@ -35,7 +35,7 @@
 | 24 | Academy (6 cursussen, 28 lessen, t.academy) | 2 | ✅ klaar (gekoppeld aan de beloningen-engine) |
 | 25 | Sales Game (klassementen, podium) | 2/3 | ontbreekt |
 | 26 | Heractiveren (t.react) | 2 | ✅ klaar (4 trajecten + heractivatie-acties, opvolging in Vandaag) |
-| 27 | Community | 3 | ontbreekt |
+| 27 | Community | 3 | ✅ klaar (besloten tijdlijn per AM-portefeuille, eigen tabel + RLS, migratie 013) |
 | 28 | Welkom/rondleiding, SPOTLIGHT, merk & assets, teksten-editor, layout-regie | 3 | ontbreekt |
 
 ## Kritieke datacompatibiliteit (veldnamen — NOOIT wijzigen)
