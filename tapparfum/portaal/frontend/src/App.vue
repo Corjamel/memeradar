@@ -22,6 +22,7 @@ async function uitloggen() {
     <header v-if="auth.ingelogd" class="topbar">
       <span class="brand" translate="no">TAPPARFUM</span>
       <nav class="mainnav" aria-label="Hoofdmenu">
+        <!-- Dagelijks -->
         <router-link :to="{ name: 'home' }">Start</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'vandaag' }">Vandaag</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'trajecten' }">Trajecten</router-link>
@@ -31,13 +32,17 @@ async function uitloggen() {
         <router-link :to="{ name: 'acties' }">Acties</router-link>
         <router-link :to="{ name: 'beloningen' }">Beloningen</router-link>
         <router-link :to="{ name: 'game' }">Game</router-link>
+        <!-- Assortiment & leren -->
+        <span class="sep" aria-hidden="true"></span>
         <router-link :to="{ name: 'producten' }">Producten</router-link>
         <router-link v-if="auth.role === 'partner'" :to="{ name: 'bestellen' }">Bestellen</router-link>
-        <router-link :to="{ name: 'academy' }">Academy</router-link>
         <router-link :to="{ name: 'geuren' }">Geuren</router-link>
+        <router-link :to="{ name: 'academy' }">Academy</router-link>
         <router-link :to="{ name: 'kennisbank' }">Kennis</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'proces' }">Proces</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'formulieren' }">Formulieren</router-link>
+        <!-- Beheer & inzicht (AM/kantoor) -->
+        <span v-if="auth.role !== 'partner'" class="sep" aria-hidden="true"></span>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'bestellingen' }">Bestellingen</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'deals' }">Deals</router-link>
         <router-link v-if="auth.role !== 'partner'" :to="{ name: 'taken' }">Taken</router-link>
@@ -66,6 +71,7 @@ async function uitloggen() {
 .mainnav a{color:var(--ink);text-decoration:none;font-weight:700;font-size:13.5px;padding:6px 10px;border-radius:8px}
 .mainnav a:hover{background:var(--cream)}
 .mainnav a.router-link-active{color:var(--coral-d);background:var(--soft)}
+.sep{width:1px;align-self:stretch;background:var(--line);margin:2px 4px}
 .spacer{flex:1}
 .zoek{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:6px 11px;font-size:14px;cursor:pointer}
 .zoek:hover{border-color:var(--coral)}
