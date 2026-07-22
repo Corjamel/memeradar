@@ -7,8 +7,12 @@ import { useTappunten } from '../../tappunten/store.js'
 import { haalWinkelvragen } from '../../winkelvragen/api.js'
 import { haalAgenda } from '../../agenda/api.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
-import { levelOf, jaaromzet, beDone, flessenVerkocht } from '../../rekenhart/logic.js'
+import { levelOf, jaaromzet, beDone, flessenVerkocht, winkelOmzetInfo } from '../../rekenhart/logic.js'
 import { setupComplete, setupCount, SETUP_TOTAL } from '../../setup/logic.js'
+import { basisScore, BASIS_MAX, officieel } from '../../punten/logic.js'
+import { REWARDS, rewUnlocked } from '../../beloningen/logic.js'
+import { SPOTLIGHT, USPS } from '../../geurbib/spotlight.js'
+import { stuurWinkelvraag } from '../../winkelvragen/api.js'
 import { haalActies, isActief } from '../../acties/api.js'
 import { haalProducten, actieveProducten } from '../../producten/api.js'
 import { doetMee, heeftRes } from '../../acties/logic.js'
@@ -90,6 +94,43 @@ const fase = computed(() => {
   return { key: 'doel-ontbreekt', titel: '🎯 Jaardoel', n: 0, tot: 0, pct: null,
            tekst: 'Er staat nog geen jaardoel — vraag je accountmanager om samen het doel te zetten.' }
 })
+
+/* Partner stats-KPI-rij (v71 r.3709): status, basispunten, winkelverkoop, voortgang. */
+const stats = computed(() => {
+  const t = eigen.value
+  if (!auth.isPartner || !t) return null
+  const wo = winkelOmzetInfo(t, marge.value, [])
+  const inBe = t.be && !beDone(t)
+  const sold = flessenVerkocht(t)
+  const target = inBe ? t.be.bottles : ((t.goal && t.goal.flJaar) || 0)
+  return {
+    officieel: officieel(t),
+    niveau: levelOf(jaaromzet(t), marge.value).k,
+    basis: basisScore(t),
+    winkelverkoop: wo.bedrag,
+    voortgangLabel: inBe ? 'naar break-even' : 'van jaardoel',
+    voortgangPct: target ? Math.min(100, Math.round(sold / target * 100)) : null
+  }
+})
+// Trofeeën-strip: alle spaarcadeaus, behaald of nog te gaan.
+const trofeeen = computed(() => {
+  const t = eigen.value
+  if (!auth.isPartner || !t) return []
+  return REWARDS.map(rw => ({ key: rw.key, r: rw.r, ic: rw.ic, gewonnen: rewUnlocked(t, rw) || !!(t.beloond || {})[rw.key] }))
+})
+
+// Partner vraagt zelf een bezoek aan (v71 bezoekaanvraag).
+const bezoekDatum = ref('')
+const bezoekMelding = ref('')
+async function vraagBezoek() {
+  const t = eigen.value
+  if (!t || !bezoekDatum.value) return
+  try {
+    await stuurWinkelvraag({ tappunt_snelstart: t.snelstart, type: 'vraag', txt: `📅 Bezoek aangevraagd — voorkeur: ${bezoekDatum.value}` })
+    bezoekMelding.value = `✓ Bezoekaanvraag (${bezoekDatum.value}) doorgegeven aan je accountmanager.`
+    bezoekDatum.value = ''
+  } catch (e) { bezoekMelding.value = 'Aanvraag mislukt: ' + e.message }
+}
 
 /* Vieringen (v71): mijlpalen die de engine schreef — tonen tot ze weggeklikt
    worden (dismissViering). */
@@ -176,6 +217,14 @@ const meterLabel = computed(() => {
       </div>
     </div>
 
+    <!-- Partner: stats-KPI-rij -->
+    <div v-if="stats" class="pstats" data-test="pstats">
+      <div class="pstat"><b :class="{ groen: stats.officieel }">{{ stats.officieel ? '✓ Officieel' : 'Niveau ' + stats.niveau }}</b><span>status</span></div>
+      <div class="pstat"><b>{{ stats.basis }}/{{ BASIS_MAX }}</b><span>basispunten</span></div>
+      <div class="pstat"><b>{{ eur0(stats.winkelverkoop) }}</b><span>winkelverkoop</span></div>
+      <div class="pstat"><b>{{ stats.voortgangPct == null ? '—' : stats.voortgangPct + '%' }}</b><span>{{ stats.voortgangLabel }}</span></div>
+    </div>
+
     <!-- Partner: vieringen (mijlpalen) -->
     <div v-for="(v, i) in vieringen" :key="'v' + i" class="viering" role="status" data-test="viering-banner">
       <span class="ic">🎉</span><span class="ntxt">{{ vierTekst(v) }}</span>
@@ -196,6 +245,42 @@ const meterLabel = computed(() => {
       <div v-if="fase.pct != null" class="balk"><div class="vul" :style="{ width: fase.pct + '%' }"></div></div>
       <p class="regel">{{ fase.tekst }}</p>
       <router-link v-if="eigen" class="link" :to="{ name: 'winkel', params: { code: eigen.snelstart } }">→ Naar je winkelpagina</router-link>
+    </div>
+
+    <!-- Partner: trofeeën-strip -->
+    <div v-if="trofeeen.length" class="kaart" data-test="trofeeen">
+      <h2>🏆 Jullie spaarcadeaus</h2>
+      <div class="trofeeen">
+        <router-link v-for="tr in trofeeen" :key="tr.key" class="trof" :class="{ gewonnen: tr.gewonnen }" :to="{ name: 'beloningen' }" :title="tr.r">
+          <span class="tic">{{ tr.ic }}</span>
+          <span class="tstatus">{{ tr.gewonnen ? '✓' : '🔒' }}</span>
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Partner: bezoek aanvragen -->
+    <div v-if="auth.isPartner && eigen" class="kaart" data-test="bezoekaanvraag">
+      <h2>📅 Bezoek aanvragen</h2>
+      <p class="regel">Wil je je accountmanager langs laten komen? Geef een voorkeursdatum door.</p>
+      <div class="bezrij">
+        <input v-model="bezoekDatum" type="date" data-test="bezoek-datum" />
+        <button class="link-knop" type="button" :disabled="!bezoekDatum" data-test="bezoek-vraag" @click="vraagBezoek">Bezoek aanvragen</button>
+      </div>
+      <p v-if="bezoekMelding" class="ok" role="status" data-test="bezoek-melding">{{ bezoekMelding }}</p>
+    </div>
+
+    <!-- Partner: geur van de week -->
+    <div v-if="auth.isPartner && eigen" class="kaart spotlight" data-test="spotlight">
+      <div class="spkop"><span class="splbl">Geur van de week</span><b>{{ SPOTLIGHT.code }}</b></div>
+      <p class="spnaam">{{ SPOTLIGHT.naam }}</p>
+      <p class="regel">{{ SPOTLIGHT.tip }}</p>
+    </div>
+
+    <!-- Partner: waarom TapParfum -->
+    <div v-if="auth.isPartner && eigen" class="usps" data-test="usps">
+      <div v-for="u in USPS" :key="u.t" class="usp">
+        <span class="uic">{{ u.ic }}</span><b>{{ u.t }}</b><span class="mo">{{ u.m }}</span>
+      </div>
     </div>
 
     <!-- Partner: eigen winkel + niveau -->
@@ -263,6 +348,29 @@ h2{margin:0 0 10px;font-size:15px}
 .nudge:hover{border-color:var(--coral)}
 .nudge .ntxt{flex:1}
 .nudge .pijl{color:var(--coral-d);font-weight:800}
+.pstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+.pstat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.pstat b{display:block;font-size:17px;color:var(--coral-d)}
+.pstat b.groen{color:#2c5a12}
+.pstat span{font-size:12px;color:var(--grey);font-weight:700}
+.trofeeen{display:flex;gap:10px;flex-wrap:wrap}
+.trof{position:relative;width:52px;height:52px;border-radius:14px;background:var(--cream);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;text-decoration:none;filter:grayscale(1);opacity:.55}
+.trof.gewonnen{filter:none;opacity:1;border-color:#bcd9a0;background:var(--green-soft)}
+.tstatus{position:absolute;bottom:-4px;right:-4px;font-size:12px}
+.bezrij{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.bezrij input{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
+.link-knop{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:9px 15px;font-weight:800;cursor:pointer;font-size:13px}
+.link-knop:disabled{opacity:.5}
+.spotlight{border-left:4px solid var(--coral)}
+.spkop{display:flex;align-items:baseline;gap:10px}
+.splbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--coral-d)}
+.spkop b{font-size:18px}
+.spnaam{margin:4px 0;font-weight:700}
+.usps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px}
+.usp{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:3px}
+.uic{font-size:22px}
+.usp b{font-size:14px}
+.ok{color:#2c5a12;font-size:13px;margin:6px 0 0}
 .fasekaart{border-left:4px solid var(--coral)}
 .fasekaart .pct{margin-left:auto;color:var(--coral-d);font-size:18px;font-variant-numeric:tabular-nums}
 .kop{display:flex;align-items:center;gap:10px}
