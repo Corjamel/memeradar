@@ -52,11 +52,22 @@ async function stuurReset() {
 </script>
 
 <template>
-  <div class="wrap">
+  <div class="loginsplit">
+    <!-- Visueel paneel: merk + belofte, in de signatuur-gradient (v71-split) -->
+    <div class="ls-visual" aria-hidden="true">
+      <div class="ls-veil"></div>
+      <div class="ls-txt">
+        <div class="ls-brand" translate="no">TAP<b>PARFUM</b></div>
+        <div class="ls-tag">Ruiken met je neus, niet je portemonnee</div>
+      </div>
+    </div>
+
+    <!-- Formulierpaneel -->
+    <div class="ls-form">
     <!-- Inloggen (iedereen: kantoor, accountmanager én winkel — je account bepaalt wat je ziet) -->
-    <form v-if="modus === 'in'" class="card" @submit.prevent="inloggen">
-      <div class="brand">TAPPARFUM</div>
-      <h1>Portaal</h1>
+    <form v-if="modus === 'in'" class="fbox" @submit.prevent="inloggen">
+      <div class="brand" translate="no">TAP<b>PARFUM</b></div>
+      <h1>Inloggen</h1>
       <p class="uitleg">Eén login voor iedereen — kantoor, accountmanagers en winkels. Je account bepaalt automatisch wat je ziet.</p>
       <label>E-mail
         <input v-model="vorm.email" type="email" autocomplete="username" required placeholder="jij@voorbeeld.nl" />
@@ -74,8 +85,8 @@ async function stuurReset() {
     </form>
 
     <!-- Eerste keer: winkel (snelstartcode) of uitgenodigde accountmanager -->
-    <form v-else-if="modus === 'nieuw'" class="card" @submit.prevent="maakAccount">
-      <div class="brand">TAPPARFUM</div>
+    <form v-else-if="modus === 'nieuw'" class="fbox" @submit.prevent="maakAccount">
+      <div class="brand" translate="no">TAP<b>PARFUM</b></div>
       <h1>Account aanmaken</h1>
       <div class="soortkeuze">
         <label class="soort" :class="{ aan: nieuw.soort === 'winkel' }">
@@ -105,8 +116,8 @@ async function stuurReset() {
     </form>
 
     <!-- Wachtwoord vergeten -->
-    <form v-else class="card" @submit.prevent="stuurReset">
-      <div class="brand">TAPPARFUM</div>
+    <form v-else class="fbox" @submit.prevent="stuurReset">
+      <div class="brand" translate="no">TAP<b>PARFUM</b></div>
       <h1>Wachtwoord vergeten</h1>
       <p class="uitleg">Vul je e-mailadres in; je krijgt een mail met een link om een nieuw wachtwoord in te stellen.</p>
       <label>E-mail
@@ -115,27 +126,45 @@ async function stuurReset() {
       <button class="btn" type="submit" :disabled="bezig" data-test="reset-stuur">{{ bezig ? 'Bezig…' : 'Stuur resetmail →' }}</button>
       <div class="links"><button type="button" @click="wissel('in')">← Terug naar inloggen</button></div>
     </form>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:12px}
-.brand{font-weight:800;letter-spacing:.16em;color:var(--coral)}
-h1{margin:0;font-size:22px}
-.uitleg{margin:0;font-size:13px;color:var(--grey)}
-label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;color:var(--grey)}
-input{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:15px}
-input:focus{border-color:var(--coral)}
+/* v71-inlogscherm: split-screen — visueel merkpaneel links, formulier rechts. */
+.loginsplit{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr;background:var(--pagebg)}
+.ls-visual{position:relative;overflow:hidden;background:var(--sig)}
+.ls-veil{position:absolute;inset:0;background:radial-gradient(120% 90% at 85% -10%, rgba(255,255,255,.28), transparent 55%),linear-gradient(160deg, rgba(217,84,60,.15), rgba(42,33,28,.35))}
+.ls-txt{position:absolute;left:0;bottom:0;padding:48px 44px;color:#fff}
+.ls-brand{font-weight:800;letter-spacing:.18em;font-size:26px;text-shadow:0 2px 12px rgba(0,0,0,.25)}
+.ls-brand b{font-weight:900}
+.ls-tag{margin-top:10px;font-size:17px;font-weight:600;max-width:340px;line-height:1.4;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+.ls-form{display:flex;flex-direction:column;justify-content:center;padding:40px 48px;max-width:520px;width:100%;margin:0 auto}
+.fbox{display:flex;flex-direction:column;gap:12px;width:100%;max-width:400px}
+.brand{font-weight:800;letter-spacing:.16em;color:var(--coral);font-size:15px}
+.brand b{font-weight:900}
+h1{margin:0;font-size:26px;letter-spacing:-.5px}
+.uitleg{margin:0;font-size:13.5px;color:var(--grey);line-height:1.55}
+label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey)}
+input{padding:12px 13px;border:1.5px solid var(--line);font-size:15px;background:#fff;color:var(--ink)}
+input:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px rgba(238,100,77,.15)}
 .err{color:#b3261e;font-size:13px;margin:0}
-.okmsg{color:#2c5a12;font-size:13px;margin:0;background:#f4faf0;border-radius:8px;padding:8px 10px}
-.btn{margin-top:6px;background:var(--coral);color:#fff;border:0;border-radius:10px;padding:11px;font-weight:800;font-size:15px;cursor:pointer}
+.okmsg{color:#2c5a12;font-size:13px;margin:0;background:#f4faf0;padding:8px 10px}
+.btn{margin-top:6px;background:var(--coral);color:#fff;border:0;padding:12px;font-weight:800;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px}
+.btn:hover{background:var(--coral-d)}
 .btn:disabled{opacity:.6;cursor:default}
 .links{display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .links button{background:none;border:0;padding:0;text-align:left;color:var(--coral);font-weight:700;font-size:13px;cursor:pointer}
 .links button:hover{text-decoration:underline}
 .soortkeuze{display:flex;gap:8px}
-.soort{flex:1;flex-direction:row;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:13px;cursor:pointer}
-.soort.aan{border-color:var(--coral);background:#fdeee7;color:var(--ink)}
+.soort{flex:1;flex-direction:row;align-items:center;gap:8px;border:1.5px solid var(--line);padding:10px;font-size:13px;cursor:pointer}
+.soort.aan{border-color:var(--coral);background:var(--soft);color:var(--ink)}
 .soort input{width:16px;height:16px;accent-color:var(--coral)}
+@media(max-width:820px){
+  .loginsplit{grid-template-columns:1fr}
+  .ls-visual{min-height:160px}
+  .ls-txt{padding:26px 24px}
+  .ls-brand{font-size:22px}.ls-tag{font-size:15px}
+  .ls-form{padding:28px 22px}
+}
 </style>

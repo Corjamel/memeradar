@@ -15,6 +15,7 @@ export const ICONS = {
   community: sv('<circle cx="9" cy="9" r="3"/><path d="M3.5 19c0-3 2.5-4.6 5.5-4.6S14.5 16 14.5 19"/><path d="M15.5 6.5a3 3 0 0 1 0 5.4M17 14.6c2.3.5 3.5 2 3.5 4.4"/>'),
   bestellen: sv('<path d="M4 6h2l1.5 10.5h9L18.5 8.5H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="16" cy="20" r="1.3"/>'),
   geur: sv('<path d="M12 3v3M10 6h4l1 3.5H9L10 6Z"/><rect x="7" y="9.5" width="10" height="11" rx="2.5"/><path d="M9.5 13.5h5"/>'),
+  merk: sv('<path d="M12 2.5 15 8.5l6.5 1-4.7 4.6 1.1 6.4L12 17.5 6.1 20.5l1.1-6.4L2.5 9.5 9 8.5 12 2.5Z"/>'),
   proces: sv('<path d="M4 6h16M4 12h16M4 18h10"/>'),
   kennis: sv('<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H18a1 1 0 0 1 1 1v15.5a1 1 0 0 1-1 1H6.5A1.5 1.5 0 0 1 5 19V4.5Z"/><path d="M5 17.5A1.5 1.5 0 0 1 6.5 16H19"/><path d="M9 7.5h6M9 10.5h4"/>'),
   check: sv('<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>'),

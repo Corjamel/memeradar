@@ -42,6 +42,7 @@ const GROEPEN = computed(() => [
     { naam: 'producten', label: 'Producten', ic: 'vial' },
     isPartner.value && { naam: 'bestellen', label: 'Bestellen', ic: 'bestellen' },
     { naam: 'geuren', label: 'Geuren', ic: 'geur' },
+    { naam: 'merk', label: 'Merk & Assets', ic: 'merk' },
     { naam: 'community', label: 'Community', ic: 'community' },
     { naam: 'academy', label: 'Academy', ic: 'academy' },
     { naam: 'kennisbank', label: 'Kennis', ic: 'kennis' },
