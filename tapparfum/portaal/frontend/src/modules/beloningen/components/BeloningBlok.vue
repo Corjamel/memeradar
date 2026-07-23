@@ -7,8 +7,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { eur0 } from '../../../lib/format.js'
-import { levelOf, statusKey, STATUS, winkelOmzetInfo, jaaromzet } from '../../rekenhart/logic.js'
+import { levelOf, statusKey, STATUS, winkelOmzetInfo, jaaromzet, LEVELS } from '../../rekenhart/logic.js'
 import { REWARDS, rewUnlocked, rewPct, academyDone, academyPct, cursusNaam, checkBeloningen, inTraject } from '../logic.js'
+import { basisScore, totaalScore, BASIS_MAX } from '../../punten/logic.js'
 import { haalRekenConfig } from '../api.js'
 import { stuurWinkelvraag } from '../../winkelvragen/api.js'
 
@@ -44,6 +45,36 @@ const volgendeKey = computed(() => {
   if (!open.length) return null
   return open.reduce((a, b) => (b.pct > a.pct ? b : a)).rw.key
 })
+
+// --- v71-beloningsladder: hero, puntentellers, niveau-pad, topbeloningen ---
+const jo = computed(() => jaaromzet(t.value))
+const bs = computed(() => basisScore(t.value))
+const ts = computed(() => totaalScore(t.value))
+const belLevels = LEVELS.filter(L => L.bel)        // A+ en A++ (met korting)
+const beloond = computed(() => t.value.beloond || {})
+const vrijN = computed(() =>
+  kaarten.value.filter(k => k.unlocked).length +
+  belLevels.filter(L => beloond.value['lvl-' + L.k] || jo.value >= L.min).length)
+const totN = REWARDS.length + belLevels.length
+const heroPct = computed(() => totN ? Math.round(vrijN.value / totN * 100) : 0)
+// Niveau-pad: 6 nodes gelijk verdeeld; de vulling loopt door tot in het
+// huidige segment naar rato van de omzet (v71 r.3505).
+const padNodes = computed(() => LEVELS.map((L, i) => ({
+  k: L.k, min: L.min, left: i * (100 / (LEVELS.length - 1)), done: jo.value >= L.min
+})))
+const padFill = computed(() => {
+  let idx = 0
+  LEVELS.forEach((L, i) => { if (jo.value >= L.min) idx = i })
+  const L = LEVELS[idx], next = LEVELS[idx + 1]
+  const segPct = next ? Math.min((jo.value - L.min) / (next.min - L.min), 1) : 1
+  return Math.min((idx + segPct) / (LEVELS.length - 1) * 100, 100)
+})
+const groeiKaarten = computed(() => belLevels.map(L => ({
+  L,
+  unlocked: !!beloond.value['lvl-' + L.k] || jo.value >= L.min,
+  pct: Math.min(Math.round(jo.value / L.min * 100), 100),
+  rest: Math.max(L.min - jo.value, 0)
+})))
 
 // Voortgang niveau-balk: hoe ver zit de winkelomzet tussen huidige en volgende drempel?
 const nivoPct = computed(() => {
@@ -92,6 +123,17 @@ watch(() => props.tappunt, keurUit)
     </div>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
+    <!-- Hero: beloningsprogramma-overzicht (v71 rewhero) -->
+    <div class="rewhero">
+      <div class="rewic">🎁</div>
+      <div class="rewtxt">
+        <div class="eyebrow">Beloningsprogramma</div>
+        <h3>Verdien terwijl je groeit</h3>
+        <div class="herosub">Je hebt <b>{{ vrijN }} van de {{ totN }}</b> beloningen vrijgespeeld · niveau <b>{{ lv.k }}</b>: {{ lv.r }} · {{ eur0(jo) }} dit jaar</div>
+      </div>
+      <div class="heroring" data-test="hero-pct">{{ heroPct }}%</div>
+    </div>
+
     <!-- Niveau-kaart -->
     <div class="nivo">
       <p class="regel"><b>Niveau {{ lv.k }}</b> — {{ lv.r }}</p>
@@ -109,6 +151,20 @@ watch(() => props.tappunt, keurUit)
     <!-- Zojuist vrijgespeeld -->
     <div v-for="n in netUitgekeerd" :key="n.key" class="viering" role="status" data-test="viering">
       🎉 Beloning vrijgespeeld ({{ n.bron }}): <b>{{ n.r }}</b> — kantoor/AM regelt de uitkering.
+    </div>
+
+    <!-- Conceptbeloningen -->
+    <div class="zh">Conceptbeloningen — verkoop de lifestyle, niet losse flesjes</div>
+    <p class="intro">Deze beloningen verdien je met het échte TapParfum-concept: je winkel op orde, vaste klanten die terugkomen om te hervullen, en de beleving verkopen. Alles wordt automatisch gemeten of door je accountmanager goedgekeurd.</p>
+    <div class="tellers">
+      <div class="teller">
+        <div class="tl">Basispunten <span>{{ bs }}/{{ BASIS_MAX }}</span></div>
+        <div class="tbar"><i :style="{ width: Math.round(bs / BASIS_MAX * 100) + '%' }"></i></div>
+      </div>
+      <div class="teller">
+        <div class="tl">Totaalpunten <span>{{ ts }}/128</span></div>
+        <div class="tbar"><i class="groen" :style="{ width: Math.min(Math.round(ts / 128 * 100), 100) + '%' }"></i></div>
+      </div>
     </div>
 
     <!-- Spaarcadeaus -->
@@ -140,6 +196,30 @@ watch(() => props.tappunt, keurUit)
         </div>
       </div>
     </div>
+
+    <!-- Topbeloningen — voor omzetkampioenen (v71 groeiladder + niveau-pad) -->
+    <div class="zh top">Topbeloningen — voor omzetkampioenen</div>
+    <p class="intro">Je niveau (D t/m A++) is je omzet-status. Alleen de absolute top verdient er korting mee — de weg ernaartoe loopt via de conceptbeloningen hierboven.</p>
+
+    <div class="lvlpath">
+      <div class="track"></div>
+      <div class="pfill" :style="{ width: padFill + '%' }"></div>
+      <div v-for="n in padNodes" :key="n.k" class="node" :class="{ done: n.done }" :style="{ left: n.left + '%' }">
+        <div class="dot">{{ n.k }}</div>
+        <div class="lbl">{{ n.min ? eur0(n.min) : 'start' }}</div>
+      </div>
+    </div>
+
+    <div class="groei">
+      <div v-for="g in groeiKaarten" :key="g.L.k" class="gcard" :class="{ unlocked: g.unlocked }" :data-test="'groei-' + g.L.k">
+        <div class="gkop"><span class="niveau sm">{{ g.L.k }}</span><b>{{ g.L.bel }}</b>
+          <span v-if="g.unlocked" class="won">✓ VRIJGESPEELD</span></div>
+        <div class="gsub">{{ g.L.k }} · {{ g.L.r }}</div>
+        <div v-if="!g.unlocked" class="geis">○ {{ eur0(g.L.min) }} jaaromzet <b>· nog {{ eur0(g.rest) }}</b></div>
+        <div class="voet"><div class="cbalk"><i :style="{ width: g.pct + '%' }"></i></div><span class="pct">{{ g.pct }}%</span></div>
+      </div>
+    </div>
+    <p class="intro slot">Beloningen keert je accountmanager uit. Kortingen gelden op je bestellingen in de 3 maanden na het vrijspelen.</p>
   </section>
 </template>
 
@@ -182,4 +262,42 @@ h2{margin:0;font-size:16px;flex:1}
 .cbalk i{display:block;height:100%;background:var(--coral)}
 .pct{font-size:11.5px;font-weight:800;color:var(--grey);font-variant-numeric:tabular-nums}
 .fout{color:#b3261e;font-size:13px}
+/* Hero */
+.rewhero{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--sig);color:#fff;padding:16px 18px;margin-top:12px}
+.rewic{width:52px;height:52px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.rewtxt{flex:1;min-width:220px}
+.eyebrow{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.4px;opacity:.9}
+.rewhero h3{margin:2px 0 4px;font-size:20px;font-weight:800}
+.herosub{font-size:13px;opacity:.96}
+.heroring{background:rgba(255,255,255,.92);color:var(--coral-d);font-weight:900;font-size:18px;padding:10px 14px;font-variant-numeric:tabular-nums}
+/* Concept/top secties */
+.zh{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral);font-weight:800;margin:18px 0 6px}
+.zh.top{margin-top:22px}
+.intro{margin:0 0 10px;color:var(--grey);font-size:13px;line-height:1.55}
+.intro.slot{margin-top:12px}
+.tellers{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:6px}
+.teller{flex:1;min-width:180px}
+.tl{font-size:12px;font-weight:700;margin-bottom:4px}
+.tl span{color:var(--grey)}
+.tbar{height:10px;background:#f0ebe3;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--coral)}
+.tbar i.groen{background:linear-gradient(90deg,#7fb05a,#3B6D11)}
+/* Niveau-pad */
+.lvlpath{position:relative;height:56px;margin:10px 4px 26px}
+.lvlpath .track{position:absolute;top:11px;left:0;right:0;height:4px;background:#f0ebe3}
+.lvlpath .pfill{position:absolute;top:11px;left:0;height:4px;background:var(--coral)}
+.node{position:absolute;top:0;transform:translateX(-50%);text-align:center}
+.node .dot{width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid var(--line);color:var(--grey);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;margin:0 auto}
+.node.done .dot{background:var(--coral);border-color:var(--coral);color:#fff}
+.node .lbl{font-size:10px;color:var(--grey);margin-top:4px;font-weight:700;white-space:nowrap}
+/* Groei-kaarten */
+.groei{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.gcard{border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:6px;background:#fff}
+.gcard.unlocked{border-color:#bcd9a0;background:linear-gradient(180deg,#fbfdf8,#fff)}
+.gkop{display:flex;align-items:center;gap:8px}
+.niveau.sm{width:26px;height:26px;border-radius:8px;font-size:11px}
+.gkop b{font-size:13px;flex:1}
+.gsub{font-size:11.5px;color:var(--grey)}
+.geis{font-size:11.5px;font-weight:600}
+.geis b{color:var(--coral-d)}
 </style>
