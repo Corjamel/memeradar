@@ -83,7 +83,7 @@ with sync_playwright() as p:
     pg.fill('[data-test=best-totaal]','850'); pg.fill('[data-test=best-ref]','F2000')
     pg.click('[data-test=best-toevoegen]'); pg.wait_for_timeout(400)
     n2=pg.evaluate("window.__UPSERTS.filter(u=>u[0]==='tappunten').length")
-    ck("dubbel ordernr geweigerd (geen upsert + melding)", n1==n2 and 'dubbel' in (pg.text_content('section.blok:has-text(\"Bestellingen\")') or ''))
+    ck("dubbel ordernr geweigerd (geen upsert + melding)", n1==n2 and 'dubbel' in (pg.text_content('section.blok:has-text(\"Bestellingen bij TapParfum\")') or ''))
     # twee-staps verwijderen
     wisknop=pg.locator('[data-test^=best-wis-]').first
     wisknop.click(); pg.wait_for_timeout(200)
