@@ -11,6 +11,7 @@ import BeloningBlok from '../../beloningen/components/BeloningBlok.vue'
 import BestellingenBlok from '../../bestellingen/components/BestellingenBlok.vue'
 import LogboekBlok from '../../logboek/components/LogboekBlok.vue'
 import SituatieBlok from '../components/SituatieBlok.vue'
+import HeractiveerBlok from '../components/HeractiveerBlok.vue'
 import { haalRekenConfig } from '../../beloningen/api.js'
 import VerkoopBlok from '../../verkoop/components/VerkoopBlok.vue'
 import { eur0 } from '../../../lib/format.js'
@@ -43,6 +44,7 @@ const gegVol = computed(() => GEG.filter(k => String((bron.value || {})[k] || ''
 const jo = computed(() => bron.value ? winkelOmzet(bron.value, marge.value) : 0)
 const lv = computed(() => levelOf(jaaromzet(bron.value || {}), marge.value))
 const stat = computed(() => STATUS[statusKey(bron.value || {}, marge.value)] || STATUS.groeit)
+const stagneert = computed(() => !!bron.value && statusKey(bron.value, marge.value) === 'stagneert')
 const perMaand = computed(() => bron.value ? Math.round(jo.value / monthsElapsed(bron.value)) : 0)
 const groei = computed(() => bron.value ? omzetGroei(bron.value) : null)
 const volgendeStap = computed(() => {
@@ -154,6 +156,7 @@ async function wisselBlokkade() {
     </div>
 
     <SituatieBlok v-if="!auth.isPartner" :tappunt="bron" :marge="marge" @bijgewerkt="bron = $event" />
+    <HeractiveerBlok v-if="!auth.isPartner && stagneert" :tappunt="bron" @bijgewerkt="bron = $event" />
     <SetupBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <KassaBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <VerkoopBlok :tappunt="bron" @bijgewerkt="bron = $event" />
