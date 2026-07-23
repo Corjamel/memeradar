@@ -10,6 +10,7 @@ import { haalActies, bewaarActies, isActief } from '../api.js'
 import { doetMee, heeftRes, zetDeelname, actieResSave, actieResStats, videoEmbedUrl } from '../logic.js'
 import { checkBeloningen } from '../../beloningen/logic.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
+import { ACTIES_CAMP } from '../campagnes.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -196,6 +197,17 @@ function video(a) { return videoEmbedUrl(a.video) }
         </label>
       </details>
     </div>
+
+    <!-- Vaste campagnekalender (v71 ACTIES_CAMP) — terugkerende momenten -->
+    <div class="blk-t">Campagnekalender</div>
+    <div v-for="c in ACTIES_CAMP" :key="c.t" class="kaart camp" data-test="camp">
+      <div class="campkop">
+        <span class="staat" :class="c.live ? 'nu' : 'straks'">{{ c.live ? '● Loopt nu' : '◐ Binnenkort' }}</span>
+        <b>{{ c.t }}</b>
+        <span class="when">{{ c.when }}</span>
+      </div>
+      <p class="txt">{{ c.d }}</p>
+    </div>
   </div>
 </template>
 
@@ -235,4 +247,11 @@ input:focus,textarea:focus,select:focus{border-color:var(--coral)}
 .fout{color:#b3261e}
 .melding{color:#2c5a12;font-size:13px}
 .stil{color:var(--grey)}
+.blk-t{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--coral-d);margin:20px 0 10px}
+.camp{border-left:4px solid var(--coral)}
+.campkop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.staat{font-size:11.5px;font-weight:800}
+.staat.nu{color:var(--green)}
+.staat.straks{color:var(--grey)}
+.when{margin-left:auto;font-weight:800;font-size:14px}
 </style>
