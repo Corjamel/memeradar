@@ -55,6 +55,25 @@ const flesWeek = computed(() => vanafN(new Date(Date.now() - 6 * 864e5).toISOStr
 const flesJaar = computed(() => vanafN(new Date().getFullYear() + '-01-01'))
 const laatste = computed(() => [...log.value].map((e, i) => ({ e, i })).sort((a, b) => (a.e.at < b.e.at ? 1 : -1)).slice(0, 7))
 
+// Verkoopgrafiek (v71 salesChart): flessen per dag over de laatste ~12 dagen
+// met een geregistreerde verkoop. Onder de 2 dagen tonen we niets.
+const grafiek = computed(() => {
+  const map = {}
+  log.value.forEach(e => { map[e.at] = (map[e.at] || 0) + (+e.n || 0) })
+  const dates = Object.keys(map).sort().slice(-12)
+  if (dates.length < 2) return null
+  const mx = Math.max(...dates.map(d => map[d])) || 1
+  const bw = 22, gap = 12, h = 78
+  return {
+    w: dates.length * (bw + gap) + gap, h, bw,
+    bars: dates.map((d, i) => {
+      const v = map[d]
+      const bh = Math.max(3, Math.round(v / mx * (h - 24)))
+      return { x: gap + i * (bw + gap), y: h - bh - 16, bh, v, lbl: d.slice(5) }
+    })
+  }
+})
+
 // v71 SALE_TYPES-keuze: label + omzet per fles voor de <option>-lijst.
 const typeOpties = SALE_TYPES.map((x, i) => ({ i, label: `${x.label} · ${eur0(omzetPF(x.tp, x.md, x.sz))}` }))
 
@@ -138,6 +157,18 @@ async function verwijder(o) {
         <div class="tegel"><b data-test="fles-vandaag">{{ flesVandaag }}</b><span>vandaag</span></div>
         <div class="tegel"><b data-test="fles-week">{{ flesWeek }}</b><span>laatste 7 dagen</span></div>
         <div class="tegel"><b data-test="fles-jaar">{{ flesJaar }}</b><span>dit jaar</span></div>
+      </div>
+
+      <!-- Verkoopgrafiek per dag (v71 salesChart) -->
+      <div v-if="grafiek" class="grafiek" data-test="verkoopgrafiek">
+        <span class="glbl">Verkoop per dag (flessen · laatste {{ grafiek.bars.length }})</span>
+        <svg :width="grafiek.w" :height="grafiek.h" :viewBox="'0 0 ' + grafiek.w + ' ' + grafiek.h" class="gsvg">
+          <g v-for="(b, i) in grafiek.bars" :key="i">
+            <rect :x="b.x" :y="b.y" :width="grafiek.bw" :height="b.bh" rx="2" fill="var(--coral)" />
+            <text :x="b.x + grafiek.bw / 2" :y="b.y - 4" text-anchor="middle" font-size="9" fill="var(--grey)">{{ b.v }}</text>
+            <text :x="b.x + grafiek.bw / 2" :y="grafiek.h - 3" text-anchor="middle" font-size="8" fill="#aaa">{{ b.lbl }}</text>
+          </g>
+        </svg>
       </div>
 
       <!-- Op-schema-strip (v71 schemaHTML) -->
@@ -241,4 +272,7 @@ select:focus{border-color:var(--coral)}
 .dag .dm{font-size:9.5px;color:var(--grey)}
 .dag input{width:100%;text-align:center;font-weight:800;font-size:15px;padding:5px 2px;margin-top:5px;border:1px solid var(--line);border-radius:8px}
 .dag input:focus{border-color:var(--coral)}
+.grafiek{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.glbl{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--grey);margin-bottom:6px}
+.gsvg{max-width:100%;height:auto;overflow:visible}
 </style>
