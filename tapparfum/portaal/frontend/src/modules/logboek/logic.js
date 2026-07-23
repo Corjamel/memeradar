@@ -4,11 +4,19 @@
 import { BASIS, BONUS_MANUAL } from '../punten/logic.js'
 import { beDone } from '../rekenhart/logic.js'
 
+// Kleuren 1-op-1 uit v71 (LOG_TYPES r.1232) zodat de badges gelijk ogen.
 export const LOG_TYPES = {
-  bezoek: { l: 'Bezoek', ic: '📍' },
-  telefoon: { l: 'Telefoon', ic: '📞' },
-  mail: { l: 'Mail', ic: '✉️' },
-  notitie: { l: 'Notitie', ic: '📝' }
+  bezoek: { l: 'Bezoek', ic: '📍', bg: 'var(--mist)', fg: '#21343f' },
+  telefoon: { l: 'Telefoon', ic: '📞', bg: '#C0DD97', fg: '#173404' },
+  mail: { l: 'Mail', ic: '✉️', bg: '#dcd9e8', fg: '#3a2f5a' },
+  notitie: { l: 'Notitie', ic: '📝', bg: 'var(--sand)', fg: 'var(--ink)' }
+}
+
+// Duur van een bezoek leesbaar maken (v71 fmtDuur r.1511).
+export function fmtDuur(min) {
+  if (min == null) return ''
+  min = Math.max(0, Math.round(min))
+  return min < 60 ? min + ' min' : Math.floor(min / 60) + ' u ' + String(min % 60).padStart(2, '0')
 }
 
 // v71-cadans: vaste opvolgmomenten vanaf de live-datum.
@@ -39,7 +47,12 @@ export function logToevoegen(t, entry) {
     type: LOG_TYPES[entry.type] ? entry.type : 'notitie',
     txt, nextDate: entry.nextDate || '', nextDone: false
   }
-  const logboek = [e, ...(t.logboek || [])].sort((a, b) => (a.at < b.at ? 1 : -1))
+  // v71-compatibele extra's: mailrichting bij mail, bezoekduur bij bezoek.
+  if (e.type === 'mail' && (entry.dir === 'in' || entry.dir === 'uit')) e.dir = entry.dir
+  if (e.type === 'bezoek' && entry.duurMin !== '' && entry.duurMin != null) e.duurMin = Math.max(0, parseInt(entry.duurMin) || 0)
+  // Stabiel sorteren op datum (nieuwste eerst): 0 teruggeven bij gelijke datum
+  // houdt de zojuist toegevoegde regel bovenaan i.p.v. willekeurig te herschikken.
+  const logboek = [e, ...(t.logboek || [])].sort((a, b) => (a.at < b.at ? 1 : (a.at > b.at ? -1 : 0)))
   const t2 = { ...t, logboek }
   if (e.type === 'bezoek') {
     if (!t2.laatsteBezoek || e.at > t2.laatsteBezoek) t2.laatsteBezoek = e.at

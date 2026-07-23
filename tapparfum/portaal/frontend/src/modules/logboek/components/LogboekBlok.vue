@@ -5,7 +5,7 @@ import { computed, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import {
-  LOG_TYPES, logToevoegen, logNextDone, logVerwijder, dagenSindsBezoek, bezoekStil,
+  LOG_TYPES, fmtDuur, logToevoegen, logNextDone, logVerwijder, dagenSindsBezoek, bezoekStil,
   BEZOEK_RITME_DAGEN, afsprakenOpen, afspraakToevoegen, afspraakDone,
   planBezoek, registreerBezoek, visitOpenClaims
 } from '../logic.js'
@@ -19,7 +19,7 @@ const vandaag = new Date().toISOString().slice(0, 10)
 const fout = ref('')
 const bezig = ref(false)
 const wis = ref(null)
-const vorm = reactive({ type: 'bezoek', at: vandaag, txt: '', nextDate: '' })
+const vorm = reactive({ type: 'bezoek', at: vandaag, txt: '', nextDate: '', dir: 'uit', duurMin: '' })
 const afspraakTekst = ref('')
 const planDatum = ref('')
 
@@ -43,7 +43,7 @@ async function schrijf() {
   const res = logToevoegen(t.value, vorm)
   if (!res) { fout.value = 'Schrijf eerst een verslag of notitie.'; return }
   await bewaar(res.t2)
-  Object.assign(vorm, { type: 'bezoek', at: vandaag, txt: '', nextDate: '' })
+  Object.assign(vorm, { type: 'bezoek', at: vandaag, txt: '', nextDate: '', dir: 'uit', duurMin: '' })
 }
 
 async function vinkNext(e, v) { await bewaar(logNextDone(t.value, e.id, v)) }
@@ -110,13 +110,23 @@ async function vinkAfspraak(a, v) {
         <select v-model="vorm.type" aria-label="Soort" data-test="log-type">
           <option v-for="(v, k) in LOG_TYPES" :key="k" :value="k">{{ v.ic }} {{ v.l }}</option>
         </select>
+        <select v-if="vorm.type === 'mail'" v-model="vorm.dir" aria-label="Mailrichting" data-test="log-dir">
+          <option value="uit">↑ verstuurd</option>
+          <option value="in">↓ ontvangen</option>
+        </select>
+        <input v-if="vorm.type === 'bezoek'" v-model="vorm.duurMin" type="number" min="0" placeholder="duur (min)"
+               aria-label="Bezoekduur in minuten" class="duurin" data-test="log-duur" />
         <input v-model="vorm.at" type="date" aria-label="Datum" />
         <input v-model="vorm.txt" placeholder="verslag of notitie…" class="lang" data-test="log-tekst" />
         <label class="next">opvolgen op <input v-model="vorm.nextDate" type="date" data-test="log-next" /></label>
         <button class="btn" type="submit" :disabled="bezig" data-test="log-toevoegen">Toevoegen</button>
       </form>
       <div v-for="e in log.slice(0, 8)" :key="e.id" class="rij" data-test="log-rij">
-        <span class="soort">{{ LOG_TYPES[e.type]?.ic }} {{ LOG_TYPES[e.type]?.l }}</span>
+        <span class="soort" :style="{ background: LOG_TYPES[e.type]?.bg, color: LOG_TYPES[e.type]?.fg }">{{ LOG_TYPES[e.type]?.ic }} {{ LOG_TYPES[e.type]?.l }}</span>
+        <span v-if="e.dir" class="mdir" :class="e.dir" data-test="log-mdir">{{ e.dir === 'in' ? '↓ ontvangen' : '↑ verstuurd' }}</span>
+        <a v-if="e.gps" class="gps" :href="'https://maps.google.com/?q=' + e.gps.lat + ',' + e.gps.lng" target="_blank" rel="noopener noreferrer"
+           :title="'Locatiestempel' + (e.gps.loc ? ' · ' + e.gps.loc : '')">📍<span v-if="e.gps.loc" class="mo"> {{ e.gps.loc }}</span></a>
+        <span v-if="e.duurMin != null" class="duur" data-test="log-duur-badge">⏱ {{ fmtDuur(e.duurMin) }}</span>
         <span class="datum">{{ e.at }}</span>
         <span class="txt">{{ e.txt }}</span>
         <label v-if="e.nextDate" class="opvolg" :class="{ af: e.nextDone }">
@@ -163,6 +173,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--coral)}
 .rij{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;flex-wrap:wrap}
 .rij:last-of-type{border-bottom:0}
 .soort{font-size:11px;font-weight:800;background:var(--cream);border-radius:6px;padding:2px 8px;white-space:nowrap}
+.mdir,.duur{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 8px;white-space:nowrap}
+.mdir.in{background:#dcd9e8;color:#3a2f5a}
+.mdir.uit{background:#C0DD97;color:#173404}
+.duur{background:var(--mist);color:#21343f}
+.gps{text-decoration:none;font-size:13px;color:var(--coral-d);white-space:nowrap}
+.duurin{max-width:110px}
 .datum{color:var(--grey);font-size:12.5px;font-variant-numeric:tabular-nums}
 .txt{flex:1;min-width:150px}
 .opvolg{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--coral-d)}
