@@ -13,6 +13,7 @@ with sync_playwright() as p:
     pg.add_init_script(INIT); pg.goto(URL); pg.wait_for_timeout(500)
     pg.evaluate("""window.__DB.tappunten=[{snelstart:'kl-1',name:'Zwolle',email:null,geblokkeerd:false,am_id:'am-1',
         data:{snelstart:'kl-1',name:'Zwolle',jaaromzet:12000,vorigJaar:6000,setup:{skipped:true},doel:20000,
+              goal:{doel:20000,flJaar:260,flWeek:5},
               bp:{prijzen:true,presentatie:true,zichtbaar:true,home:true},
               flesLog:[{at:'2026-01-05',n:80,ti:1}]}}];
       window.__MOCK.signin={data:{user:{id:'u-p',app_metadata:{}}},error:null};""")
@@ -23,13 +24,23 @@ with sync_playwright() as p:
     ck("trofeeen-strip: 5 spaarcadeaus", pg.locator('[data-test=trofeeen] .trof').count()==5)
     ck("spotlight geur van de week (TN056)", pg.locator('[data-test=spotlight]').count()==1 and 'TN056' in (pg.text_content('[data-test=spotlight]') or ''))
     ck("USP-blok: 4 kaarten", pg.locator('[data-test=usps] .usp').count()==4)
-    # bezoekaanvraag
-    ck("bezoekaanvraag-kaart", pg.locator('[data-test=bezoekaanvraag]').count()==1)
-    pg.fill('[data-test=bezoek-datum]','2026-08-15')
-    pg.click('[data-test=bezoek-vraag]'); pg.wait_for_timeout(500)
+    # berichtenkaart met 4 knoppen (vraag/bezoek/probleem/retour)
+    ck("berichtenkaart met 4 soorten", pg.locator('[data-test=berichtkaart]').count()==1 and pg.locator('[data-test^=ber-soort-]').count()==4)
+    # bezoek aanvragen (datum)
+    pg.click('[data-test=ber-soort-bezoek]'); pg.wait_for_timeout(200)
+    pg.fill('[data-test=ber-datum]','2026-08-15')
+    pg.click('[data-test=ber-verstuur]'); pg.wait_for_timeout(500)
     ins=pg.evaluate("window.__INSERTS.filter(i=>i[0]==='winkelvragen').slice(-1)[0][1]")
-    ck("bezoekaanvraag -> winkelvraag met datum", 'Bezoek aangevraagd' in ins['txt'] and '2026-08-15' in ins['txt'])
-    ck("bevestiging getoond", '2026-08-15' in (pg.text_content('[data-test=bezoek-melding]') or ''))
+    ck("bezoek -> winkelvraag type vraag met datum", ins['type']=='vraag' and 'Bezoek aangevraagd' in ins['txt'] and '2026-08-15' in ins['txt'])
+    ck("bevestiging getoond", 'antwoord terug' in (pg.text_content('[data-test=bezoek-melding]') or ''))
+    # probleem melden (type probleem)
+    pg.click('[data-test=ber-soort-probleem]'); pg.wait_for_timeout(200)
+    pg.fill('[data-test=ber-txt]','Tapbar lekt')
+    pg.click('[data-test=ber-verstuur]'); pg.wait_for_timeout(500)
+    ins=pg.evaluate("window.__INSERTS.filter(i=>i[0]==='winkelvragen').slice(-1)[0][1]")
+    ck("probleem -> winkelvraag type probleem", ins['type']=='probleem' and 'Tapbar lekt' in ins['txt'])
+    # deze-week-ring + projectie aanwezig (winkel heeft goal.flWeek + omzet)
+    ck("deze-week-kaart aanwezig", pg.locator('[data-test=weekkaart]').count()==1)
     ck("geen pageerrors", len(errs)==0)
     for e in errs[:5]: print("   XX", e)
     b.close()

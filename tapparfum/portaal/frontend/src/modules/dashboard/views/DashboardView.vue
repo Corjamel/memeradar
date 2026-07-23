@@ -9,7 +9,7 @@ import { haalAgenda } from '../../agenda/api.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
 import { levelOf, jaaromzet, beDone, flessenVerkocht, winkelOmzetInfo } from '../../rekenhart/logic.js'
 import { setupComplete, setupCount, SETUP_TOTAL } from '../../setup/logic.js'
-import { basisScore, BASIS_MAX, officieel } from '../../punten/logic.js'
+import { basisScore, BASIS_MAX, officieel, monthsElapsed } from '../../punten/logic.js'
 import { REWARDS, rewUnlocked } from '../../beloningen/logic.js'
 import { SPOTLIGHT, USPS } from '../../geurbib/spotlight.js'
 import { stuurWinkelvraag } from '../../winkelvragen/api.js'
@@ -119,17 +119,60 @@ const trofeeen = computed(() => {
   return REWARDS.map(rw => ({ key: rw.key, r: rw.r, ic: rw.ic, gewonnen: rewUnlocked(t, rw) || !!(t.beloond || {})[rw.key] }))
 })
 
-// Partner vraagt zelf een bezoek aan (v71 bezoekaanvraag).
-const bezoekDatum = ref('')
-const bezoekMelding = ref('')
-async function vraagBezoek() {
+// "Deze week"-ring (v71 r.3719): flessen laatste 7 dagen vs weekdoel.
+const week = computed(() => {
   const t = eigen.value
-  if (!t || !bezoekDatum.value) return
+  if (!auth.isPartner || !t) return null
+  const vanaf = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10)
+  const flessen = (t.flesLog || []).filter(e => e.at >= vanaf).reduce((s, e) => s + (+e.n || 0), 0)
+  let doel = 0
+  if (t.goal && t.goal.flWeek) doel = Math.round(t.goal.flWeek)
+  else if (t.be && t.be.days) doel = Math.max(1, Math.round(t.be.bottles / (t.be.days / 7)))
+  const pct = doel ? Math.min(100, Math.round(flessen / doel * 100)) : 0
+  return { flessen, doel, pct, koers: doel > 0 && flessen >= doel }
+})
+
+// Vooruitblik/projectie (v71 r.3723): in dit tempo eindig je rond €X -> niveau Y.
+const projectie = computed(() => {
+  const t = eigen.value
+  if (!auth.isPartner || !t) return null
+  const jo = jaaromzet(t)
+  const m = monthsElapsed(t)
+  if (m < 1 || jo <= 0) return null
+  const jaarInkoop = Math.round(jo / m * 12)
+  const lv = levelOf(jaarInkoop, marge.value)
+  return {
+    winkelomzet: Math.round(jaarInkoop * (marge.value > 0 ? marge.value : 1)),
+    niveau: lv.k, niveauR: lv.r
+  }
+})
+
+// Berichtenkaart met 4 knoppen (v71 berichtKnopKaart r.3595): vraag/bezoek/
+// probleem/retour. De winkelvragen-tabel kent type vraag/probleem/retour; een
+// bezoekaanvraag is een 'vraag' met datum, precies als in v71.
+const BERICHT_SOORTEN = [
+  { k: 'vraag', l: '❓ Vraag', type: 'vraag', pre: '❓ ' },
+  { k: 'bezoek', l: '📅 Bezoek', type: 'vraag', pre: '📅 Bezoek aangevraagd — ' },
+  { k: 'probleem', l: '⚠️ Probleem', type: 'probleem', pre: '⚠ ' },
+  { k: 'retour', l: '📦 Retour', type: 'retour', pre: '📦 Retour — ' }
+]
+const berSoort = ref('')
+const berTxt = ref('')
+const berDatum = ref('')
+const berFoto = ref(null)
+const bezoekMelding = ref('')
+function kiesSoort(k) { berSoort.value = k; berTxt.value = ''; berDatum.value = ''; berFoto.value = null; bezoekMelding.value = '' }
+async function verstuurBericht() {
+  const t = eigen.value
+  const cfg = BERICHT_SOORTEN.find(s => s.k === berSoort.value)
+  if (!t || !cfg) return
+  const kern = cfg.k === 'bezoek' ? ('voorkeur: ' + (berDatum.value || 'z.s.m.')) : berTxt.value.trim()
+  if (cfg.k !== 'bezoek' && !kern) { bezoekMelding.value = 'Schrijf eerst een korte toelichting.'; return }
   try {
-    await stuurWinkelvraag({ tappunt_snelstart: t.snelstart, type: 'vraag', txt: `📅 Bezoek aangevraagd — voorkeur: ${bezoekDatum.value}` })
-    bezoekMelding.value = `✓ Bezoekaanvraag (${bezoekDatum.value}) doorgegeven aan je accountmanager.`
-    bezoekDatum.value = ''
-  } catch (e) { bezoekMelding.value = 'Aanvraag mislukt: ' + e.message }
+    await stuurWinkelvraag({ tappunt_snelstart: t.snelstart, type: cfg.type, txt: cfg.pre + kern, foto: cfg.k === 'retour' ? berFoto.value : null })
+    bezoekMelding.value = '✓ Verstuurd naar je accountmanager — je krijgt hier antwoord terug.'
+    berSoort.value = ''; berTxt.value = ''; berDatum.value = ''; berFoto.value = null
+  } catch (e) { bezoekMelding.value = 'Versturen mislukt: ' + e.message }
 }
 
 /* Vieringen (v71): mijlpalen die de engine schreef — tonen tot ze weggeklikt
@@ -247,6 +290,19 @@ const meterLabel = computed(() => {
       <router-link v-if="eigen" class="link" :to="{ name: 'winkel', params: { code: eigen.snelstart } }">→ Naar je winkelpagina</router-link>
     </div>
 
+    <!-- Partner: deze week + vooruitblik -->
+    <div v-if="week && week.doel" class="kaart weekkaart" data-test="weekkaart">
+      <div class="weekring" :class="{ koers: week.koers }">
+        <b>{{ week.flessen }}</b><small>/ {{ week.doel }}</small>
+      </div>
+      <div class="weekbody">
+        <h2>Deze week</h2>
+        <div class="balk"><div class="vul" :style="{ width: week.pct + '%' }"></div></div>
+        <p class="regel">{{ week.koers ? 'Op koers 🔥 — weekdoel gehaald!' : `Nog ${Math.max(0, week.doel - week.flessen)} flessen tot je weekdoel.` }}</p>
+        <p v-if="projectie" class="regel proj" data-test="projectie">📈 In dit tempo eindig je rond <b>{{ eur0(projectie.winkelomzet) }}</b> — niveau <b>{{ projectie.niveau }}</b> ({{ projectie.niveauR }}).</p>
+      </div>
+    </div>
+
     <!-- Partner: trofeeën-strip -->
     <div v-if="trofeeen.length" class="kaart" data-test="trofeeen">
       <h2>🏆 Jullie spaarcadeaus</h2>
@@ -258,13 +314,22 @@ const meterLabel = computed(() => {
       </div>
     </div>
 
-    <!-- Partner: bezoek aanvragen -->
-    <div v-if="auth.isPartner && eigen" class="kaart" data-test="bezoekaanvraag">
-      <h2>📅 Bezoek aanvragen</h2>
-      <p class="regel">Wil je je accountmanager langs laten komen? Geef een voorkeursdatum door.</p>
-      <div class="bezrij">
-        <input v-model="bezoekDatum" type="date" data-test="bezoek-datum" />
-        <button class="link-knop" type="button" :disabled="!bezoekDatum" data-test="bezoek-vraag" @click="vraagBezoek">Bezoek aanvragen</button>
+    <!-- Partner: berichtenkaart (v71 berichtKnopKaart) — vraag/bezoek/probleem/retour -->
+    <div v-if="auth.isPartner && eigen" class="kaart" data-test="berichtkaart">
+      <h2>💬 Contact met je accountmanager</h2>
+      <p class="regel">Een vraag, bezoekverzoek, probleem of retour? Kies waar het over gaat.</p>
+      <div class="soorten">
+        <button v-for="s in BERICHT_SOORTEN" :key="s.k" type="button" class="soort" :class="{ aan: berSoort === s.k }"
+                :data-test="'ber-soort-' + s.k" @click="kiesSoort(s.k)">{{ s.l }}</button>
+      </div>
+      <div v-if="berSoort" class="bercompose">
+        <input v-if="berSoort === 'bezoek'" v-model="berDatum" type="date" data-test="ber-datum" aria-label="Voorkeursdatum" />
+        <textarea v-else v-model="berTxt" rows="2" :data-test="'ber-txt'"
+                  :placeholder="berSoort === 'retour' ? 'Wat wil je retourneren en waarom?' : (berSoort === 'probleem' ? 'Wat is het probleem?' : 'Je vraag…')"></textarea>
+        <label v-if="berSoort === 'retour'" class="foto">📎 Foto (optioneel)
+          <input type="file" accept="image/*" data-test="ber-foto" @change="berFoto = $event.target.files[0] || null" />
+        </label>
+        <button class="link-knop" type="button" data-test="ber-verstuur" @click="verstuurBericht">Versturen →</button>
       </div>
       <p v-if="bezoekMelding" class="ok" role="status" data-test="bezoek-melding">{{ bezoekMelding }}</p>
     </div>
@@ -385,4 +450,21 @@ h2{margin:0 0 10px;font-size:15px}
 .mo{color:var(--grey);font-size:12.5px}
 .bedrag{margin-left:auto;font-weight:700}
 .fout{color:#b3261e}
+
+.weekkaart{display:flex;gap:16px;align-items:center}
+.weekring{width:74px;height:74px;border-radius:50%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--soft);border:3px solid var(--coral)}
+.weekring.koers{background:var(--green-soft);border-color:var(--green)}
+.weekring b{font-size:22px;font-weight:900;line-height:1}
+.weekring small{font-size:11px;color:var(--grey);font-weight:700}
+.weekbody{flex:1;min-width:0}
+.weekbody .balk{height:8px;background:#f0ebe3;overflow:hidden;margin:6px 0}
+.weekbody .vul{height:100%;background:var(--coral)}
+.proj{color:var(--coral-d);font-weight:600;margin-top:6px}
+.soorten{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.soort{background:var(--cream);border:1.5px solid var(--line);padding:8px 13px;font-size:13px;font-weight:700;color:var(--grey);cursor:pointer}
+.soort.aan{border-color:var(--coral);background:var(--soft);color:var(--coral-d)}
+.bercompose{display:flex;flex-direction:column;gap:8px;max-width:460px}
+.bercompose textarea,.bercompose input[type=date]{padding:9px 11px;border:1.5px solid var(--line);font-size:14px;font-family:inherit}
+.bercompose textarea:focus,.bercompose input:focus{border-color:var(--coral);outline:none}
+.foto{font-size:12.5px;font-weight:700;color:var(--grey);display:flex;flex-direction:column;gap:4px}
 </style>
