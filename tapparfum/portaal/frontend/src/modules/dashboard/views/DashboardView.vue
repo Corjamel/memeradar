@@ -7,7 +7,8 @@ import { useTappunten } from '../../tappunten/store.js'
 import { haalWinkelvragen } from '../../winkelvragen/api.js'
 import { haalAgenda } from '../../agenda/api.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
-import { levelOf, jaaromzet, beDone, flessenVerkocht, winkelOmzetInfo } from '../../rekenhart/logic.js'
+import { levelOf, jaaromzet, beDone, flessenVerkocht, winkelOmzetInfo, statusKey } from '../../rekenhart/logic.js'
+import { inkoopJaar, bestelStil } from '../../bestellingen/logic.js'
 import { setupComplete, setupCount, SETUP_TOTAL } from '../../setup/logic.js'
 import { basisScore, BASIS_MAX, officieel, monthsElapsed } from '../../punten/logic.js'
 import { REWARDS, rewUnlocked } from '../../beloningen/logic.js'
@@ -64,6 +65,22 @@ const perAm = computed(() => {
 })
 const topWinkels = computed(() => [...st.items]
   .sort((a, b) => (Number(b.jaaromzet) || 0) - (Number(a.jaaromzet) || 0)).slice(0, 5))
+
+// Kantoor-cockpit: stagnerende winkels (aandachtslijst) + bestellingen-KPI's.
+const stagneerders = computed(() => (auth.isKantoor || auth.isAm)
+  ? st.items.filter(t => statusKey(t, marge.value) === 'stagneert')
+      .sort((a, b) => (Number(b.jaaromzet) || 0) - (Number(a.jaaromzet) || 0))
+  : [])
+const bestelKpi = computed(() => {
+  if (!auth.isKantoor) return null
+  const maand = new Date().toISOString().slice(0, 7)
+  let inkoop = 0, maandN = 0
+  st.items.forEach(t => {
+    inkoop += inkoopJaar(t)
+    ;(t.bestellingen || []).forEach(b => { if (String(b.at || '').slice(0, 7) === maand) maandN++ })
+  })
+  return { inkoop, maandN, stil: st.items.filter(t => bestelStil(t)).length }
+})
 const eigen = computed(() => st.items[0] || null)
 const mijnNiveau = computed(() => eigen.value ? levelOf(jaaromzet(eigen.value), marge.value) : null)
 
@@ -254,10 +271,40 @@ const meterLabel = computed(() => {
         <div class="cijfer">{{ openTaken }}</div>
         <div class="lbl">open taken</div>
       </router-link>
+      <div v-if="auth.isKantoor" class="tegel" data-test="tile-ams">
+        <div class="cijfer">{{ ams.length }}</div>
+        <div class="lbl">accountmanagers</div>
+      </div>
+      <div v-if="auth.isKantoor" class="tegel" data-test="tile-stagneert">
+        <div class="cijfer amber">{{ stagneerders.length }}</div>
+        <div class="lbl">stagneert</div>
+      </div>
       <div v-if="auth.isKantoor" class="tegel" data-test="tile-blok">
         <div class="cijfer">{{ blok }}</div>
         <div class="lbl">geblokkeerd</div>
       </div>
+    </div>
+
+    <!-- Kantoor: bestellingen-KPI's -->
+    <div v-if="bestelKpi" class="kaart bestelkpi" data-test="bestel-kpi">
+      <h2>📦 Bestellingen (team)</h2>
+      <div class="kpirij">
+        <div class="kpi"><b>{{ eur0(bestelKpi.inkoop) }}</b><span>inkoop dit jaar</span></div>
+        <div class="kpi"><b>{{ bestelKpi.maandN }}</b><span>bestellingen deze maand</span></div>
+        <div class="kpi"><b :class="{ amber: bestelKpi.stil > 0 }">{{ bestelKpi.stil }}</b><span>60+ dgn geen bestelling</span></div>
+      </div>
+    </div>
+
+    <!-- Kantoor/AM: stagnatie-aandachtslijst -->
+    <div v-if="(auth.isKantoor || auth.isAm) && stagneerders.length" class="kaart" data-test="aandacht">
+      <h2>⚠️ Vraagt aandacht — stagnerende tappunten</h2>
+      <router-link v-for="t in stagneerders" :key="t.snelstart" class="rij klik" data-test="aandacht-rij"
+                   :to="{ name: 'winkel', params: { code: t.snelstart } }">
+        <b>{{ t.name }}</b>
+        <span class="mo">{{ t.snelstart }}</span>
+        <span class="bedrag">{{ eur0(t.jaaromzet) }}</span>
+        <span class="pijl">→ heractiveren</span>
+      </router-link>
     </div>
 
     <!-- Partner: stats-KPI-rij -->
@@ -467,4 +514,15 @@ h2{margin:0 0 10px;font-size:15px}
 .bercompose textarea,.bercompose input[type=date]{padding:9px 11px;border:1.5px solid var(--line);font-size:14px;font-family:inherit}
 .bercompose textarea:focus,.bercompose input:focus{border-color:var(--coral);outline:none}
 .foto{font-size:12.5px;font-weight:700;color:var(--grey);display:flex;flex-direction:column;gap:4px}
+
+.cijfer.amber{color:var(--amber)}
+.bestelkpi .kpirij{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);margin-top:4px}
+.bestelkpi .kpi{padding:12px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.bestelkpi .kpi:last-child{border-right:0}
+.bestelkpi .kpi b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.bestelkpi .kpi b.amber{color:var(--amber)}
+.bestelkpi .kpi span{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+@media(max-width:620px){.bestelkpi .kpirij{grid-template-columns:1fr}.bestelkpi .kpi{border-right:0;border-bottom:1px solid var(--line)}}
+[data-test=aandacht] .rij .pijl{margin-left:auto;color:var(--coral-d);font-weight:700;font-size:12.5px;white-space:nowrap}
+[data-test=aandacht]{border-left:4px solid var(--amber)}
 </style>
