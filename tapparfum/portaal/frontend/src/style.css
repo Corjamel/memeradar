@@ -1,30 +1,39 @@
 /* ============================================================
    TapParfum Portaal — designtokens & basis
-   Merk: TAPPARFUM-woordmerk (geen beeldmerk), koraal op warm crème.
-   Signatuur: de parfumfles-vulmeter (FlesMeter.vue) voor voortgang.
+   Eén-op-één afgestemd op v71: warm crème + koraal, Nunito Sans,
+   rechte (niet-afgeronde) vlakken, kapitale labels. De waarden en
+   de vormtaal komen letterlijk uit TapParfum_Portal_v71_cloud.html.
    ============================================================ */
 :root {
-  --coral: #E2694F;        /* merkkoraal */
-  --coral-d: #C9503B;      /* donker koraal — tekst op licht */
-  --ink: #21343F;          /* hoofdtekst */
-  --grey: #8A8178;         /* secundaire tekst */
-  --cream: #FAF6F1;        /* pagina-achtergrond */
+  --coral: #EE644D;        /* merkkoraal (v71) */
+  --coral-d: #D9543C;      /* donker koraal — tekst/hover op licht */
+  --peach: #F9C5AF;
+  --ink: #2A211C;          /* warme hoofdtekst */
+  --ink-2: #5C524B;
+  --grey: #5C524B;         /* secundaire tekst */
+  --cream: #F6F4F0;        /* pagina-achtergrond (creme/pagebg) */
+  --pagebg: #F6F4F0;
+  --sand: #EDE3D0;         /* zand */
   --card: #FFFFFF;
-  --line: #EBE3D8;         /* randen */
+  --line: #E8DECF;         /* randen */
   --soft: #FDEEE7;         /* koraal-tint vlakken */
-  --mist: #DCE8EC;         /* koele accent (bodymist) */
-  --green: #5B8C3E;
-  --green-soft: #E7F3D9;
-  --amber: #E8B04B;
+  --mist: #CDEAFB;         /* koele accent (bodymist) */
+  --green: #3B6D11;
+  --green-soft: #EEF6E6;
+  --amber: #BA7517;
+  --sig: linear-gradient(135deg, #EE644D, #F9C5AF);
+  --font-body: 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Jost', 'Nunito Sans', system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 html { color-scheme: light; }
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
   color: var(--ink);
-  background: var(--cream);
+  background: var(--pagebg);
+  line-height: 1.5;
   -webkit-tap-highlight-color: transparent;
 }
 button, a, input, select, textarea, label { touch-action: manipulation; }
@@ -32,12 +41,35 @@ button, input, select, textarea { font-family: inherit; }
 
 /* Zichtbare focus voor toetsenbord, rust voor muis/tik */
 :focus { outline: none; }
-:focus-visible { outline: 2.5px solid var(--coral-d); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2.5px solid var(--coral-d); outline-offset: 2px; }
 
 h1, h2, h3 { text-wrap: balance; }
 
 /* Cijfers lijnen netjes uit in kolommen en tegels */
 .bedrag, .cijfer, .totaal, .tegel b, .pct b { font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------
+   Vormtaal-laag: v71 is consequent RECHT (border-radius 0) op vlakken,
+   knoppen, chips en invoer. De modulecomponenten stylen zichzelf met
+   afgeronde hoeken; deze laag trekt de identiteit centraal recht zonder
+   38 bestanden aan te hoeven raken. Ronde elementen die rond hóren te
+   zijn (avatars, rol-pillen, voortgangsbalken, de flesmeter) blijven
+   ongemoeid — die dragen geen van deze klassenamen.
+   ------------------------------------------------------------------ */
+.kaart, .blok, .tegel, .paneel, .card,
+.btn, .knop,
+.chip, .fchip,
+input[type=text], input[type=email], input[type=password], input[type=date],
+input[type=month], input[type=number], input[type=search], textarea, select {
+  border-radius: 0 !important;
+}
+
+/* Knoppen dragen v71's kapitale, gespatieerde signatuur. */
+.btn, .knop {
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 800;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
