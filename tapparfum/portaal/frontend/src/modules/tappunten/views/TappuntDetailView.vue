@@ -13,6 +13,9 @@ import LogboekBlok from '../../logboek/components/LogboekBlok.vue'
 import SituatieBlok from '../components/SituatieBlok.vue'
 import { haalRekenConfig } from '../../beloningen/api.js'
 import VerkoopBlok from '../../verkoop/components/VerkoopBlok.vue'
+import { eur0 } from '../../../lib/format.js'
+import { jaaromzet, winkelOmzet, levelOf, statusKey, STATUS, groeiTxt } from '../../rekenhart/logic.js'
+import { omzetGroei, monthsElapsed } from '../../punten/logic.js'
 
 const props = defineProps({ code: { type: String, required: true } })
 const st = useTappunten()
@@ -35,6 +38,23 @@ function vulVorm(t) {
 }
 // Compleetheid: hoeveel van de 13 velden zijn ingevuld?
 const gegVol = computed(() => GEG.filter(k => String((bron.value || {})[k] || '').trim()).length)
+
+// Kop-metrics (v71 metricrow r.2906) + volgende stap (v71 nextStep r.2796).
+const jo = computed(() => bron.value ? winkelOmzet(bron.value, marge.value) : 0)
+const lv = computed(() => levelOf(jaaromzet(bron.value || {}), marge.value))
+const stat = computed(() => STATUS[statusKey(bron.value || {}, marge.value)] || STATUS.groeit)
+const perMaand = computed(() => bron.value ? Math.round(jo.value / monthsElapsed(bron.value)) : 0)
+const groei = computed(() => bron.value ? omzetGroei(bron.value) : null)
+const volgendeStap = computed(() => {
+  const t = bron.value
+  if (!t) return ''
+  const s = t.setup || {}
+  if (!(s.done || s.skipped)) return 'Rond de opstart af met de winkel'
+  if (jaaromzet(t) === 0) return 'Vul de huidige jaaromzet in'
+  if (statusKey(t, marge.value) === 'stagneert') return 'Stagneert — plan een heractivatie'
+  if (lv.value.next) return `Nog ${eur0(lv.value.gap)} tot niveau ${lv.value.next}`
+  return 'Hoogste niveau bereikt — houd het vast'
+})
 
 onMounted(async () => {
   if (!st.items.length) await st.laad()
@@ -82,7 +102,21 @@ async function wisselBlokkade() {
       <div class="kop">
         <h1>{{ bron.name }}</h1>
         <span class="code">code {{ bron.snelstart }}</span>
+        <span class="niveau" data-test="kop-niveau">{{ lv.k }}</span>
+        <span class="badge sit" :style="{ background: stat.bg, color: stat.fg }">{{ stat.l }}</span>
         <span v-if="bron.geblokkeerd" class="badge" data-test="blok-badge">geblokkeerd</span>
+      </div>
+
+      <!-- Kerncijfers in één oogopslag (v71 metricrow) -->
+      <div class="metricrow" data-test="metricrow">
+        <div class="m"><span class="mv">{{ lv.k }}</span><span class="ml">Niveau</span></div>
+        <div class="m"><span class="mv">{{ eur0(jo) }}</span><span class="ml">Jaaromzet</span></div>
+        <div class="m"><span class="mv">{{ eur0(perMaand) }}</span><span class="ml">Per maand</span></div>
+        <div class="m"><span class="mv" :class="{ up: groei > 0, down: groei < 0 }">{{ groeiTxt(groei) }}</span><span class="ml">Groei vs vorig jaar</span></div>
+      </div>
+      <div class="nextstep" data-test="volgende-stap">
+        <span class="ns-t">Volgende stap</span>
+        <span class="ns-h">{{ volgendeStap }}</span>
       </div>
 
       <p class="geg-teller" data-test="geg-teller">📇 Gegevens · {{ gegVol }}/13 ingevuld</p>
@@ -139,6 +173,18 @@ async function wisselBlokkade() {
 h1{margin:0;font-size:20px}
 .code{color:var(--grey);font-size:13px}
 .badge{background:#333;color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px}
+.badge.sit{border-radius:6px}
+.niveau{width:30px;height:30px;border-radius:9px;background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12.5px}
+.metricrow{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);margin-bottom:12px}
+.metricrow .m{padding:12px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.metricrow .m:last-child{border-right:0}
+.metricrow .mv{font-size:20px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.metricrow .mv.up{color:var(--green)}.metricrow .mv.down{color:var(--coral-d)}
+.metricrow .ml{font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+@media(max-width:620px){.metricrow{grid-template-columns:repeat(2,1fr)}.metricrow .m:nth-child(2){border-right:0}}
+.nextstep{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--soft);border:1px solid var(--line);margin-bottom:14px}
+.ns-t{font-size:10.5px;color:var(--coral-d);text-transform:uppercase;letter-spacing:.5px;font-weight:800;flex-shrink:0}
+.ns-h{font-size:13.5px;font-weight:600}
 .vorm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey)}
 input{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
