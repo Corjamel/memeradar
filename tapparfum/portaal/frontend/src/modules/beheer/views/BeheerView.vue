@@ -30,7 +30,7 @@ const bezig = ref(false)
 const nieuw = reactive({ naam: '', email: '' })
 const wis = ref(null)            // twee-staps: AM verwijderen
 const anon = ref(null)           // twee-staps: winkel anonimiseren
-const inst = reactive({ maten: [], marge: 1, shopUrl: '' })
+const inst = reactive({ maten: [], marge: 1, shopUrl: '', b2bUrl: '', b2bActief: false })
 const mod = reactive({ game: true, kassa: true, producten: true })
 const rechten = ref({})          // rechten-matrix kantoor-accounts (v71)
 const RECHT_KEYS = ['acties', 'game', 'producten', 'team', 'analyse']   // v71 ALLE_RECHTEN
@@ -52,6 +52,8 @@ async function laad() {
     inst.maten = (Array.isArray(m) && m.length ? m : STANDAARD_MATEN).map(x => ({ ...x }))
     inst.marge = Number(await haalCentral('margeFactor')) || 1
     inst.shopUrl = String(await haalCentral('shopUrl') || '')
+    const b2b = await haalCentral('b2bApi') || {}
+    inst.b2bUrl = String(b2b.url || ''); inst.b2bActief = !!b2b.actief
     const mo = await haalCentral('modules') || {}
     mod.game = mo.game !== false; mod.kassa = mo.kassa !== false; mod.producten = mo.producten !== false
     rechten.value = (await haalCentral('kantoorRechten')) || {}
@@ -178,11 +180,36 @@ async function backupExport() {
     _tp: 'portaal-backup', at: new Date().toISOString(),
     tappunten: st.items,
     accountmanagers: ams.value,
-    instellingen: { flesMaten: inst.maten, margeFactor: inst.marge, shopUrl: inst.shopUrl, modules: { ...mod } }
+    instellingen: { flesMaten: inst.maten, margeFactor: inst.marge, shopUrl: inst.shopUrl, modules: { ...mod }, b2bApi: { url: inst.b2bUrl, actief: inst.b2bActief } }
   }
   download(`TapParfum_backup_${new Date().toISOString().slice(0, 10)}.json`, dump)
   await log(wie(), 'Back-up gedownload')
   meld('✓ Back-up gedownload. (Supabase maakt daarnaast zelf dagelijkse back-ups.)')
+}
+
+// Back-up herstellen (v71 backupHerstel): leest een back-up-JSON en zet de
+// netwerk-instellingen terug. Winkel-/AM-data blijft bewust ongemoeid — die
+// leeft in de database en Supabase heeft daar eigen dagback-ups voor; we
+// herstellen alleen de central-configuratie (veilig + omkeerbaar).
+const herstelBezig = ref(false)
+async function backupHerstel(ev) {
+  const file = ev.target.files && ev.target.files[0]
+  ev.target.value = ''
+  if (!file) return
+  herstelBezig.value = true; fout.value = ''
+  try {
+    const dump = JSON.parse(await file.text())
+    if (dump._tp !== 'portaal-backup' || !dump.instellingen) throw new Error('Geen geldig TapParfum-back-upbestand.')
+    const i = dump.instellingen
+    if (Array.isArray(i.flesMaten)) { await bewaarCentral('flesMaten', i.flesMaten); inst.maten = i.flesMaten.map(x => ({ ...x })) }
+    if (i.margeFactor != null) { await bewaarCentral('margeFactor', Number(i.margeFactor) || 1); inst.marge = Number(i.margeFactor) || 1 }
+    if (i.shopUrl != null) { await bewaarCentral('shopUrl', String(i.shopUrl)); inst.shopUrl = String(i.shopUrl) }
+    if (i.modules) { await bewaarCentral('modules', i.modules); mod.game = i.modules.game !== false; mod.kassa = i.modules.kassa !== false; mod.producten = i.modules.producten !== false }
+    if (i.b2bApi) { await bewaarCentral('b2bApi', i.b2bApi); inst.b2bUrl = String(i.b2bApi.url || ''); inst.b2bActief = !!i.b2bApi.actief }
+    await log(wie(), 'Back-up hersteld (netwerk-instellingen)')
+    meld('✓ Netwerk-instellingen hersteld uit de back-up.')
+  } catch (e) { fout.value = 'Herstellen mislukt: ' + e.message }
+  herstelBezig.value = false
 }
 
 // ---- Instellingen -----------------------------------------------------
@@ -192,6 +219,7 @@ async function instellingenOpslaan() {
     await bewaarCentral('flesMaten', inst.maten.map(x => ({ m: x.m, p: Number(x.p) || 0 })))
     await bewaarCentral('margeFactor', Number(inst.marge) || 1)
     await bewaarCentral('shopUrl', inst.shopUrl.trim())
+    await bewaarCentral('b2bApi', { url: inst.b2bUrl.trim(), actief: !!inst.b2bActief })
     await bewaarCentral('modules', { game: !!mod.game, kassa: !!mod.kassa, producten: !!mod.producten })
     await log(wie(), 'Netwerk-instellingen gewijzigd')
     meld('✓ Instellingen opgeslagen — direct actief voor het hele netwerk.')
@@ -316,6 +344,16 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
         </div>
       </div>
       <div class="kaart">
+        <h2>B2B-koppeling</h2>
+        <p class="note">De URL van het B2B-portaal voor de klant-/ordersynchronisatie. Zet 'm aan zodra de koppeling live is.</p>
+        <div class="rij vorm">
+          <label>B2B-API-URL
+            <input v-model="inst.b2bUrl" type="url" placeholder="https://b2b.retail-brands.nl/api…" data-test="inst-b2b-url" />
+          </label>
+          <label class="schakel b2b"><input v-model="inst.b2bActief" type="checkbox" data-test="inst-b2b-actief" /> Koppeling actief</label>
+        </div>
+      </div>
+      <div class="kaart">
         <h2>Modules aan/uit</h2>
         <p class="note">Uitzetten verbergt de module in het hele netwerk — data blijft bewaard.</p>
         <div class="rij">
@@ -335,7 +373,14 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
         <h2>Back-up</h2>
         <p class="note">Downloadt alle winkels, accountmanagers en instellingen als JSON. Supabase maakt daarnaast zelf
           dagelijkse database-back-ups.</p>
-        <button class="knop" type="button" data-test="backup-export" @click="backupExport">⬇ Back-up downloaden</button>
+        <div class="rij">
+          <button class="knop" type="button" data-test="backup-export" @click="backupExport">⬇ Back-up downloaden</button>
+          <label class="knop ghost" :class="{ bezig: herstelBezig }">
+            {{ herstelBezig ? 'Bezig…' : '⬆ Back-up herstellen' }}
+            <input type="file" accept="application/json,.json" data-test="backup-herstel" style="display:none" @change="backupHerstel" />
+          </label>
+        </div>
+        <p class="note" style="margin-top:8px">Herstellen zet de <b>netwerk-instellingen</b> (kassaprijzen, marge, portaal-URL, modules, B2B) terug uit een back-upbestand. Winkel- en AM-gegevens blijven ongemoeid — die staan veilig in de database.</p>
       </div>
       <div class="kaart">
         <h2>AVG per winkel</h2>
@@ -408,4 +453,7 @@ input:focus,select:focus{border-color:var(--coral)}
 .stil{color:var(--grey);font-size:13px}
 .vink{display:flex;flex-direction:row;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);cursor:pointer;min-width:0;flex:none}
 .vink input{width:15px;height:15px;accent-color:var(--coral)}
+.knop.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.knop.ghost:hover{border-color:var(--coral);color:var(--coral)}
+.knop.ghost.bezig{opacity:.6}
 </style>
