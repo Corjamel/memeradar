@@ -141,7 +141,14 @@ async function laadBrand() {
     const t = (await haalCentral('teksten')) || {}
     teksten.value = (t && typeof t === 'object') ? t : {}
   } catch (e) { teksten.value = {} }
+  try {
+    const l = (await haalCentral('layout')) || {}
+    layout.value = (l && typeof l === 'object') ? l : {}
+  } catch (e) { layout.value = {} }
 }
+// Layout/regie (v71): kantoor kan de content-uitlijning per rol centreren.
+const layout = ref({})
+const gecentreerd = computed(() => (layout.value.align || {})[auth.role] === 'midden')
 watch(() => auth.ingelogd, (ja) => { if (ja) laadBrand() }, { immediate: true })
 
 async function uitloggen() {
@@ -188,7 +195,7 @@ async function uitloggen() {
         <span class="tb-role rol">{{ ROL_LABEL[auth.role] || auth.role }}</span>
         <span class="tb-av">{{ initialen }}</span>
       </header>
-      <main class="content">
+      <main class="content" :class="{ mid: gecentreerd }">
         <router-view />
       </main>
     </div>
@@ -229,6 +236,7 @@ async function uitloggen() {
 .tb-role{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--coral-d);background:var(--soft);padding:6px 12px;border-radius:999px}
 .tb-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--coral-d));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
 .content{padding:26px 32px 60px;max-width:1100px}
+.content.mid{max-width:940px;margin-inline:auto}
 .bare{min-height:100vh}
 .bare .content{padding:0;max-width:none}
 @media(max-width:760px){

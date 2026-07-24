@@ -58,6 +58,9 @@ function brandReset() {
 }
 // Schermtitels (central 'teksten'): per route een override (leeg = standaard).
 const tekst = reactive(Object.fromEntries(TEKST_SCHERMEN.map(([r]) => [r, ''])))
+// Layout/regie (central 'layout'): content-uitlijning per rol (v71 bhAlign).
+const ZONES = [['am', '🚗 Accountmanager'], ['partner', '🏪 Partner'], ['kantoor', '🏢 Kantoor']]
+const align = reactive({ am: '', partner: '', kantoor: '' })
 const mod = reactive({ game: true, kassa: true, producten: true })
 const rechten = ref({})          // rechten-matrix kantoor-accounts (v71)
 const RECHT_KEYS = ['acties', 'game', 'producten', 'team', 'analyse']   // v71 ALLE_RECHTEN
@@ -94,6 +97,11 @@ async function laad() {
     brand.green = br.green || BRAND_STD.green; brand.amber = br.amber || BRAND_STD.amber
     const tk = (await haalCentral('teksten')) || {}
     TEKST_SCHERMEN.forEach(([r]) => { tekst[r] = String(tk['title.' + r] || '') })
+    const la = (await haalCentral('layout')) || {}
+    const al = la.align || {}
+    align.am = al.am === 'midden' ? 'midden' : ''
+    align.partner = al.partner === 'midden' ? 'midden' : ''
+    align.kantoor = al.kantoor === 'midden' ? 'midden' : ''
     logboek.value = await haalLog()
   } catch (e) { fout.value = 'Kon beheer niet laden: ' + e.message }
 }
@@ -325,7 +333,11 @@ async function instellingenOpslaan() {
     })
     await bewaarCentral('brand', br)
     applyBrand(br)                       // kleuren meteen live
-    try { window.dispatchEvent(new CustomEvent('tp-brand')) } catch (e) { /* logo volgt bij herladen */ }
+    // Layout/regie: alleen gecentreerde zones bewaren.
+    const alignObj = {}
+    ZONES.forEach(([z]) => { if (align[z] === 'midden') alignObj[z] = 'midden' })
+    await bewaarCentral('layout', Object.keys(alignObj).length ? { align: alignObj } : {})
+    try { window.dispatchEvent(new CustomEvent('tp-brand')) } catch (e) { /* logo/layout volgt bij herladen */ }
     await log(wie(), 'Netwerk-instellingen gewijzigd')
     meld('✓ Instellingen opgeslagen — direct actief voor het hele netwerk.')
   } catch (e) { fout.value = 'Instellingen opslaan mislukt: ' + e.message }
@@ -509,6 +521,20 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
         <div class="rij">
           <span class="brandvoor" :style="{ background: brand.coral, color: '#fff' }" data-test="brand-preview">Voorbeeld-accent</span>
           <button class="knop ghost" type="button" data-test="brand-reset" @click="brandReset">Terug naar standaard</button>
+        </div>
+      </div>
+
+      <!-- Layout/regie (v71): content-uitlijning per rol -->
+      <div class="kaart">
+        <h2>📐 Layout</h2>
+        <p class="note">Standaard staat de inhoud links (breed werkscherm). Gecentreerd geeft een smallere, gecentreerde kolom — rustiger voor lees-schermen. Per rol in te stellen.</p>
+        <div class="rij vorm">
+          <label v-for="[z, lbl] in ZONES" :key="z">{{ lbl }}
+            <select v-model="align[z]" :data-test="'align-' + z">
+              <option value="">Links (standaard)</option>
+              <option value="midden">Gecentreerd</option>
+            </select>
+          </label>
         </div>
       </div>
       <div class="rij">
