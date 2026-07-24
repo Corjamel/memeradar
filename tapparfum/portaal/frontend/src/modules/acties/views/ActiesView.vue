@@ -20,7 +20,7 @@ const fout = ref('')
 const melding = ref('')
 const bezig = ref(false)
 const vandaag = new Date().toISOString().slice(0, 10)
-const nieuw = reactive({ titel: '', omschrijving: '', start: '', eind: '', punten: '', video: '', materialen: '' })
+const nieuw = reactive({ titel: '', omschrijving: '', start: '', eind: '', punten: '', video: '', materialen: '', artikelnrs: '', bestelDeadline: '', todo: '' })
 const fb = reactive({})          // feedback-invoer per actie(+winkel): { key: {werkte,tekst} }
 
 const actief = computed(() => alle.value.filter(a => isActief(a)))
@@ -60,10 +60,11 @@ async function toevoegen() {
       id: 'act-' + Date.now(), titel: nieuw.titel.trim(), omschrijving: nieuw.omschrijving.trim(),
       start: nieuw.start || null, eind: nieuw.eind || null,
       punten: Math.max(0, +nieuw.punten || 0), video: nieuw.video.trim(), materialen: nieuw.materialen.trim(),
+      artikelnrs: nieuw.artikelnrs.trim(), bestelDeadline: nieuw.bestelDeadline || null, todo: nieuw.todo.trim(),
       archived: false
     }, ...alle.value]
     await bewaarActies(arr)
-    Object.assign(nieuw, { titel: '', omschrijving: '', start: '', eind: '', punten: '', video: '', materialen: '' })
+    Object.assign(nieuw, { titel: '', omschrijving: '', start: '', eind: '', punten: '', video: '', materialen: '', artikelnrs: '', bestelDeadline: '', todo: '' })
     await laad()
   } catch (e) { fout.value = 'Opslaan mislukt: ' + e.message }
   bezig.value = false
@@ -103,6 +104,9 @@ async function feedback(t, a, key) {
 function stats(a) { return actieResStats(st.items, a.id) }
 function meeTelling(a) { return st.items.filter(t => doetMee(t, a.id)).length }
 function video(a) { return videoEmbedUrl(a.video) }
+// v71 bestelbaar(): materialen zijn te bestellen tot en met de deadline.
+function bestelbaar(a) { return !a.bestelDeadline || a.bestelDeadline >= new Date().toISOString().slice(0, 10) }
+function stappen(a) { return String(a.todo || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean) }
 </script>
 
 <template>
@@ -125,8 +129,13 @@ function video(a) { return videoEmbedUrl(a.video) }
       </div>
       <div class="rij">
         <label>Actievideo (YouTube/Vimeo)<input v-model="nieuw.video" placeholder="https://youtu.be/…" /></label>
-        <label>Materialen<input v-model="nieuw.materialen" placeholder="poster, flyers, social-post…" /></label>
+        <label>Materialen<input v-model="nieuw.materialen" placeholder="poster, flyers, social-post…" data-test="actie-materialen" /></label>
       </div>
+      <div class="rij">
+        <label>Artikelnummers<input v-model="nieuw.artikelnrs" placeholder="bijv. #A102, #A103" data-test="actie-artikelnrs" /></label>
+        <label>Materialen bestelbaar t/m<input v-model="nieuw.bestelDeadline" type="date" data-test="actie-deadline" /></label>
+      </div>
+      <label>Stappenplan (één stap per regel)<textarea v-model="nieuw.todo" rows="2" placeholder="1 · Poster ophangen&#10;2 · Social-post plaatsen" data-test="actie-todo"></textarea></label>
       <button class="btn" type="submit" :disabled="bezig" data-test="actie-toevoegen">{{ bezig ? 'Bezig…' : 'Actie plaatsen' }}</button>
     </form>
 
@@ -176,7 +185,20 @@ function video(a) { return videoEmbedUrl(a.video) }
         <button v-if="auth.magActiesBeheren" class="archief" type="button" data-test="actie-archiveer" @click="archiveer(a)">archiveer</button>
       </div>
       <p v-if="a.omschrijving" class="txt">{{ a.omschrijving }}</p>
-      <p v-if="a.materialen" class="mo">🧰 Materialen: {{ a.materialen }}</p>
+
+      <!-- Campagne-detail (v71): materialen · artikelnummers · besteldeadline · stappenplan -->
+      <div v-if="a.materialen || a.artikelnrs || a.bestelDeadline || stappen(a).length" class="campdetail" data-test="actie-detail">
+        <p v-if="a.materialen" class="mo" data-test="detail-materialen">🧰 <b>Materialen:</b> {{ a.materialen }}</p>
+        <p v-if="a.artikelnrs" class="mo" data-test="detail-artikelnrs">🔖 <b>Artikelnummers:</b> {{ a.artikelnrs }}</p>
+        <p v-if="a.bestelDeadline" class="mo" data-test="detail-deadline">
+          <template v-if="bestelbaar(a)">📦 <b class="coral">Bestel materialen vóór {{ a.bestelDeadline }}</b></template>
+          <template v-else>📦 <b class="amber">Bestelperiode gesloten (t/m {{ a.bestelDeadline }})</b></template>
+        </p>
+        <div v-if="stappen(a).length" class="stappen" data-test="detail-stappen">
+          <b class="mo">📋 Stappenplan</b>
+          <ol><li v-for="(s, i) in stappen(a)" :key="i">{{ s }}</li></ol>
+        </div>
+      </div>
       <iframe v-if="video(a)?.embed" :src="video(a).embed" title="Actievideo" class="video" allowfullscreen loading="lazy"></iframe>
       <a v-else-if="video(a)?.link" class="klein" :href="video(a).link" target="_blank" rel="noopener noreferrer">▶ Bekijk actievideo →</a>
 
@@ -229,6 +251,14 @@ input:focus,textarea:focus,select:focus{border-color:var(--coral)}
 .archief:hover{border-color:var(--coral);color:var(--coral)}
 .txt{margin:8px 0 0;font-size:14px}
 .mo{color:var(--grey);font-size:12.5px;margin:6px 0 0}
+.campdetail{margin-top:8px;padding:10px 12px;background:var(--cream);border:1px solid var(--line);border-radius:10px}
+.campdetail .mo{margin:4px 0 0}
+.campdetail .mo:first-child{margin-top:0}
+.campdetail b.coral{color:var(--coral-d)}
+.campdetail b.amber{color:var(--amber)}
+.stappen{margin-top:6px}
+.stappen ol{margin:4px 0 0;padding-left:20px;color:var(--ink);font-size:12.5px}
+.stappen li{margin:2px 0}
 .video{width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:10px}
 .deelname{margin-top:10px}
 .badge{font-size:11.5px;font-weight:800;border-radius:6px;padding:3px 10px}
