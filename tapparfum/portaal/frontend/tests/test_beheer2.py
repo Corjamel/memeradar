@@ -29,7 +29,7 @@ with sync_playwright() as p:
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(500)
 
     # tabs
-    ck("6 tabbladen zichtbaar", pg.locator('.tabs button').count()==6)
+    ck("7 tabbladen zichtbaar", pg.locator('.tabs button').count()==7)
     ck("Mensen-tab is standaard actief", pg.locator('[data-test=am-naam]').count()==1)
 
     # winkel blokkeren via Winkels-tab

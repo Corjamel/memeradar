@@ -24,8 +24,16 @@ const TABS = [
   ['winkels', '🏬 Winkels'],
   ['instellingen', '⚙️ Instellingen'],
   ['regels', '⚖️ Regels'],
+  ['teksten', '✏️ Teksten'],
   ['avg', '🔐 AVG & back-up'],
   ['audit', '📜 Audit']
+]
+// Schermtitels die kantoor mag herbenoemen (v71 title.<route>).
+const TEKST_SCHERMEN = [
+  ['home', 'Mijn winkels'], ['vandaag', 'Vandaag'], ['winkels', 'Winkels'], ['agenda', 'Agenda'],
+  ['bezoeken', 'Bezoeken'], ['berichten', 'Berichten'], ['acties', 'Acties'], ['beloningen', 'Beloningen'],
+  ['game', 'Sales Game'], ['producten', 'Producten'], ['geuren', 'Geurbibliotheek'], ['community', 'Community'],
+  ['academy', 'Academy'], ['kennisbank', 'Kennisbank'], ['analyse', 'Analyse'], ['team', 'Accountmanagers']
 ]
 // Regels-editor: ABCD-drempels (D=0 vast) + AM-score-weging.
 const WEGING_STANDAARD = { groei: 35, activatie: 25, retentie: 20, data: 20 }
@@ -48,6 +56,8 @@ function brandReset() {
   brand.coral = BRAND_STD.coral; brand.corald = BRAND_STD.corald
   brand.green = BRAND_STD.green; brand.amber = BRAND_STD.amber
 }
+// Schermtitels (central 'teksten'): per route een override (leeg = standaard).
+const tekst = reactive(Object.fromEntries(TEKST_SCHERMEN.map(([r]) => [r, ''])))
 const mod = reactive({ game: true, kassa: true, producten: true })
 const rechten = ref({})          // rechten-matrix kantoor-accounts (v71)
 const RECHT_KEYS = ['acties', 'game', 'producten', 'team', 'analyse']   // v71 ALLE_RECHTEN
@@ -82,6 +92,8 @@ async function laad() {
     brand.logoTekst = String(br.logoTekst || '')
     brand.coral = br.coral || BRAND_STD.coral; brand.corald = br.corald || BRAND_STD.corald
     brand.green = br.green || BRAND_STD.green; brand.amber = br.amber || BRAND_STD.amber
+    const tk = (await haalCentral('teksten')) || {}
+    TEKST_SCHERMEN.forEach(([r]) => { tekst[r] = String(tk['title.' + r] || '') })
     logboek.value = await haalLog()
   } catch (e) { fout.value = 'Kon beheer niet laden: ' + e.message }
 }
@@ -319,6 +331,22 @@ async function instellingenOpslaan() {
   } catch (e) { fout.value = 'Instellingen opslaan mislukt: ' + e.message }
 }
 
+async function tekstenOpslaan() {
+  fout.value = ''
+  try {
+    const obj = {}
+    TEKST_SCHERMEN.forEach(([r, std]) => {
+      const v = String(tekst[r] || '').trim()
+      if (v && v !== std) obj['title.' + r] = v      // alleen echte afwijkingen bewaren
+    })
+    await bewaarCentral('teksten', obj)
+    try { window.dispatchEvent(new CustomEvent('tp-brand')) } catch (e) { /* volgt bij herladen */ }
+    await log(wie(), 'Schermteksten aangepast')
+    meld('✓ Schermteksten opgeslagen — direct actief voor het hele netwerk.')
+  } catch (e) { fout.value = 'Teksten opslaan mislukt: ' + e.message }
+}
+function tekstenReset() { TEKST_SCHERMEN.forEach(([r]) => { tekst[r] = '' }) }
+
 function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' ') : '—' }
 </script>
 
@@ -517,6 +545,24 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
       </div>
     </template>
 
+    <!-- ===== TEKSTEN ===== -->
+    <template v-else-if="tab === 'teksten'">
+      <div class="kaart">
+        <h2>✏️ Schermtitels</h2>
+        <p class="note">Herbenoem de schermen in het menu en de topbalk voor het hele netwerk. Leeg = de standaardnaam. Handig om het portaal op jullie eigen woorden af te stemmen.</p>
+        <div class="tekstlijst">
+          <label v-for="[r, std] in TEKST_SCHERMEN" :key="r" class="tekstrij">
+            <span class="tstd">{{ std }}</span>
+            <input v-model="tekst[r]" :placeholder="std" :data-test="'tekst-' + r" maxlength="40" />
+          </label>
+        </div>
+        <div class="rij">
+          <button class="knop" type="button" data-test="teksten-opslaan" @click="tekstenOpslaan">Teksten opslaan</button>
+          <button class="knop ghost" type="button" data-test="teksten-reset" @click="tekstenReset">Terug naar standaard</button>
+        </div>
+      </div>
+    </template>
+
     <!-- ===== AVG & BACK-UP ===== -->
     <template v-else-if="tab === 'avg'">
       <div class="kaart">
@@ -606,6 +652,10 @@ input:focus,select:focus{border-color:var(--coral)}
 .csvknop.bezig{opacity:.6;pointer-events:none}
 .csvknop input{display:none}
 .brandvoor{display:inline-flex;align-items:center;font-size:12px;font-weight:800;border-radius:8px;padding:8px 14px}
+.tekstlijst{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:12px}
+.tekstrij{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--grey)}
+.tekstrij .tstd{text-transform:uppercase;letter-spacing:.4px;font-weight:800}
+.tekstrij input{font-size:13.5px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;color:var(--ink)}
 input[type=color]{width:52px;height:34px;padding:2px;border:1.5px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
 .vink{display:flex;flex-direction:row;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);cursor:pointer;min-width:0;flex:none}
 .vink input{width:15px;height:15px;accent-color:var(--coral)}

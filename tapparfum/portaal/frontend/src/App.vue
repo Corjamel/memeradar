@@ -67,7 +67,11 @@ const TITELS = {
   proces: 'Proces', formulieren: 'Formulieren', bestellingen: 'Bestellingen', deals: 'Deals',
   taken: 'Taken', calculator: 'Calculator', analyse: 'Analyse', team: 'Accountmanagers', beheer: 'Beheer'
 }
-const titel = computed(() => TITELS[route.name] || 'TapParfum')
+// Kantoor kan de schermtitels overschrijven (central 'teksten', v71 title.<route>).
+const teksten = ref({})
+const titel = computed(() => teksten.value['title.' + route.name] || TITELS[route.name] || 'TapParfum')
+// De navigatie-labels mogen dezelfde override volgen (title.<route>).
+function navLabel(naam, standaard) { return teksten.value['title.' + naam] || standaard }
 
 // Navigatie-opbouw: drie groepen zoals in v71 (Dagelijks / Assortiment & leren /
 // Beheer & inzicht). `p` = ook voor partner zichtbaar; anders alleen AM/kantoor.
@@ -131,8 +135,12 @@ async function laadBrand() {
   try {
     const b = (await haalCentral('brand')) || {}
     applyBrand(b)
-    if (b.logoTekst) logoTekst.value = String(b.logoTekst).toUpperCase()
+    logoTekst.value = b.logoTekst ? String(b.logoTekst).toUpperCase() : 'TAPPARFUM'
   } catch (e) { /* standaard-huisstijl */ }
+  try {
+    const t = (await haalCentral('teksten')) || {}
+    teksten.value = (t && typeof t === 'object') ? t : {}
+  } catch (e) { teksten.value = {} }
 }
 watch(() => auth.ingelogd, (ja) => { if (ja) laadBrand() }, { immediate: true })
 
@@ -155,7 +163,7 @@ async function uitloggen() {
           <div class="navgroup">{{ g.groep }}</div>
           <router-link v-for="it in g.items" :key="it.naam" :to="{ name: it.naam }"
                        class="nav-a" active-class="on">
-            <span class="ic" v-html="ICONS[it.ic]"></span>{{ it.label }}
+            <span class="ic" v-html="ICONS[it.ic]"></span>{{ navLabel(it.naam, it.label) }}
             <span v-if="badges[it.naam]" class="bdg" :data-test="'bdg-' + it.naam">{{ badges[it.naam] }}</span>
           </router-link>
         </template>
