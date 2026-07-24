@@ -12,6 +12,7 @@ import BestellingenBlok from '../../bestellingen/components/BestellingenBlok.vue
 import LogboekBlok from '../../logboek/components/LogboekBlok.vue'
 import SituatieBlok from '../components/SituatieBlok.vue'
 import HeractiveerBlok from '../components/HeractiveerBlok.vue'
+import InstellingenBlok from '../components/InstellingenBlok.vue'
 import { haalRekenConfig } from '../../beloningen/api.js'
 import VerkoopBlok from '../../verkoop/components/VerkoopBlok.vue'
 import { eur0 } from '../../../lib/format.js'
@@ -157,6 +158,7 @@ async function wisselBlokkade() {
 
     <SituatieBlok v-if="!auth.isPartner" :tappunt="bron" :marge="marge" @bijgewerkt="bron = $event" />
     <HeractiveerBlok v-if="!auth.isPartner && stagneert" :tappunt="bron" @bijgewerkt="bron = $event" />
+    <InstellingenBlok v-if="!auth.isPartner" :tappunt="bron" @bijgewerkt="bron = $event" />
     <SetupBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <KassaBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <VerkoopBlok :tappunt="bron" @bijgewerkt="bron = $event" />
