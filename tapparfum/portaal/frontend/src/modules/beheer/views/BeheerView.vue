@@ -11,6 +11,7 @@ import {
 } from '../api.js'
 import { STANDAARD_MATEN } from '../../kassa/api.js'
 import { parseTappuntCSV, rijNaarNieuwTappunt } from '../csv.js'
+import { BRAND_STD, applyBrand } from '../../../lib/brand.js'
 import { eur0 } from '../../../lib/format.js'
 import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels } from '../../rekenhart/logic.js'
 
@@ -40,6 +41,13 @@ const nieuw = reactive({ naam: '', email: '' })
 const wis = ref(null)            // twee-staps: AM verwijderen
 const anon = ref(null)           // twee-staps: winkel anonimiseren
 const inst = reactive({ maten: [], marge: 1, shopUrl: '', b2bUrl: '', b2bActief: false })
+// Huisstijl (central 'brand'): logotekst + de vier merkkleuren.
+const brand = reactive({ logoTekst: '', coral: BRAND_STD.coral, corald: BRAND_STD.corald, green: BRAND_STD.green, amber: BRAND_STD.amber })
+function brandReset() {
+  brand.logoTekst = ''
+  brand.coral = BRAND_STD.coral; brand.corald = BRAND_STD.corald
+  brand.green = BRAND_STD.green; brand.amber = BRAND_STD.amber
+}
 const mod = reactive({ game: true, kassa: true, producten: true })
 const rechten = ref({})          // rechten-matrix kantoor-accounts (v71)
 const RECHT_KEYS = ['acties', 'game', 'producten', 'team', 'analyse']   // v71 ALLE_RECHTEN
@@ -70,6 +78,10 @@ async function laad() {
     regels.drempels = Array.isArray(rg.drempels) && rg.drempels.length === NIVEAU_DREMPELS_STANDAARD.length
       ? rg.drempels.map(Number) : [...NIVEAU_DREMPELS_STANDAARD]
     regels.weging = { ...WEGING_STANDAARD, ...(rg.weging || {}) }
+    const br = (await haalCentral('brand')) || {}
+    brand.logoTekst = String(br.logoTekst || '')
+    brand.coral = br.coral || BRAND_STD.coral; brand.corald = br.corald || BRAND_STD.corald
+    brand.green = br.green || BRAND_STD.green; brand.amber = br.amber || BRAND_STD.amber
     logboek.value = await haalLog()
   } catch (e) { fout.value = 'Kon beheer niet laden: ' + e.message }
 }
@@ -293,6 +305,15 @@ async function instellingenOpslaan() {
     await bewaarCentral('shopUrl', inst.shopUrl.trim())
     await bewaarCentral('b2bApi', { url: inst.b2bUrl.trim(), actief: !!inst.b2bActief })
     await bewaarCentral('modules', { game: !!mod.game, kassa: !!mod.kassa, producten: !!mod.producten })
+    // Huisstijl: alleen afwijkingen van de standaard bewaren (leeg = standaard).
+    const br = {}
+    if (brand.logoTekst.trim()) br.logoTekst = brand.logoTekst.trim()
+    ;['coral', 'corald', 'green', 'amber'].forEach(k => {
+      if (String(brand[k]).toLowerCase() !== String(BRAND_STD[k]).toLowerCase()) br[k] = brand[k]
+    })
+    await bewaarCentral('brand', br)
+    applyBrand(br)                       // kleuren meteen live
+    try { window.dispatchEvent(new CustomEvent('tp-brand')) } catch (e) { /* logo volgt bij herladen */ }
     await log(wie(), 'Netwerk-instellingen gewijzigd')
     meld('✓ Instellingen opgeslagen — direct actief voor het hele netwerk.')
   } catch (e) { fout.value = 'Instellingen opslaan mislukt: ' + e.message }
@@ -446,6 +467,22 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
           <label class="schakel"><input v-model="mod.producten" type="checkbox" data-test="mod-producten" /> 🧴 Producten</label>
         </div>
       </div>
+      <!-- Huisstijl (v71 thema): merkkleuren + logotekst, netwerkbreed -->
+      <div class="kaart">
+        <h2>🎨 Huisstijl</h2>
+        <p class="note">Merkkleuren en logotekst voor het hele netwerk. Contrastbewaking maakt een te lichte tekstkleur automatisch leesbaar. Leeg = standaard TapParfum-huisstijl.</p>
+        <div class="rij vorm">
+          <label>Logotekst<input v-model="brand.logoTekst" maxlength="20" placeholder="TAPPARFUM" data-test="brand-logo" /></label>
+          <label>Accent (koraal)<input v-model="brand.coral" type="color" data-test="brand-coral" /></label>
+          <label>Accent donker (tekst)<input v-model="brand.corald" type="color" data-test="brand-corald" /></label>
+          <label>Groen (succes)<input v-model="brand.green" type="color" data-test="brand-green" /></label>
+          <label>Amber (aandacht)<input v-model="brand.amber" type="color" data-test="brand-amber" /></label>
+        </div>
+        <div class="rij">
+          <span class="brandvoor" :style="{ background: brand.coral, color: '#fff' }" data-test="brand-preview">Voorbeeld-accent</span>
+          <button class="knop ghost" type="button" data-test="brand-reset" @click="brandReset">Terug naar standaard</button>
+        </div>
+      </div>
       <div class="rij">
         <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>
       </div>
@@ -568,6 +605,8 @@ input:focus,select:focus{border-color:var(--coral)}
 .csvknop:hover{background:var(--coral-d)}
 .csvknop.bezig{opacity:.6;pointer-events:none}
 .csvknop input{display:none}
+.brandvoor{display:inline-flex;align-items:center;font-size:12px;font-weight:800;border-radius:8px;padding:8px 14px}
+input[type=color]{width:52px;height:34px;padding:2px;border:1.5px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
 .vink{display:flex;flex-direction:row;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);cursor:pointer;min-width:0;flex:none}
 .vink input{width:15px;height:15px;accent-color:var(--coral)}
 .knop.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);display:inline-flex;align-items:center;gap:6px;cursor:pointer}

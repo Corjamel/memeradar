@@ -9,6 +9,8 @@ import WelkomOverlay from './components/WelkomOverlay.vue'
 import { ICONS } from './lib/icons.js'
 import { haalWinkelvragen } from './modules/winkelvragen/api.js'
 import { haalTaken } from './modules/taken/api.js'
+import { haalCentral } from './modules/beheer/api.js'
+import { applyBrand } from './lib/brand.js'
 
 const auth = useAuth()
 const router = useRouter()
@@ -119,8 +121,20 @@ function sneltoets(e) {
   e.preventDefault()
   zoekOpen.value = true
 }
-onMounted(() => window.addEventListener('keydown', sneltoets))
-onUnmounted(() => window.removeEventListener('keydown', sneltoets))
+onMounted(() => { window.addEventListener('keydown', sneltoets); window.addEventListener('tp-brand', laadBrand) })
+onUnmounted(() => { window.removeEventListener('keydown', sneltoets); window.removeEventListener('tp-brand', laadBrand) })
+
+// Huisstijl (central 'brand') netwerkbreed toepassen zodra we ingelogd zijn —
+// central is alleen leesbaar voor ingelogde gebruikers.
+const logoTekst = ref('TAPPARFUM')
+async function laadBrand() {
+  try {
+    const b = (await haalCentral('brand')) || {}
+    applyBrand(b)
+    if (b.logoTekst) logoTekst.value = String(b.logoTekst).toUpperCase()
+  } catch (e) { /* standaard-huisstijl */ }
+}
+watch(() => auth.ingelogd, (ja) => { if (ja) laadBrand() }, { immediate: true })
 
 async function uitloggen() {
   welkomOpen.value = false
@@ -135,7 +149,7 @@ async function uitloggen() {
 <template>
   <div :class="auth.ingelogd ? 'shell' : 'bare'">
     <aside v-if="auth.ingelogd" class="side">
-      <div class="logo"><span class="dot"></span><b translate="no">TAPPARFUM</b></div>
+      <div class="logo"><span class="dot"></span><b translate="no">{{ logoTekst }}</b></div>
       <nav class="nav" aria-label="Hoofdmenu">
         <template v-for="g in GROEPEN" :key="g.groep">
           <div class="navgroup">{{ g.groep }}</div>
