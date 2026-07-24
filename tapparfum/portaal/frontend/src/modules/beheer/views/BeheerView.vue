@@ -10,6 +10,7 @@ import {
   haalCentral, bewaarCentral, haalLog, log, anonimiseer
 } from '../api.js'
 import { STANDAARD_MATEN } from '../../kassa/api.js'
+import { parseTappuntCSV, rijNaarNieuwTappunt } from '../csv.js'
 import { eur0 } from '../../../lib/format.js'
 import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels } from '../../rekenhart/logic.js'
 
@@ -158,6 +159,44 @@ async function blok(t) {
     await log(wie(), `${t.geblokkeerd ? 'Geblokkeerd' : 'Gedeblokkeerd'}: ${t.name}`)
     meld(t.geblokkeerd ? `${t.name} geblokkeerd.` : `${t.name} gedeblokkeerd.`)
   } catch (e) { fout.value = 'Blokkeren mislukt: ' + e.message }
+}
+
+// ---- CSV-import van winkels -------------------------------------------
+const csvBezig = ref(false)
+const csvMelding = ref('')
+const csvFout = ref('')
+async function csvImporteer(ev) {
+  csvMelding.value = ''; csvFout.value = ''
+  const f = ev.target && ev.target.files && ev.target.files[0]
+  if (!f) return
+  csvBezig.value = true
+  try {
+    const tekst = await f.text()
+    const rows = parseTappuntCSV(tekst)
+    if (!rows.length) { csvFout.value = 'Geen bruikbare regels — een kolom "naam" (of tappunt/winkel) is verplicht.'; return }
+    // Dubbele winkels overslaan op code of naam (case-insensitief).
+    const codes = new Set(st.items.map(t => String(t.snelstart || '').toLowerCase()))
+    const namen = new Set(st.items.map(t => String(t.name || '').toLowerCase()))
+    let ok = 0, dup = 0
+    for (const r of rows) {
+      const code = String(r.snelstart || '').toLowerCase()
+      const naam = String(r.name || '').toLowerCase()
+      if ((code && codes.has(code)) || namen.has(naam)) { dup++; continue }
+      const t = rijNaarNieuwTappunt(r)
+      await st.bewaar(t)                     // RLS: alleen kantoor mag schrijven
+      codes.add(String(t.snelstart).toLowerCase()); namen.add(naam)
+      ok++
+    }
+    await st.laad()
+    if (ok) await log(wie(), `CSV-import: ${ok} winkels toegevoegd${dup ? `, ${dup} overgeslagen` : ''}`)
+    csvMelding.value = `✓ ${ok} winkel${ok === 1 ? '' : 's'} geïmporteerd${dup ? ` · ${dup} bestond al (overgeslagen)` : ''}.`
+    if (ok) toast.ok(`${ok} winkel${ok === 1 ? '' : 's'} geïmporteerd`)
+  } catch (e) {
+    csvFout.value = 'Import mislukt: ' + e.message
+  } finally {
+    csvBezig.value = false
+    if (ev.target) ev.target.value = ''      // zelfde bestand nogmaals kunnen kiezen
+  }
 }
 
 // ---- Regels-editor ----------------------------------------------------
@@ -353,6 +392,18 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
         </div>
         <p v-if="!st.items.length" class="stil">Nog geen winkels.</p>
       </div>
+
+      <!-- CSV-import: klantenbestand in één keer binnenhalen (v71) -->
+      <div class="kaart">
+        <h2>📥 Winkels importeren (CSV)</h2>
+        <p class="note">Eén bestand met een kolom <b>naam</b> (of tappunt/winkel). Optioneel: snelstart/code, tel, e-mail, contact, adres, postcode, plaats, land, type, laatste bezoek. Scheidingsteken <b>;</b> of <b>,</b>. Bestaande winkels (zelfde code of naam) worden overgeslagen — nooit gedupliceerd.</p>
+        <label class="csvknop" :class="{ bezig: csvBezig }">
+          {{ csvBezig ? 'Bezig met importeren…' : '📄 Kies een CSV-bestand' }}
+          <input type="file" accept=".csv,text/csv" data-test="csv-input" :disabled="csvBezig" @change="csvImporteer" />
+        </label>
+        <p v-if="csvMelding" class="ok" role="status" data-test="csv-melding">{{ csvMelding }}</p>
+        <p v-if="csvFout" class="fout" role="alert" data-test="csv-fout">{{ csvFout }}</p>
+      </div>
     </template>
 
     <!-- ===== INSTELLINGEN ===== -->
@@ -513,6 +564,10 @@ input:focus,select:focus{border-color:var(--coral)}
 .fout{color:#b3261e}
 .ok{color:#2c5a12;background:#f4faf0;border-radius:8px;padding:8px 10px;font-size:13.5px}
 .stil{color:var(--grey);font-size:13px}
+.csvknop{display:inline-block;background:var(--coral);color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:10px 16px;cursor:pointer}
+.csvknop:hover{background:var(--coral-d)}
+.csvknop.bezig{opacity:.6;pointer-events:none}
+.csvknop input{display:none}
 .vink{display:flex;flex-direction:row;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey);cursor:pointer;min-width:0;flex:none}
 .vink input{width:15px;height:15px;accent-color:var(--coral)}
 .knop.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
