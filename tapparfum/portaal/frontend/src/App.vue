@@ -5,6 +5,7 @@ import { useTappunten } from './modules/tappunten/store.js'
 import { useRouter, useRoute } from 'vue-router'
 import ZoekOverlay from './components/ZoekOverlay.vue'
 import ToastHost from './components/ToastHost.vue'
+import WelkomOverlay from './components/WelkomOverlay.vue'
 import { ICONS } from './lib/icons.js'
 import { haalWinkelvragen } from './modules/winkelvragen/api.js'
 import { haalTaken } from './modules/taken/api.js'
@@ -14,6 +15,26 @@ const router = useRouter()
 const route = useRoute()
 const ROL_LABEL = { kantoor: 'Kantoor', am: 'Accountmanager', partner: 'Partner' }
 const zoekOpen = ref(false)
+
+// Welkom-rondleiding (v71): eerste login per rol toont de tour; daarna
+// terug te halen via de ❓ in de topbar. "Gezien" staat in localStorage.
+const welkomOpen = ref(false)
+const welkomForce = ref(false)
+function welkomGezien() {
+  // Test-escape: de e2e-suite onderdrukt de rondleiding zodat de modal geen
+  // klikken opvangt. In productie is dit vlaggetje er niet.
+  if (typeof window !== 'undefined' && window.__TP_NO_WELKOM) return true
+  try {
+    const email = String((auth.user && auth.user.email) || '').toLowerCase()
+    return localStorage.getItem('tp_welkom::' + auth.role + '::' + email) === '1'
+  } catch (e) { return true }
+}
+function toonWelkom() { welkomForce.value = true; welkomOpen.value = true }
+// Op zowel ingelogd als rol letten: de rol wordt ná het zetten van de user
+// asynchroon bepaald, dus pas als die er is weten we welke rondleiding past.
+watch(() => [auth.ingelogd, auth.role], ([ja, rol]) => {
+  if (ja && rol && !welkomGezien()) { welkomForce.value = false; welkomOpen.value = true }
+}, { immediate: true })
 
 // Nav-tellers (v71 .bdg): open meldingen op Berichten, open taken op Taken.
 // Ververst bij elke navigatie zodat de badge meteen zakt na een actie.
@@ -102,6 +123,7 @@ onMounted(() => window.addEventListener('keydown', sneltoets))
 onUnmounted(() => window.removeEventListener('keydown', sneltoets))
 
 async function uitloggen() {
+  welkomOpen.value = false
   await auth.signOut()
   // Module-stores leegmaken: de volgende gebruiker op dit apparaat mag nooit
   // data van de vorige sessie in het geheugen aantreffen.
@@ -133,10 +155,14 @@ async function uitloggen() {
 
     <div class="col">
       <header v-if="auth.ingelogd" class="topbar">
+        <button v-if="route.name !== 'home'" class="tb-terug" type="button" aria-label="Terug"
+                data-test="terug-knop" @click="router.back()">←</button>
         <span class="tb-title">{{ titel }}</span>
         <span class="tb-sp"></span>
         <button v-if="auth.role !== 'partner'" class="tb-zoek" type="button" aria-label="Zoeken"
                 data-test="zoek-knop" @click="zoekOpen = true"><span class="ic" v-html="ICONS.search"></span></button>
+        <button class="tb-help" type="button" aria-label="Rondleiding" title="Rondleiding"
+                data-test="help-knop" @click="toonWelkom">❓</button>
         <span class="tb-role rol">{{ ROL_LABEL[auth.role] || auth.role }}</span>
         <span class="tb-av">{{ initialen }}</span>
       </header>
@@ -145,6 +171,7 @@ async function uitloggen() {
       </main>
     </div>
     <ZoekOverlay v-if="zoekOpen" @sluit="zoekOpen = false" />
+    <WelkomOverlay v-if="welkomOpen" :force="welkomForce" @sluit="welkomOpen = false" />
     <ToastHost />
   </div>
 </template>
@@ -171,9 +198,12 @@ async function uitloggen() {
 .col{min-width:0}
 .topbar{display:flex;align-items:center;gap:14px;padding:14px 32px;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
 .tb-title{font-size:16px;font-weight:800;letter-spacing:-.2px;color:var(--ink)}
+.tb-terug{background:#fff;border:1.5px solid var(--line);width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font-size:16px;font-weight:800;flex-shrink:0}
+.tb-terug:hover{border-color:var(--coral);color:var(--coral)}
 .tb-sp{flex:1}
-.tb-zoek{background:#fff;border:1.5px solid var(--line);width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
-.tb-zoek:hover{border-color:var(--coral);color:var(--coral)}
+.tb-zoek,.tb-help{background:#fff;border:1.5px solid var(--line);width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
+.tb-help{border-radius:8px;font-size:15px}
+.tb-zoek:hover,.tb-help:hover{border-color:var(--coral);color:var(--coral)}
 .tb-role{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--coral-d);background:var(--soft);padding:6px 12px;border-radius:999px}
 .tb-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--coral-d));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
 .content{padding:26px 32px 60px;max-width:1100px}

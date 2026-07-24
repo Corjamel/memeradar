@@ -6,6 +6,7 @@ def ck(n,c):
 
 # Mock-Supabase incl. Storage (voor documenten).
 INIT = r"""
+window.__TP_NO_WELKOM=true;
 window.__DB = { tappunten: [], accountmanagers: [], berichten: [], agenda: [], winkelvragen: [] };
 window.__UPSERTS=[]; window.__INSERTS=[]; window.__UPDATES=[]; window.__UPLOADS=[];
 window.__FILES = {};   // prefix -> [namen]

@@ -7,6 +7,7 @@ def ck(n,c):
 # Mock-Supabase met een mini-database. RLS simuleren we door __DB per rol te vullen
 # (de echte scoping is server-side bewezen met de PG16-gedragstesten).
 INIT = r"""
+window.__TP_NO_WELKOM=true;
 window.__DB = { tappunten: [], accountmanagers: [], berichten: [], agenda: [], winkelvragen: [] };
 window.__UPSERTS=[]; window.__INSERTS=[]; window.__UPDATES=[];
 window.__MOCK = { session:null, signin:{data:null,error:{message:'x'}} };

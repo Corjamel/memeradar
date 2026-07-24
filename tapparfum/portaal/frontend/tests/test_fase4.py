@@ -7,6 +7,7 @@ def ck(n,c):
 INIT = r"""
 window.__DB = { tappunten:[], accountmanagers:[], berichten:[], agenda:[], winkelvragen:[], central:[], contacten:[], deals:[], taken:[] };
 window.__UPSERTS=[]; window.__INSERTS=[]; window.__UPDATES=[]; window.__DELETES=[];
+window.__TP_NO_WELKOM=true;
 window.__MOCK = { session:null, signin:{data:null,error:{message:'x'}} };
 var __seq=0;
 function _q(table){

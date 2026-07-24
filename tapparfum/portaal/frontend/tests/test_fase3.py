@@ -5,6 +5,7 @@ def ck(n,c):
     print(("OK " if c else "XX ")+n); R["ok" if c else "fail"]+=1
 
 INIT = r"""
+window.__TP_NO_WELKOM=true;
 window.__DB = { tappunten: [], accountmanagers: [], berichten: [], agenda: [], winkelvragen: [], central: [] };
 window.__UPSERTS=[]; window.__INSERTS=[]; window.__UPDATES=[]; window.__UPLOADS=[]; window.__FILES={};
 window.__MOCK = { session:null, signin:{data:null,error:{message:'x'}} };

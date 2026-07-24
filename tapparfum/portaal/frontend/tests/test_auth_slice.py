@@ -6,6 +6,7 @@ def ck(n,c):
 
 # Mock-Supabase: geïnjecteerd vóór de app laadt. Gedrag stuurbaar via window.__MOCK.
 INIT = r"""
+window.__TP_NO_WELKOM=true;
 window.__MOCK = { session:null, signin:{data:null,error:{message:'x'}}, ams:[] };
 function _thenable(getRows){
   var api={ select:function(){return api;}, eq:function(c,v){api._c=c;api._v=v;return api;}, limit:function(){return api;},
