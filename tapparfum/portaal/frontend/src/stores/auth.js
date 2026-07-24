@@ -31,7 +31,14 @@ export const useAuth = defineStore('auth', {
     // v71 filtert dit het MENU — de data-beveiliging blijft RLS (staff).
     magBeheer: (s) => s.role === 'kantoor' && (!s.rechten || s.rechten.rol === 'beheer'),
     magActiesBeheren: (s) => s.role === 'kantoor' && (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.acties !== false),
-    magProductenBeheren: (s) => s.role === 'kantoor' && (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.producten !== false)
+    magProductenBeheren: (s) => s.role === 'kantoor' && (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.producten !== false),
+    // v71 ALLE_RECHTEN = {acties, game, producten, team, analyse}. Deze drie
+    // gelden alleen als gating voor KANTOOR-accounts; AM/partner vallen niet
+    // onder de kantoor-rechtenmatrix, dus voor hen geven ze true terug (hun
+    // toegang loopt via meta.roles + RLS).
+    magGameBeheren: (s) => s.role === 'kantoor' ? (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.game !== false) : true,
+    magTeam: (s) => s.role === 'kantoor' ? (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.team !== false) : true,
+    magAnalyse: (s) => s.role === 'kantoor' ? (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.analyse !== false) : true
   },
   actions: {
     async _bepaalRol(user) {

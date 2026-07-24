@@ -36,7 +36,7 @@ const GROEPEN = computed(() => [
     { naam: 'berichten', label: 'Berichten', ic: 'inbox' },
     { naam: 'acties', label: 'Acties', ic: 'spark' },
     { naam: 'beloningen', label: 'Beloningen', ic: 'gift' },
-    { naam: 'game', label: 'Game', ic: 'trofee' }
+    auth.magGameBeheren && { naam: 'game', label: 'Game', ic: 'trofee' }
   ].filter(Boolean) },
   { groep: 'Assortiment & leren', items: [
     { naam: 'producten', label: 'Producten', ic: 'vial' },
@@ -54,8 +54,8 @@ const GROEPEN = computed(() => [
     { naam: 'deals', label: 'Deals', ic: 'procent' },
     { naam: 'taken', label: 'Taken', ic: 'check' },
     { naam: 'calculator', label: 'Calculator', ic: 'calculator' },
-    { naam: 'analyse', label: 'Analyse', ic: 'omzet' },
-    { naam: 'team', label: 'Team', ic: 'users' },
+    auth.magAnalyse && { naam: 'analyse', label: 'Analyse', ic: 'omzet' },
+    auth.magTeam && { naam: 'team', label: 'Team', ic: 'users' },
     auth.magBeheer && { naam: 'beheer', label: 'Beheer', ic: 'spark' }
   ].filter(Boolean) }
 ].filter(Boolean))

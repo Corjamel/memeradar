@@ -33,6 +33,7 @@ const anon = ref(null)           // twee-staps: winkel anonimiseren
 const inst = reactive({ maten: [], marge: 1, shopUrl: '' })
 const mod = reactive({ game: true, kassa: true, producten: true })
 const rechten = ref({})          // rechten-matrix kantoor-accounts (v71)
+const RECHT_KEYS = ['acties', 'game', 'producten', 'team', 'analyse']   // v71 ALLE_RECHTEN
 const rechtNieuw = reactive({ email: '', rol: 'kantoor' })
 
 const wie = () => auth.user?.email || 'kantoor'
@@ -92,7 +93,10 @@ async function rechtToevoegen() {
   if (!mail || bezig.value) return
   bezig.value = true; fout.value = ''
   try {
-    const m = { ...rechten.value, [mail]: rechtNieuw.rol === 'beheer' ? { rol: 'beheer' } : { rol: 'kantoor', acties: true, producten: true } }
+    const nieuweRechten = rechtNieuw.rol === 'beheer'
+      ? { rol: 'beheer' }
+      : { rol: 'kantoor', ...Object.fromEntries(RECHT_KEYS.map(k => [k, true])) }
+    const m = { ...rechten.value, [mail]: nieuweRechten }
     await bewaarCentral('kantoorRechten', m)
     rechten.value = m
     await log(wie(), `Rechten vastgelegd: ${mail} = ${rechtNieuw.rol}`)
@@ -256,10 +260,10 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
           <b>{{ mail }}</b>
           <span class="badge" :class="r.rol === 'beheer' ? 'groen' : 'wacht'">{{ r.rol }}</span>
           <template v-if="r.rol !== 'beheer'">
-            <label class="vink"><input type="checkbox" :checked="r.acties !== false" :data-test="'recht-acties-' + mail"
-                   @change="rechtZet(mail, 'acties', $event.target.checked)" /> acties</label>
-            <label class="vink"><input type="checkbox" :checked="r.producten !== false" :data-test="'recht-producten-' + mail"
-                   @change="rechtZet(mail, 'producten', $event.target.checked)" /> producten</label>
+            <label v-for="k in RECHT_KEYS" :key="k" class="vink">
+              <input type="checkbox" :checked="r[k] !== false" :data-test="'recht-' + k + '-' + mail"
+                     @change="rechtZet(mail, k, $event.target.checked)" /> {{ k }}
+            </label>
           </template>
           <span class="spacer"></span>
           <button class="weg" :class="{ zeker: wis === mail }" type="button" :data-test="'recht-weg-' + mail"
