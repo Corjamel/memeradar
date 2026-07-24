@@ -61,7 +61,7 @@ const badges = computed(() => ({ berichten: openVragen.value, taken: openTaken.v
 // Titel in de topbar = het label van de actieve navigatie-ingang.
 const TITELS = {
   home: 'Mijn winkels', vandaag: 'Vandaag', trajecten: 'Trajecten', winkels: 'Winkels',
-  winkel: 'Winkel', 'winkel-partner': 'Partnerweergave', agenda: 'Agenda', bezoeken: 'Bezoeken', berichten: 'Berichten', acties: 'Acties',
+  winkel: 'Winkel', 'winkel-partner': 'Partnerweergave', agenda: 'Agenda', bezoeken: 'Bezoeken', ritten: 'Ritten', berichten: 'Berichten', acties: 'Acties',
   beloningen: 'Beloningen', game: 'Sales Game', producten: 'Producten', bestellen: 'Bestellen',
   geuren: 'Geurbibliotheek', community: 'Community', academy: 'Academy', kennisbank: 'Kennisbank',
   proces: 'Proces', formulieren: 'Formulieren', bestellingen: 'Bestellingen', deals: 'Deals',
@@ -84,6 +84,7 @@ const GROEPEN = computed(() => [
     { naam: 'winkels', label: 'Winkels', ic: 'tappunten' },
     { naam: 'agenda', label: 'Agenda', ic: 'agenda' },
     !isPartner.value && { naam: 'bezoeken', label: 'Bezoeken', ic: 'bezoek' },
+    !isPartner.value && { naam: 'ritten', label: 'Ritten', ic: 'bezoek' },
     { naam: 'berichten', label: 'Berichten', ic: 'inbox' },
     { naam: 'acties', label: 'Acties', ic: 'spark' },
     { naam: 'beloningen', label: 'Beloningen', ic: 'gift' },
