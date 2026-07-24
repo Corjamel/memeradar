@@ -83,6 +83,11 @@ with sync_playwright() as p:
     ck("statusverdeling: groeit 1 / stagneert 1 / nieuw 1", '1' in (pg.text_content('[data-test=analyse-status-groeit]') or '') and '1' in (pg.text_content('[data-test=analyse-status-stagneert]') or '') and '1' in (pg.text_content('[data-test=analyse-status-nieuw]') or ''))
     ck("traject-teller 2 (Deventer eruit)", (pg.text_content('[data-test=analyse-traject]') or '').strip()=='2')
     ck("kassa per maat: 15ml en 50ml chips", pg.locator('[data-test=analyse-maat]').count()==2)
+    # Sell-through-band (kassa)
+    ck("sell-through-blok aanwezig", pg.locator('[data-test=sellthrough]').count()==1)
+    ck("activatie 14 dgn: 1 van 3", (pg.text_content('[data-test=st-activatie]') or '').replace(' ','').startswith('1/3'))
+    ck("verkochte flesjes dit jaar = 6", (pg.text_content('[data-test=st-stuks]') or '').strip()=='6')
+    ck("dekking 33% (1 van 3 met kassa)", '33%' in (pg.text_content('[data-test=st-dekking]') or ''))
     ck("top 5: Zwolle bovenaan", 'Zwolle' in (pg.locator('[data-test=analyse-top]').first.text_content() or ''))
     ck("bestelstilte: nooit besteld bovenaan", 'nooit besteld' in (pg.locator('[data-test=analyse-stil]').first.text_content() or ''))
 
