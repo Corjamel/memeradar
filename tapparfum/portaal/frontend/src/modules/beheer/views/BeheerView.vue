@@ -61,6 +61,17 @@ const tekst = reactive(Object.fromEntries(TEKST_SCHERMEN.map(([r]) => [r, ''])))
 // Layout/regie (central 'layout'): content-uitlijning per rol (v71 bhAlign).
 const ZONES = [['am', '🚗 Accountmanager'], ['partner', '🏪 Partner'], ['kantoor', '🏢 Kantoor']]
 const align = reactive({ am: '', partner: '', kantoor: '' })
+// Blokvolgorde partner-dashboard (v71 bhOrde): fase/week/trofee herschikken.
+const BLOK_STD = ['fase', 'week', 'trofee']
+const BLOK_LABEL = { fase: '📈 Fasekaart', week: '📅 Deze week', trofee: '🏆 Spaarcadeaus' }
+const blokVolgorde = ref([...BLOK_STD])
+function blokVerplaats(i, dir) {
+  const j = i + dir
+  if (j < 0 || j >= blokVolgorde.value.length) return
+  const kopie = blokVolgorde.value.slice()
+  ;[kopie[i], kopie[j]] = [kopie[j], kopie[i]]
+  blokVolgorde.value = kopie
+}
 const mod = reactive({ game: true, kassa: true, producten: true })
 const rechten = ref({})          // rechten-matrix kantoor-accounts (v71)
 const RECHT_KEYS = ['acties', 'game', 'producten', 'team', 'analyse']   // v71 ALLE_RECHTEN
@@ -102,6 +113,9 @@ async function laad() {
     align.am = al.am === 'midden' ? 'midden' : ''
     align.partner = al.partner === 'midden' ? 'midden' : ''
     align.kantoor = al.kantoor === 'midden' ? 'midden' : ''
+    const vp = la.volgorde && la.volgorde.partner
+    blokVolgorde.value = (Array.isArray(vp) && vp.length === BLOK_STD.length && BLOK_STD.every(k => vp.includes(k)))
+      ? vp.slice() : [...BLOK_STD]
     logboek.value = await haalLog()
   } catch (e) { fout.value = 'Kon beheer niet laden: ' + e.message }
 }
@@ -333,10 +347,13 @@ async function instellingenOpslaan() {
     })
     await bewaarCentral('brand', br)
     applyBrand(br)                       // kleuren meteen live
-    // Layout/regie: alleen gecentreerde zones bewaren.
+    // Layout/regie: gecentreerde zones + afwijkende partner-blokvolgorde bewaren.
     const alignObj = {}
     ZONES.forEach(([z]) => { if (align[z] === 'midden') alignObj[z] = 'midden' })
-    await bewaarCentral('layout', Object.keys(alignObj).length ? { align: alignObj } : {})
+    const layoutObj = {}
+    if (Object.keys(alignObj).length) layoutObj.align = alignObj
+    if (blokVolgorde.value.join(',') !== BLOK_STD.join(',')) layoutObj.volgorde = { partner: blokVolgorde.value.slice() }
+    await bewaarCentral('layout', layoutObj)
     try { window.dispatchEvent(new CustomEvent('tp-brand')) } catch (e) { /* logo/layout volgt bij herladen */ }
     await log(wie(), 'Netwerk-instellingen gewijzigd')
     meld('✓ Instellingen opgeslagen — direct actief voor het hele netwerk.')
@@ -536,6 +553,17 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
             </select>
           </label>
         </div>
+        <h3 class="subkop">Blokvolgorde partner-dashboard</h3>
+        <p class="note">De volgorde van de drie hoofdblokken op het partner-dashboard. Bovenaan verschijnt bovenaan.</p>
+        <ol class="blokorder">
+          <li v-for="(k, i) in blokVolgorde" :key="k" :data-test="'blok-' + k">
+            <span class="bl">{{ BLOK_LABEL[k] }}</span>
+            <span class="pijlen">
+              <button type="button" class="mini" :disabled="i === 0" :data-test="'blok-op-' + k" aria-label="Omhoog" @click="blokVerplaats(i, -1)">▲</button>
+              <button type="button" class="mini" :disabled="i === blokVolgorde.length - 1" :data-test="'blok-neer-' + k" aria-label="Omlaag" @click="blokVerplaats(i, 1)">▼</button>
+            </span>
+          </li>
+        </ol>
       </div>
       <div class="rij">
         <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>
@@ -678,6 +706,14 @@ input:focus,select:focus{border-color:var(--coral)}
 .csvknop.bezig{opacity:.6;pointer-events:none}
 .csvknop input{display:none}
 .brandvoor{display:inline-flex;align-items:center;font-size:12px;font-weight:800;border-radius:8px;padding:8px 14px}
+.subkop{font-size:13px;font-weight:800;margin:14px 0 2px}
+.blokorder{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;max-width:360px}
+.blokorder li{display:flex;align-items:center;gap:10px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.blokorder .bl{font-weight:700;font-size:13.5px}
+.blokorder .pijlen{margin-left:auto;display:flex;gap:4px}
+.blokorder .mini{width:28px;height:28px;border:1.5px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-size:11px;color:var(--ink)}
+.blokorder .mini:disabled{opacity:.35;cursor:default}
+.blokorder .mini:not(:disabled):hover{border-color:var(--coral);color:var(--coral)}
 .tekstlijst{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:12px}
 .tekstrij{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--grey)}
 .tekstrij .tstd{text-transform:uppercase;letter-spacing:.4px;font-weight:800}

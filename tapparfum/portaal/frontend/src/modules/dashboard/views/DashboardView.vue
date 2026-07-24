@@ -1,9 +1,10 @@
 <script setup>
 // Startscherm per rol: kantoor (netwerk-cockpit), AM (mijn winkels), partner
 // (eigen winkel). Alleen weergave — alle data komt RLS-gescoped uit de modules.
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
+import { haalCentral } from '../../beheer/api.js'
 import { haalWinkelvragen } from '../../winkelvragen/api.js'
 import { haalAgenda } from '../../agenda/api.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
@@ -54,12 +55,18 @@ onMounted(async () => {
       // voeden de KPI's, spotlight en nudges.
       marge.value = (await haalRekenConfig()).marge
       ;[acties.value, producten.value] = await Promise.all([haalActies().catch(() => []), haalProducten().catch(() => [])])
+      await laadLayout()
       if (preview.value) taken.value = await haalTaken().catch(() => [])
     } else {
       ;[taken.value, acties.value] = await Promise.all([haalTaken(), haalActies().catch(() => [])])
     }
   } catch (e) { fout.value = 'Kon het overzicht niet volledig laden: ' + e.message }
 })
+
+// Live meebewegen als kantoor de layout aanpast (rol-simulatie + partner).
+function opLayout() { if (alsPartner.value) laadLayout() }
+onMounted(() => window.addEventListener('tp-brand', opLayout))
+onUnmounted(() => window.removeEventListener('tp-brand', opLayout))
 
 // In simulatie tonen de bovenste tegels de gekozen winkel, niet de portefeuille.
 const zichtItems = computed(() => preview.value ? st.items.filter(t => t.snelstart === props.previewCode) : st.items)
@@ -109,6 +116,21 @@ const actieDeelname = computed(() => {
   })
 })
 const eigen = computed(() => preview.value ? (st.items.find(t => t.snelstart === props.previewCode) || null) : (st.items[0] || null))
+
+// Blokvolgorde (v71 bhOrde): kantoor kan de partner-dashboardblokken
+// fase/week/trofee herschikken via central 'layout'. We sturen de CSS-order aan
+// zodat de DOM-volgorde ongemoeid blijft. Standaard: fase -> week -> trofee.
+const BLOK_STD = ['fase', 'week', 'trofee']
+const blokVolgorde = ref([...BLOK_STD])
+async function laadLayout() {
+  try {
+    const l = (await haalCentral('layout')) || {}
+    const v = l.volgorde && l.volgorde.partner
+    blokVolgorde.value = (Array.isArray(v) && v.length === BLOK_STD.length && BLOK_STD.every(k => v.includes(k)))
+      ? v.slice() : [...BLOK_STD]
+  } catch (e) { blokVolgorde.value = [...BLOK_STD] }
+}
+function ord(key) { const i = blokVolgorde.value.indexOf(key); return i < 0 ? 99 : i }
 const mijnNiveau = computed(() => eigen.value ? levelOf(jaaromzet(eigen.value), marge.value) : null)
 
 /* v71-fasering: waar zit de winkel in de reis? onboarding -> terugverdienen ->
@@ -403,8 +425,10 @@ const meterLabel = computed(() => {
       <span class="ic">{{ n.ic }}</span><span class="ntxt">{{ n.txt }}</span><span class="pijl">→</span>
     </router-link>
 
+    <!-- Partner: herschikbaar blok-cluster (v71 bhOrde) — fase/week/trofee -->
+    <div class="movable" data-test="movable">
     <!-- Partner: fase-kaart (onboarding -> terugverdienen -> jaardoel) -->
-    <div v-if="fase" class="kaart fasekaart" :data-test="'fase-' + fase.key">
+    <div v-if="fase" class="kaart fasekaart" :style="{ order: ord('fase') }" :data-test="'fase-' + fase.key">
       <div class="kop"><h2>{{ fase.titel }}</h2>
         <b v-if="fase.pct != null" class="pct">{{ fase.pct }}%</b>
       </div>
@@ -414,7 +438,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Partner: deze week + vooruitblik -->
-    <div v-if="week && week.doel" class="kaart weekkaart" data-test="weekkaart">
+    <div v-if="week && week.doel" class="kaart weekkaart" :style="{ order: ord('week') }" data-test="weekkaart">
       <div class="weekring" :class="{ koers: week.koers }">
         <b>{{ week.flessen }}</b><small>/ {{ week.doel }}</small>
       </div>
@@ -434,7 +458,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Partner: trofeeën-strip -->
-    <div v-if="trofeeen.length" class="kaart" data-test="trofeeen">
+    <div v-if="trofeeen.length" class="kaart" :style="{ order: ord('trofee') }" data-test="trofeeen">
       <h2>🏆 Jullie spaarcadeaus</h2>
       <div class="trofeeen">
         <router-link v-for="tr in trofeeen" :key="tr.key" class="trof" :class="{ gewonnen: tr.gewonnen }" :to="{ name: 'beloningen' }" :title="tr.r">
@@ -443,6 +467,7 @@ const meterLabel = computed(() => {
         </router-link>
       </div>
     </div>
+    </div><!-- /movable -->
 
     <!-- Partner: berichtenkaart (v71 berichtKnopKaart) — vraag/bezoek/probleem/retour -->
     <div v-if="alsPartner && eigen" class="kaart" data-test="berichtkaart">
@@ -582,6 +607,7 @@ h2{margin:0 0 10px;font-size:15px}
 .uic{font-size:22px}
 .usp b{font-size:14px}
 .ok{color:#2c5a12;font-size:13px;margin:6px 0 0}
+.movable{display:flex;flex-direction:column}
 .fasekaart{border-left:4px solid var(--coral)}
 .fasekaart .pct{margin-left:auto;color:var(--coral-d);font-size:18px;font-variant-numeric:tabular-nums}
 .kop{display:flex;align-items:center;gap:10px}
