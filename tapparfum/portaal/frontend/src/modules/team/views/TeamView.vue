@@ -6,6 +6,7 @@
 // netwerkbrede activiteitenfeed.
 import { computed, onMounted, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
+import { useToast } from '../../../stores/toast.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { eur0 } from '../../../lib/format.js'
 import { haalAms } from '../../dashboard/api.js'
@@ -17,6 +18,7 @@ import { dagenSindsBezoek, afsprakenOpen, LOG_TYPES } from '../../logboek/logic.
 import { haalRekenConfig } from '../../beloningen/api.js'
 
 const auth = useAuth()
+const toast = useToast()
 const st = useTappunten()
 const ams = ref([])
 const marge = ref(1)
@@ -81,8 +83,9 @@ async function stuurOpdracht(t) {
   try {
     await stuurBericht({ aan_am: t.am_id, type: 'taak', txt: `[${t.name}] ${opdrachtTxt.value.trim()}`, van: auth.user?.email || 'kantoor' })
     melding.value = `✓ Opdracht over ${t.name} verstuurd naar de accountmanager.`
+    toast.ok(`Opdracht over ${t.name} verstuurd`)
     opdrachtVoor.value = null; opdrachtTxt.value = ''
-  } catch (e) { fout.value = 'Versturen mislukt: ' + e.message }
+  } catch (e) { fout.value = 'Versturen mislukt: ' + e.message; toast.fout('Versturen mislukt') }
 }
 function grow(t) { const g = omzetGroei(t); return g == null ? '—' : (g >= 0 ? '+' : '') + Math.round(g * 100) + '%' }
 </script>

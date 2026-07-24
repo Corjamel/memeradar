@@ -4,6 +4,7 @@ import { useAuth } from './stores/auth.js'
 import { useTappunten } from './modules/tappunten/store.js'
 import { useRouter, useRoute } from 'vue-router'
 import ZoekOverlay from './components/ZoekOverlay.vue'
+import ToastHost from './components/ToastHost.vue'
 import { ICONS } from './lib/icons.js'
 import { haalWinkelvragen } from './modules/winkelvragen/api.js'
 import { haalTaken } from './modules/taken/api.js'
@@ -144,6 +145,7 @@ async function uitloggen() {
       </main>
     </div>
     <ZoekOverlay v-if="zoekOpen" @sluit="zoekOpen = false" />
+    <ToastHost />
   </div>
 </template>
 

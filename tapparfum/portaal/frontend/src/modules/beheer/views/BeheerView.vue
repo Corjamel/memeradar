@@ -3,6 +3,7 @@
 // Mensen | Winkels | Instellingen | AVG & back-up | Audit
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
+import { useToast } from '../../../stores/toast.js'
 import { useTappunten } from '../../tappunten/store.js'
 import {
   haalAms, voegAmToe, verwijderAm, zetWinkelAm,
@@ -13,6 +14,7 @@ import { eur0 } from '../../../lib/format.js'
 import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels } from '../../rekenhart/logic.js'
 
 const auth = useAuth()
+const toast = useToast()
 const st = useTappunten()
 const tab = ref('mensen')
 const TABS = [
@@ -72,7 +74,7 @@ async function laad() {
 }
 onMounted(laad)
 
-function meld(m) { melding.value = m; fout.value = '' }
+function meld(m) { melding.value = m; fout.value = ''; toast.ok(m.replace(/^✓\s*/, '')) }
 
 // ---- Mensen -----------------------------------------------------------
 async function toevoegen() {
