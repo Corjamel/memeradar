@@ -24,8 +24,17 @@ import FlesMeter from '../../../components/FlesMeter.vue'
 import DocumentenBlok from '../../documenten/components/DocumentenBlok.vue'
 import { FORMS } from '../../formulieren/data.js'
 
+// Rol-simulatie (v71 "bekijk als partner"): een AM/kantoor opent de
+// partner-zelfservice van één winkel. `previewCode` = snelstart van die winkel;
+// dan gedraagt dit scherm zich als het partner-dashboard voor die winkel, met
+// een "← Terug (accountmanager)"-banner. Data blijft RLS-gescoped: een AM ziet
+// alleen winkels uit de eigen portefeuille.
+const props = defineProps({ previewCode: { type: String, default: '' } })
+
 const auth = useAuth()
 const st = useTappunten()
+const preview = computed(() => !!props.previewCode && !auth.isPartner)
+const alsPartner = computed(() => auth.isPartner || preview.value)
 const vragen = ref([])
 const agenda = ref([])
 const ams = ref([])
@@ -40,16 +49,21 @@ onMounted(async () => {
     if (!st.items.length) await st.laad()
     ;[vragen.value, agenda.value] = await Promise.all([haalWinkelvragen(), haalAgenda()])
     if (auth.isKantoor) ams.value = await haalAms()
-    if (auth.isPartner) {
+    if (alsPartner.value) {
+      // Partner-dashboard (echt of gesimuleerd): marge + acties + producten
+      // voeden de KPI's, spotlight en nudges.
       marge.value = (await haalRekenConfig()).marge
       ;[acties.value, producten.value] = await Promise.all([haalActies().catch(() => []), haalProducten().catch(() => [])])
+      if (preview.value) taken.value = await haalTaken().catch(() => [])
     } else {
       ;[taken.value, acties.value] = await Promise.all([haalTaken(), haalActies().catch(() => [])])
     }
   } catch (e) { fout.value = 'Kon het overzicht niet volledig laden: ' + e.message }
 })
 
-const omzetTot = computed(() => st.items.reduce((s, t) => s + (Number(t.jaaromzet) || 0), 0))
+// In simulatie tonen de bovenste tegels de gekozen winkel, niet de portefeuille.
+const zichtItems = computed(() => preview.value ? st.items.filter(t => t.snelstart === props.previewCode) : st.items)
+const omzetTot = computed(() => zichtItems.value.reduce((s, t) => s + (Number(t.jaaromzet) || 0), 0))
 const blok = computed(() => st.items.filter(t => t.geblokkeerd).length)
 const openVragen = computed(() => vragen.value.filter(v => v.status === 'open').length)
 const openTaken = computed(() => taken.value.filter(t => !t.klaar).length)
@@ -94,14 +108,14 @@ const actieDeelname = computed(() => {
     return { id: a.id, titel: a.titel, mee, totaal: st.items.length, pct: Math.round(mee / totaal * 100) }
   })
 })
-const eigen = computed(() => st.items[0] || null)
+const eigen = computed(() => preview.value ? (st.items.find(t => t.snelstart === props.previewCode) || null) : (st.items[0] || null))
 const mijnNiveau = computed(() => eigen.value ? levelOf(jaaromzet(eigen.value), marge.value) : null)
 
 /* v71-fasering: waar zit de winkel in de reis? onboarding -> terugverdienen ->
    jaardoel. De faseringskaart toont per fase precies één duidelijke opdracht. */
 const fase = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return null
+  if (!alsPartner.value || !t) return null
   if (!setupComplete(t)) {
     return { key: 'onboarding', titel: '🚀 Opstartfase', n: setupCount(t), tot: SETUP_TOTAL,
              pct: Math.round(setupCount(t) / SETUP_TOTAL * 100),
@@ -128,7 +142,7 @@ const fase = computed(() => {
 /* Partner stats-KPI-rij (v71 r.3709): status, basispunten, winkelverkoop, voortgang. */
 const stats = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return null
+  if (!alsPartner.value || !t) return null
   const wo = winkelOmzetInfo(t, marge.value, [])
   const inBe = t.be && !beDone(t)
   const sold = flessenVerkocht(t)
@@ -146,7 +160,7 @@ const stats = computed(() => {
 const FORM_KERN = ['voorraad', 'demo', 'actieplan']
 const formStatus = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return []
+  if (!alsPartner.value || !t) return []
   const forms = t.forms || {}
   return FORM_KERN.map(id => {
     const def = FORMS.find(f => f.id === id)
@@ -158,14 +172,14 @@ const formStatus = computed(() => {
 // Trofeeën-strip: alle spaarcadeaus, behaald of nog te gaan.
 const trofeeen = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return []
+  if (!alsPartner.value || !t) return []
   return REWARDS.map(rw => ({ key: rw.key, r: rw.r, ic: rw.ic, gewonnen: rewUnlocked(t, rw) || !!(t.beloond || {})[rw.key] }))
 })
 
 // "Deze week"-ring (v71 r.3719): flessen laatste 7 dagen vs weekdoel.
 const week = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return null
+  if (!alsPartner.value || !t) return null
   const vanaf = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10)
   const flessen = (t.flesLog || []).filter(e => e.at >= vanaf).reduce((s, e) => s + (+e.n || 0), 0)
   let doel = 0
@@ -178,7 +192,7 @@ const week = computed(() => {
 // Weekrooster (v71 mijnplan weekGridHTML): flessen per weekdag, laatste 7 dagen.
 const weekGrid = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return []
+  if (!alsPartner.value || !t) return []
   const map = {}
   ;(t.flesLog || []).forEach(e => { map[e.at] = (map[e.at] || 0) + (+e.n || 0) })
   const DAG = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za']
@@ -194,7 +208,7 @@ const weekGrid = computed(() => {
 // Vooruitblik/projectie (v71 r.3723): in dit tempo eindig je rond €X -> niveau Y.
 const projectie = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return null
+  if (!alsPartner.value || !t) return null
   const jo = jaaromzet(t)
   const m = monthsElapsed(t)
   if (m < 1 || jo <= 0) return null
@@ -236,7 +250,7 @@ async function verstuurBericht() {
 
 /* Vieringen (v71): mijlpalen die de engine schreef — tonen tot ze weggeklikt
    worden (dismissViering). */
-const vieringen = computed(() => auth.isPartner && eigen.value ? (eigen.value.vieringen || []).slice(-3).reverse() : [])
+const vieringen = computed(() => alsPartner.value && eigen.value ? (eigen.value.vieringen || []).slice(-3).reverse() : [])
 function vierTekst(v) {
   if (v.type === 'level') return `Niveau ${v.k} bereikt — ${v.r}`
   if (v.type === 'doel') return `Jaardoel van ${eur0(v.doel)} gehaald!`
@@ -247,13 +261,17 @@ function vierTekst(v) {
 async function wisViering(v) {
   const t = eigen.value
   const t2 = { ...t, vieringen: (t.vieringen || []).filter(x => x !== v) }
-  try { await st.bewaar(t2); st.items[0] = t2 } catch (e) { fout.value = 'Opslaan mislukt: ' + e.message }
+  try {
+    await st.bewaar(t2)
+    const i = st.items.findIndex(x => x.snelstart === t.snelstart)
+    if (i >= 0) st.items[i] = t2
+  } catch (e) { fout.value = 'Opslaan mislukt: ' + e.message }
 }
 
 /* Nudges (v71: banners voor nieuw & openstaand) — klikbaar, verdwijnen vanzelf. */
 const nudges = computed(() => {
   const t = eigen.value
-  if (!auth.isPartner || !t) return []
+  if (!alsPartner.value || !t) return []
   const uit = []
   const vd = new Date().toISOString().slice(0, 10)
   const nA = acties.value.filter(a => isActief(a) && !(t.actiesGezienP || []).includes(a.id)).length
@@ -269,7 +287,7 @@ const nudges = computed(() => {
 const datum = new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
 // Vulmeter (signatuur): voortgang naar het jaardoel, anders naar het volgende niveau.
 const meterPct = computed(() => {
-  if (!auth.isPartner || !eigen.value) return null
+  if (!alsPartner.value || !eigen.value) return null
   const jo = Number(eigen.value.jaaromzet) || 0
   const doel = Number(eigen.value.doel) || 0
   if (doel > 0) return Math.min(100, (jo / doel) * 100)
@@ -286,10 +304,16 @@ const meterLabel = computed(() => {
 
 <template>
   <div>
+    <!-- Rol-simulatie: terug naar de accountmanager-weergave van de winkel -->
+    <router-link v-if="preview && eigen" class="simbanner" data-test="sim-terug"
+                 :to="{ name: 'winkel', params: { code: eigen.snelstart } }">
+      ← Terug (accountmanager) · je bekijkt <b>{{ eigen.name }}</b> zoals de partner het ziet
+    </router-link>
     <header class="held">
       <div>
         <p class="eyebrow">TapParfum Portaal · {{ datum }}</p>
-        <h1>{{ auth.isKantoor ? 'Kantoor-cockpit' : (auth.isAm ? 'Mijn overzicht' : 'Welkom') }}</h1>
+        <h1 v-if="preview">👁 {{ eigen ? eigen.name : 'Winkel' }} — partnerweergave</h1>
+        <h1 v-else>{{ auth.isKantoor ? 'Kantoor-cockpit' : (auth.isAm ? 'Mijn overzicht' : 'Welkom') }}</h1>
       </div>
       <FlesMeter v-if="meterPct != null" :pct="meterPct" :label="meterLabel" />
     </header>
@@ -298,8 +322,8 @@ const meterLabel = computed(() => {
     <!-- Tegels -->
     <div class="tegels">
       <div class="tegel" data-test="tile-winkels">
-        <div class="cijfer">{{ st.items.length }}</div>
-        <div class="lbl">{{ auth.isPartner ? 'winkel' : 'winkels' }}</div>
+        <div class="cijfer">{{ zichtItems.length }}</div>
+        <div class="lbl">{{ alsPartner ? 'winkel' : 'winkels' }}</div>
       </div>
       <div class="tegel" data-test="tile-omzet">
         <div class="cijfer">{{ eur0(omzetTot) }}</div>
@@ -309,7 +333,7 @@ const meterLabel = computed(() => {
         <div class="cijfer">{{ openVragen }}</div>
         <div class="lbl">open meldingen</div>
       </div>
-      <router-link v-if="!auth.isPartner" class="tegel klik" data-test="tile-taken" :to="{ name: 'taken' }">
+      <router-link v-if="!alsPartner" class="tegel klik" data-test="tile-taken" :to="{ name: 'taken' }">
         <div class="cijfer">{{ openTaken }}</div>
         <div class="lbl">open taken</div>
       </router-link>
@@ -328,7 +352,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Kantoor: bestellingen-KPI's -->
-    <div v-if="bestelKpi" class="kaart bestelkpi" data-test="bestel-kpi">
+    <div v-if="!preview && bestelKpi" class="kaart bestelkpi" data-test="bestel-kpi">
       <h2>📦 Bestellingen (team)</h2>
       <div class="kpirij">
         <div class="kpi"><b>{{ eur0(bestelKpi.inkoop) }}</b><span>inkoop dit jaar</span></div>
@@ -338,7 +362,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Kantoor/AM: actieve acties · deelname -->
-    <div v-if="actieDeelname.length" class="kaart" data-test="actie-deelname">
+    <div v-if="!preview && actieDeelname.length" class="kaart" data-test="actie-deelname">
       <h2>📣 Actieve acties · deelname</h2>
       <router-link v-for="a in actieDeelname" :key="a.id" class="deelnamerij klik" :data-test="'deelname-' + a.id" :to="{ name: 'acties' }">
         <span class="atitel">{{ a.titel }}</span>
@@ -348,7 +372,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Kantoor/AM: stagnatie-aandachtslijst -->
-    <div v-if="(auth.isKantoor || auth.isAm) && stagneerders.length" class="kaart" data-test="aandacht">
+    <div v-if="!preview && (auth.isKantoor || auth.isAm) && stagneerders.length" class="kaart" data-test="aandacht">
       <h2>⚠️ Vraagt aandacht — stagnerende tappunten</h2>
       <router-link v-for="t in stagneerders" :key="t.snelstart" class="rij klik" data-test="aandacht-rij"
                    :to="{ name: 'winkel', params: { code: t.snelstart } }">
@@ -421,7 +445,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Partner: berichtenkaart (v71 berichtKnopKaart) — vraag/bezoek/probleem/retour -->
-    <div v-if="auth.isPartner && eigen" class="kaart" data-test="berichtkaart">
+    <div v-if="alsPartner && eigen" class="kaart" data-test="berichtkaart">
       <h2>💬 Contact met je accountmanager</h2>
       <p class="regel">Een vraag, bezoekverzoek, probleem of retour? Kies waar het over gaat.</p>
       <div class="soorten">
@@ -441,7 +465,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Partner: formulieren-status -->
-    <div v-if="auth.isPartner && eigen && formStatus.length" class="kaart" data-test="form-status">
+    <div v-if="alsPartner && eigen && formStatus.length" class="kaart" data-test="form-status">
       <h2>📋 Jouw formulieren</h2>
       <router-link v-for="f in formStatus" :key="f.id" class="formrij klik" :data-test="'form-status-' + f.id" :to="{ name: 'formulieren' }">
         <span class="vink" :class="{ ok: f.done }">{{ f.done ? '✓' : '○' }}</span>
@@ -451,24 +475,24 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Partner: documenten -->
-    <DocumentenBlok v-if="auth.isPartner && eigen" :snelstart="eigen.snelstart" />
+    <DocumentenBlok v-if="alsPartner && eigen" :snelstart="eigen.snelstart" />
 
     <!-- Partner: geur van de week -->
-    <div v-if="auth.isPartner && eigen" class="kaart spotlight" data-test="spotlight">
+    <div v-if="alsPartner && eigen" class="kaart spotlight" data-test="spotlight">
       <div class="spkop"><span class="splbl">Geur van de week</span><b>{{ SPOTLIGHT.code }}</b></div>
       <p class="spnaam">{{ SPOTLIGHT.naam }}</p>
       <p class="regel">{{ SPOTLIGHT.tip }}</p>
     </div>
 
     <!-- Partner: waarom TapParfum -->
-    <div v-if="auth.isPartner && eigen" class="usps" data-test="usps">
+    <div v-if="alsPartner && eigen" class="usps" data-test="usps">
       <div v-for="u in USPS" :key="u.t" class="usp">
         <span class="uic">{{ u.ic }}</span><b>{{ u.t }}</b><span class="mo">{{ u.m }}</span>
       </div>
     </div>
 
     <!-- Partner: eigen winkel + niveau -->
-    <div v-if="auth.isPartner && eigen" class="kaart" data-test="eigen-kaart">
+    <div v-if="alsPartner && eigen" class="kaart" data-test="eigen-kaart">
       <div class="kop"><h2>{{ eigen.name }}</h2><span class="code">code {{ eigen.snelstart }}</span></div>
       <p class="regel">Jaaromzet: <b>{{ eur0(eigen.jaaromzet) }}</b></p>
       <template v-if="mijnNiveau">
@@ -482,7 +506,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Kantoor: per accountmanager -->
-    <div v-if="auth.isKantoor && perAm.length" class="kaart">
+    <div v-if="!preview && auth.isKantoor && perAm.length" class="kaart">
       <h2>Per accountmanager</h2>
       <div v-for="r in perAm" :key="r.naam" class="rij" data-test="am-rij">
         <b>{{ r.naam }}</b>
@@ -492,7 +516,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- AM: top-winkels -->
-    <div v-if="auth.isAm && topWinkels.length" class="kaart">
+    <div v-if="!preview && auth.isAm && topWinkels.length" class="kaart">
       <h2>Jouw winkels (top {{ topWinkels.length }})</h2>
       <router-link v-for="t in topWinkels" :key="t.snelstart" class="rij klik" data-test="top-winkel"
                    :to="{ name: 'winkel', params: { code: t.snelstart } }">
@@ -503,7 +527,7 @@ const meterLabel = computed(() => {
     </div>
 
     <!-- Iedereen: eerstvolgende bezoeken -->
-    <div v-if="komend.length" class="kaart">
+    <div v-if="!preview && komend.length" class="kaart">
       <h2>Eerstvolgend</h2>
       <div v-for="i in komend" :key="i.id" class="rij" data-test="komend-item">
         <b>{{ WINKEL[i.tappunt_snelstart] || i.tappunt_snelstart }}</b>
@@ -515,6 +539,9 @@ const meterLabel = computed(() => {
 </template>
 
 <style scoped>
+.simbanner{display:block;background:var(--ink);color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 16px;border-radius:12px;margin-bottom:12px}
+.simbanner b{color:var(--peach)}
+.simbanner:hover{background:#000}
 .held{display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(115deg,var(--soft),#fff 72%);border:1px solid var(--line);border-radius:18px;padding:18px 22px;margin-bottom:14px}
 .eyebrow{margin:0 0 3px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--coral-d)}
 h1{margin:0;font-size:24px}

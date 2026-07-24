@@ -108,6 +108,8 @@ async function wisselBlokkade() {
         <span class="niveau" data-test="kop-niveau">{{ lv.k }}</span>
         <span class="badge sit" :style="{ background: stat.bg, color: stat.fg }">{{ stat.l }}</span>
         <span v-if="bron.geblokkeerd" class="badge" data-test="blok-badge">geblokkeerd</span>
+        <router-link v-if="!auth.isPartner" class="alspartner" data-test="bekijk-als-partner"
+                     :to="{ name: 'winkel-partner', params: { code: bron.snelstart } }">👁 Bekijk als partner</router-link>
       </div>
 
       <!-- Kerncijfers in één oogopslag (v71 metricrow) -->
@@ -175,6 +177,8 @@ async function wisselBlokkade() {
 .terug{display:inline-block;margin-bottom:10px;color:var(--coral);font-weight:700;text-decoration:none}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px}
 .kop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.alspartner{margin-left:auto;font-size:12px;font-weight:800;color:var(--coral-d);background:var(--soft);border:1.5px solid var(--peach);border-radius:999px;padding:5px 12px;text-decoration:none;white-space:nowrap}
+.alspartner:hover{background:var(--peach)}
 h1{margin:0;font-size:20px}
 .code{color:var(--grey);font-size:13px}
 .badge{background:#333;color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px}

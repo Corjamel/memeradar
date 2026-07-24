@@ -39,6 +39,8 @@ const routes = [
   { path: '/', name: 'home', component: DashboardView, meta: { roles: ALLE_ROLLEN } },
   { path: '/winkels', name: 'winkels', component: TappuntenListView, meta: { roles: ALLE_ROLLEN } },
   { path: '/winkels/:code', name: 'winkel', component: TappuntDetailView, props: true, meta: { roles: ALLE_ROLLEN } },
+  // Rol-simulatie: AM/kantoor bekijkt de partner-zelfservice van één winkel.
+  { path: '/winkels/:code/als-partner', name: 'winkel-partner', component: DashboardView, props: r => ({ previewCode: r.params.code }), meta: { roles: ['kantoor', 'am'] } },
   { path: '/berichten', name: 'berichten', component: BerichtenView, meta: { roles: ALLE_ROLLEN } },
   { path: '/agenda', name: 'agenda', component: AgendaView, meta: { roles: ALLE_ROLLEN } },
   { path: '/acties', name: 'acties', component: ActiesView, meta: { roles: ALLE_ROLLEN } },
