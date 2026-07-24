@@ -11,6 +11,7 @@
 //   - anders                                  -> 'partner'
 import { defineStore } from 'pinia'
 import { sb } from '../lib/supabase.js'
+import { setNiveauDrempels } from '../modules/rekenhart/logic.js'
 
 export const useAuth = defineStore('auth', {
   state: () => ({
@@ -18,6 +19,7 @@ export const useAuth = defineStore('auth', {
     role: null,        // 'kantoor' | 'am' | 'partner'
     amId: null,        // gezet als de gebruiker een accountmanager is
     rechten: null,     // kantoor: rechten-matrix uit central 'kantoorRechten' (null = alles)
+    regels: null,      // netwerk-regels uit central 'regels' (drempels + AM-score-weging)
     ready: false,      // eerste sessie-check afgerond
     error: ''
   }),
@@ -41,7 +43,20 @@ export const useAuth = defineStore('auth', {
     magAnalyse: (s) => s.role === 'kantoor' ? (!s.rechten || s.rechten.rol === 'beheer' || s.rechten.analyse !== false) : true
   },
   actions: {
+    // Netwerk-regels (v71 Regels-tab): ABCD-drempels + AM-score-weging.
+    // Eenmalig toepassen zodra we ingelogd zijn, zodat elke view met dezelfde
+    // (eventueel door kantoor bijgestelde) drempels rekent.
+    async _laadRegels() {
+      try {
+        const { data } = await sb.from('central').select('data').eq('ns', 'regels')
+        const r = (data && data[0] && data[0].data) || {}
+        this.regels = r
+        if (Array.isArray(r.drempels)) setNiveauDrempels(r.drempels)
+      } catch (e) { /* zonder regels rekenen we met de standaarddrempels */ }
+    },
+
     async _bepaalRol(user) {
+      await this._laadRegels()
       const meta = (user && user.app_metadata) || {}
       if (meta.role === 'staff') {
         this.role = 'kantoor'; this.amId = null

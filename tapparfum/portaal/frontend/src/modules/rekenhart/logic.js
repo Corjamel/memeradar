@@ -18,6 +18,21 @@ export const LEVELS = [
   { k: 'A+', min: 50000, r: 'Top 4% — regiotopper', bel: '5% korting op je bestellingen — 3 maanden lang' },
   { k: 'A++', min: 100000, r: 'Top 1% — landelijke top, ambassadeur van TapParfum', bel: '10% korting op je bestellingen — 3 maanden lang' }
 ]
+// De standaard-drempels, zodat de regels-editor kan resetten.
+export const NIVEAU_DREMPELS_STANDAARD = LEVELS.map(l => l.min)
+
+/* Regels-editor (v71 Regels-tab): kantoor kan de ABCD-omzetdrempels bijstellen.
+   We patchen de bestaande LEVELS-drempels in-place (D=0 blijft), zodat álle
+   afnemers van levelOf/statusKey meteen met de nieuwe drempels rekenen. Wordt
+   éénmalig toegepast bij het laden van central 'regels' (auth.init). */
+export function setNiveauDrempels(mins) {
+  if (!Array.isArray(mins)) return
+  LEVELS.forEach((l, i) => {
+    if (i === 0) { l.min = 0; return }
+    const v = Number(mins[i])
+    if (Number.isFinite(v) && v >= 0) l.min = v
+  })
+}
 
 // Vaste typevolgorde uit v71 (r.3201) — t.flesLog[].ti verwijst hierin op index.
 export const SALE_TYPES = []

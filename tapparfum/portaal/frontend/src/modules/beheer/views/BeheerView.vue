@@ -10,6 +10,7 @@ import {
 } from '../api.js'
 import { STANDAARD_MATEN } from '../../kassa/api.js'
 import { eur0 } from '../../../lib/format.js'
+import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels } from '../../rekenhart/logic.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -18,9 +19,14 @@ const TABS = [
   ['mensen', '🚗 Mensen'],
   ['winkels', '🏬 Winkels'],
   ['instellingen', '⚙️ Instellingen'],
+  ['regels', '⚖️ Regels'],
   ['avg', '🔐 AVG & back-up'],
   ['audit', '📜 Audit']
 ]
+// Regels-editor: ABCD-drempels (D=0 vast) + AM-score-weging.
+const WEGING_STANDAARD = { groei: 35, activatie: 25, retentie: 20, data: 20 }
+const regels = reactive({ drempels: [...NIVEAU_DREMPELS_STANDAARD], weging: { ...WEGING_STANDAARD } })
+const NIVEAU_LABELS = LEVELS.map(l => l.k)
 
 const ams = ref([])
 const logboek = ref([])
@@ -57,6 +63,10 @@ async function laad() {
     const mo = await haalCentral('modules') || {}
     mod.game = mo.game !== false; mod.kassa = mo.kassa !== false; mod.producten = mo.producten !== false
     rechten.value = (await haalCentral('kantoorRechten')) || {}
+    const rg = (await haalCentral('regels')) || {}
+    regels.drempels = Array.isArray(rg.drempels) && rg.drempels.length === NIVEAU_DREMPELS_STANDAARD.length
+      ? rg.drempels.map(Number) : [...NIVEAU_DREMPELS_STANDAARD]
+    regels.weging = { ...WEGING_STANDAARD, ...(rg.weging || {}) }
     logboek.value = await haalLog()
   } catch (e) { fout.value = 'Kon beheer niet laden: ' + e.message }
 }
@@ -146,6 +156,27 @@ async function blok(t) {
     await log(wie(), `${t.geblokkeerd ? 'Geblokkeerd' : 'Gedeblokkeerd'}: ${t.name}`)
     meld(t.geblokkeerd ? `${t.name} geblokkeerd.` : `${t.name} gedeblokkeerd.`)
   } catch (e) { fout.value = 'Blokkeren mislukt: ' + e.message }
+}
+
+// ---- Regels-editor ----------------------------------------------------
+const wegingTotaal = computed(() => Object.values(regels.weging).reduce((a, v) => a + (Number(v) || 0), 0))
+async function regelsOpslaan() {
+  fout.value = ''
+  // D=0 vast; drempels moeten oplopend zijn.
+  const d = regels.drempels.map((v, i) => i === 0 ? 0 : Math.max(0, Number(v) || 0))
+  for (let i = 1; i < d.length; i++) if (d[i] < d[i - 1]) { fout.value = `Drempel ${NIVEAU_LABELS[i]} moet ≥ ${NIVEAU_LABELS[i - 1]} zijn.`; return }
+  try {
+    const cfg = { drempels: d, weging: { ...regels.weging } }
+    await bewaarCentral('regels', cfg)
+    setNiveauDrempels(d)              // direct actief in deze sessie
+    auth.regels = cfg                 // AM-score-weging meteen live
+    await log(wie(), 'Regels gewijzigd (ABCD-drempels / AM-score-weging)')
+    meld('✓ Regels opgeslagen — direct actief voor het hele netwerk.')
+  } catch (e) { fout.value = 'Regels opslaan mislukt: ' + e.message }
+}
+function regelsReset() {
+  regels.drempels = [...NIVEAU_DREMPELS_STANDAARD]
+  regels.weging = { ...WEGING_STANDAARD }
 }
 
 // ---- AVG & back-up ----------------------------------------------------
@@ -364,6 +395,35 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
       </div>
       <div class="rij">
         <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>
+      </div>
+    </template>
+
+    <!-- ===== REGELS ===== -->
+    <template v-else-if="tab === 'regels'">
+      <div class="kaart">
+        <h2>ABCD-omzetdrempels</h2>
+        <p class="note">De jaaromzet (× marge = winkelomzet) waarop een winkel een niveau bereikt. D is altijd 0; elk niveau moet ≥ het vorige zijn. Direct van invloed op status, beloningen en de cockpit.</p>
+        <div class="rij vorm">
+          <label v-for="(k, i) in NIVEAU_LABELS" :key="k">Niveau {{ k }}
+            <input v-if="i === 0" type="number" value="0" disabled />
+            <input v-else v-model="regels.drempels[i]" type="number" min="0" step="500" :data-test="'regel-drempel-' + k" />
+          </label>
+        </div>
+      </div>
+      <div class="kaart">
+        <h2>AM-score-weging</h2>
+        <p class="note">Hoe zwaar elk onderdeel meetelt in de accountmanager-score. Richtlijn: samen 100.
+          <b :class="{ amber: wegingTotaal !== 100 }">nu {{ wegingTotaal }}</b>.</p>
+        <div class="rij vorm">
+          <label>Groei<input v-model="regels.weging.groei" type="number" min="0" data-test="regel-weging-groei" /></label>
+          <label>Activaties<input v-model="regels.weging.activatie" type="number" min="0" data-test="regel-weging-activatie" /></label>
+          <label>Retentie (bezoekritme)<input v-model="regels.weging.retentie" type="number" min="0" data-test="regel-weging-retentie" /></label>
+          <label>Datakwaliteit<input v-model="regels.weging.data" type="number" min="0" data-test="regel-weging-data" /></label>
+        </div>
+      </div>
+      <div class="rij">
+        <button class="knop" type="button" data-test="regels-opslaan" @click="regelsOpslaan">Regels opslaan</button>
+        <button class="knop ghost" type="button" data-test="regels-reset" @click="regelsReset">Terug naar standaard</button>
       </div>
     </template>
 

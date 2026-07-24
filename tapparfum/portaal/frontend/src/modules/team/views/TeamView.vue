@@ -34,15 +34,19 @@ onMounted(async () => {
   } catch (e) { fout.value = 'Kon het team niet laden: ' + e.message }
 })
 
-// AM-score (v71-weging, vereenvoudigd maar trouw): 35% groei + 25% activaties +
-// 20% actie-uitvoering + 10% retentie (bestelritme) + 20% datakwaliteit-proxy.
+// AM-score (v71-weging) — de wegingen komen uit central 'regels' (kantoor kan ze
+// in de Regels-editor bijstellen); zonder config gelden de standaardwegingen
+// 35% groei + 25% activaties + 20% retentie + 20% datakwaliteit-proxy.
+const WEGING_STANDAARD = { groei: 35, activatie: 25, retentie: 20, data: 20 }
+const weging = computed(() => ({ ...WEGING_STANDAARD, ...((auth.regels && auth.regels.weging) || {}) }))
 function amScore(winkels) {
   if (!winkels.length) return 0
+  const w = weging.value
   const groei = winkels.map(t => omzetGroei(t)).filter(g => g != null)
   const gAvg = groei.length ? groei.reduce((a, g) => a + g, 0) / groei.length : 0
   const actief = winkels.filter(t => Object.values(t.actieDeelname || {}).some(v => v && v.res)).length / winkels.length
   const nietStil = winkels.filter(t => { const d = dagenSindsBezoek(t); return d != null && d <= 90 }).length / winkels.length
-  return Math.round((Math.max(0, gAvg) * 35 + actief * 25 + nietStil * 20 + 0.2 * 20) * 10) / 10
+  return Math.round((Math.max(0, gAvg) * w.groei + actief * w.activatie + nietStil * w.retentie + 0.2 * w.data) * 10) / 10
 }
 
 const perAm = computed(() => {
