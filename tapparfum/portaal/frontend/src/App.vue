@@ -1,16 +1,38 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAuth } from './stores/auth.js'
 import { useTappunten } from './modules/tappunten/store.js'
 import { useRouter, useRoute } from 'vue-router'
 import ZoekOverlay from './components/ZoekOverlay.vue'
 import { ICONS } from './lib/icons.js'
+import { haalWinkelvragen } from './modules/winkelvragen/api.js'
+import { haalTaken } from './modules/taken/api.js'
 
 const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 const ROL_LABEL = { kantoor: 'Kantoor', am: 'Accountmanager', partner: 'Partner' }
 const zoekOpen = ref(false)
+
+// Nav-tellers (v71 .bdg): open meldingen op Berichten, open taken op Taken.
+// Ververst bij elke navigatie zodat de badge meteen zakt na een actie.
+const openVragen = ref(0)
+const openTaken = ref(0)
+async function laadBadges() {
+  if (!auth.ingelogd) { openVragen.value = 0; openTaken.value = 0; return }
+  try {
+    const v = await haalWinkelvragen()
+    openVragen.value = (v || []).filter(x => x.status === 'open').length
+  } catch { openVragen.value = 0 }
+  if (auth.role !== 'partner') {
+    try {
+      const t = await haalTaken()
+      openTaken.value = (t || []).filter(x => !x.klaar).length
+    } catch { openTaken.value = 0 }
+  } else openTaken.value = 0
+}
+watch(() => [auth.ingelogd, route.name], laadBadges, { immediate: true })
+const badges = computed(() => ({ berichten: openVragen.value, taken: openTaken.value }))
 
 // Titel in de topbar = het label van de actieve navigatie-ingang.
 const TITELS = {
@@ -84,6 +106,7 @@ async function uitloggen() {
           <router-link v-for="it in g.items" :key="it.naam" :to="{ name: it.naam }"
                        class="nav-a" active-class="on">
             <span class="ic" v-html="ICONS[it.ic]"></span>{{ it.label }}
+            <span v-if="badges[it.naam]" class="bdg" :data-test="'bdg-' + it.naam">{{ badges[it.naam] }}</span>
           </router-link>
         </template>
       </nav>
@@ -124,6 +147,7 @@ async function uitloggen() {
 .nav-a.on{border-left-color:var(--coral);color:var(--coral);background:var(--soft)}
 .ic{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .ic :deep(svg){width:19px;height:19px}
+.bdg{margin-left:auto;background:var(--coral);color:#fff;font-size:10px;font-weight:800;min-width:18px;text-align:center;border-radius:9px;padding:1px 6px}
 .profilebox{border-top:1px solid var(--line);padding:14px 18px}
 .profilebox .who{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .profilebox .role{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
