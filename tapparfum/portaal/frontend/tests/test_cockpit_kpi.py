@@ -8,8 +8,9 @@ with sync_playwright() as p:
     pg=b.new_context().new_page(); errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)[:180]))
     pg.add_init_script(INIT); pg.goto(URL); pg.wait_for_timeout(400)
     pg.evaluate("""window.__DB.accountmanagers=[{id:'am-1',naam:'Marian',auth_user_id:'u-am'},{id:'am-2',naam:'Kees',auth_user_id:'u-x'}];
+      window.__DB.central=[{ns:'acties',data:[{id:'act-1',titel:'Zomeractie',start:'2026-06-01',eind:'2026-12-01',archived:false}]}];
       window.__DB.tappunten=[
-        {snelstart:'kl-1',name:'Zwolle',geblokkeerd:false,am_id:'am-1',data:{snelstart:'kl-1',name:'Zwolle',jaaromzet:24000,statusManual:'stagneert',bestellingen:[{id:'b1',at:'2026-07-10',ref:'F1',totaal:1200,bron:'handmatig'}]}},
+        {snelstart:'kl-1',name:'Zwolle',geblokkeerd:false,am_id:'am-1',data:{snelstart:'kl-1',name:'Zwolle',jaaromzet:24000,statusManual:'stagneert',actieDeelname:{'act-1':{done:true,at:'2026-06-05'}},bestellingen:[{id:'b1',at:'2026-07-10',ref:'F1',totaal:1200,bron:'handmatig'}]}},
         {snelstart:'kl-2',name:'Deventer',geblokkeerd:false,am_id:'am-1',data:{snelstart:'kl-2',name:'Deventer',jaaromzet:9000,statusManual:'stagneert',bestellingen:[{id:'b2',at:'2026-01-02',ref:'F2',totaal:400,bron:'handmatig'}]}},
         {snelstart:'kl-3',name:'Kampen',geblokkeerd:false,am_id:'am-2',data:{snelstart:'kl-3',name:'Kampen',jaaromzet:15000,statusManual:'top',bestellingen:[{id:'b3',at:'2026-07-20',ref:'F3',totaal:800,bron:'handmatig'}]}}];
       window.__MOCK.signin={data:{user:{id:'u-staff',email:'k@tp.nl',app_metadata:{role:'staff'}}},error:null};""")
@@ -20,6 +21,7 @@ with sync_playwright() as p:
     ck("bestel-KPI inkoop dit jaar = 2.400", '2.400' in kpi)
     ck("bestel-KPI 2 bestellingen deze maand", '2' in kpi and 'deze maand' in kpi)
     ck("bestel-KPI 1 stil (60+ dgn)", '60+ dgn' in kpi)
+    ck("actieve-acties-deelname blok toont 1/3", pg.locator('[data-test=actie-deelname]').count()==1 and '1/3' in (pg.text_content('[data-test=deelname-act-1]') or ''))
     ck("aandachtslijst: 2 stagnerende winkels", pg.locator('[data-test=aandacht-rij]').count()==2)
     ck("aandacht-rij linkt naar heractiveren", '→ heractiveren' in (pg.text_content('[data-test=aandacht-rij]') or ''))
     # klik opent de winkelpagina (waar het heractiveer-blok staat)

@@ -41,7 +41,9 @@ onMounted(async () => {
     if (auth.isPartner) {
       marge.value = (await haalRekenConfig()).marge
       ;[acties.value, producten.value] = await Promise.all([haalActies().catch(() => []), haalProducten().catch(() => [])])
-    } else taken.value = await haalTaken()
+    } else {
+      ;[taken.value, acties.value] = await Promise.all([haalTaken(), haalActies().catch(() => [])])
+    }
   } catch (e) { fout.value = 'Kon het overzicht niet volledig laden: ' + e.message }
 })
 
@@ -80,6 +82,15 @@ const bestelKpi = computed(() => {
     ;(t.bestellingen || []).forEach(b => { if (String(b.at || '').slice(0, 7) === maand) maandN++ })
   })
   return { inkoop, maandN, stil: st.items.filter(t => bestelStil(t)).length }
+})
+// Actieve acties · deelname (v71 r.4038): per lopende actie hoeveel winkels meedoen.
+const actieDeelname = computed(() => {
+  if (!auth.isKantoor && !auth.isAm) return []
+  const totaal = st.items.length || 1
+  return acties.value.filter(a => isActief(a)).map(a => {
+    const mee = st.items.filter(t => doetMee(t, a.id)).length
+    return { id: a.id, titel: a.titel, mee, totaal: st.items.length, pct: Math.round(mee / totaal * 100) }
+  })
 })
 const eigen = computed(() => st.items[0] || null)
 const mijnNiveau = computed(() => eigen.value ? levelOf(jaaromzet(eigen.value), marge.value) : null)
@@ -293,6 +304,16 @@ const meterLabel = computed(() => {
         <div class="kpi"><b>{{ bestelKpi.maandN }}</b><span>bestellingen deze maand</span></div>
         <div class="kpi"><b :class="{ amber: bestelKpi.stil > 0 }">{{ bestelKpi.stil }}</b><span>60+ dgn geen bestelling</span></div>
       </div>
+    </div>
+
+    <!-- Kantoor/AM: actieve acties · deelname -->
+    <div v-if="actieDeelname.length" class="kaart" data-test="actie-deelname">
+      <h2>📣 Actieve acties · deelname</h2>
+      <router-link v-for="a in actieDeelname" :key="a.id" class="deelnamerij klik" :data-test="'deelname-' + a.id" :to="{ name: 'acties' }">
+        <span class="atitel">{{ a.titel }}</span>
+        <span class="abalk"><i :style="{ width: a.pct + '%' }"></i></span>
+        <span class="amee">{{ a.mee }}/{{ a.totaal }}</span>
+      </router-link>
     </div>
 
     <!-- Kantoor/AM: stagnatie-aandachtslijst -->
@@ -525,4 +546,12 @@ h2{margin:0 0 10px;font-size:15px}
 @media(max-width:620px){.bestelkpi .kpirij{grid-template-columns:1fr}.bestelkpi .kpi{border-right:0;border-bottom:1px solid var(--line)}}
 [data-test=aandacht] .rij .pijl{margin-left:auto;color:var(--coral-d);font-weight:700;font-size:12.5px;white-space:nowrap}
 [data-test=aandacht]{border-left:4px solid var(--amber)}
+
+.deelnamerij{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+.deelnamerij:last-child{border-bottom:0}
+.deelnamerij.klik:hover .atitel{color:var(--coral)}
+.atitel{flex:1;min-width:120px;font-weight:700;font-size:13.5px}
+.abalk{flex:1.4;height:8px;background:#f0ebe3;overflow:hidden;min-width:80px}
+.abalk i{display:block;height:100%;background:var(--coral)}
+.amee{font-size:12.5px;color:var(--grey);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 </style>
