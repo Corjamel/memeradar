@@ -13,6 +13,7 @@ import { stuurWinkelvraag } from '../../winkelvragen/api.js'
 import { SALE_TYPES, flessenVerkocht, beDone } from '../../rekenhart/logic.js'
 import { omzetPF } from '../../calculator/logic.js'
 import { schemaStatus, dagTotaal, zetDagVerkoop, laatste7Dagen } from '../logic.js'
+import { omzetTrend } from '../omzetlog.js'
 
 const props = defineProps({ tappunt: { type: Object, required: true } })
 const emit = defineEmits(['bijgewerkt'])
@@ -76,6 +77,25 @@ const grafiek = computed(() => {
 
 // v71 SALE_TYPES-keuze: label + omzet per fles voor de <option>-lijst.
 const typeOpties = SALE_TYPES.map((x, i) => ({ i, label: `${x.label} · ${eur0(omzetPF(x.tp, x.md, x.sz))}` }))
+
+// Omzet-trend (v71 trendSpark): sparkline over de laatste omzet-meetpunten
+// (joLog). Toont richting (▲/▼) + procentuele verandering t.o.v. het vorige punt.
+const trend = computed(() => {
+  const vals = omzetTrend(props.tappunt)
+  if (vals.length < 2) return null
+  const mx = Math.max(...vals), mn = Math.min(...vals), rng = (mx - mn) || 1
+  const w = 132, h = 30, step = w / (vals.length - 1)
+  const punten = vals.map((v, i) => `${(i * step).toFixed(1)},${(h - ((v - mn) / rng) * h).toFixed(1)}`).join(' ')
+  const laatste = vals[vals.length - 1], vorige = vals[vals.length - 2]
+  const dpct = vorige > 0 ? Math.round((laatste - vorige) / vorige * 100) : 0
+  const omhoog = laatste >= vorige
+  return {
+    punten, w, h, omhoog,
+    pijl: laatste > vorige ? '▲' : (laatste < vorige ? '▼' : '▬'),
+    dpct: (dpct >= 0 ? '+' : '') + dpct + '%',
+    n: vals.length, laatst: eur0(laatste)
+  }
+})
 
 // Op-schema-strip + doelbalk (v71 schemaStatus/verkoopBlock).
 const schema = computed(() => schemaStatus(props.tappunt))
@@ -149,6 +169,16 @@ async function verwijder(o) {
         <input v-model="omzet.doel" type="number" min="0" placeholder="0" data-test="omzet-doel" />
       </label>
       <button class="knop" type="button" :disabled="bezig" data-test="omzet-opslaan" @click="omzetOpslaan">Opslaan</button>
+    </div>
+
+    <!-- Omzet-trend (v71 trendSpark): pas zichtbaar bij ≥2 meetpunten -->
+    <div v-if="trend" class="trend" data-test="omzet-trend">
+      <span class="tl">Omzet-trend <small>· laatste {{ trend.n }} metingen</small></span>
+      <svg :width="trend.w" :height="trend.h" class="spark" :class="{ omhoog: trend.omhoog }" aria-hidden="true">
+        <polyline :points="trend.punten" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+      </svg>
+      <span class="tv" :class="{ omhoog: trend.omhoog }" data-test="trend-delta">{{ trend.pijl }} {{ trend.dpct }}</span>
+      <span class="tnow">nu {{ trend.laatst }}</span>
     </div>
 
     <!-- Flessenteller -->
@@ -232,6 +262,14 @@ input{padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-si
 input:focus{border-color:var(--coral)}
 .knop{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer}
 .knop:disabled{opacity:.6}
+.trend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:var(--cream);border:1px solid var(--line);border-radius:10px;font-size:12.5px;color:var(--grey)}
+.trend .tl{font-weight:700;color:var(--ink)}
+.trend .tl small{font-weight:400;color:var(--grey)}
+.trend .spark{color:var(--coral-d);flex-shrink:0}
+.trend .spark.omhoog{color:var(--green)}
+.trend .tv{font-weight:800;color:var(--coral-d)}
+.trend .tv.omhoog{color:var(--green)}
+.trend .tnow{margin-left:auto;font-variant-numeric:tabular-nums}
 .teller{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
 .tegels{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .tegel{flex:1;min-width:110px;background:#faf7f2;border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
