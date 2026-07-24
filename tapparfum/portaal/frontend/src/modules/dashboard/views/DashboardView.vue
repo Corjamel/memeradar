@@ -21,6 +21,8 @@ import { haalTaken } from '../../taken/api.js'
 import { haalAms } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
 import FlesMeter from '../../../components/FlesMeter.vue'
+import DocumentenBlok from '../../documenten/components/DocumentenBlok.vue'
+import { FORMS } from '../../formulieren/data.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -140,6 +142,19 @@ const stats = computed(() => {
     voortgangPct: target ? Math.min(100, Math.round(sold / target * 100)) : null
   }
 })
+// Formulieren-status (v71 partner-dashboard): welke sleutelformulieren zijn af?
+const FORM_KERN = ['voorraad', 'demo', 'actieplan']
+const formStatus = computed(() => {
+  const t = eigen.value
+  if (!auth.isPartner || !t) return []
+  const forms = t.forms || {}
+  return FORM_KERN.map(id => {
+    const def = FORMS.find(f => f.id === id)
+    const ingevuld = forms[id] && Object.keys(forms[id]).length > 0
+    return { id, naam: def ? def.naam : id, done: !!ingevuld }
+  })
+})
+
 // Trofeeën-strip: alle spaarcadeaus, behaald of nog te gaan.
 const trofeeen = computed(() => {
   const t = eigen.value
@@ -402,6 +417,19 @@ const meterLabel = computed(() => {
       <p v-if="bezoekMelding" class="ok" role="status" data-test="bezoek-melding">{{ bezoekMelding }}</p>
     </div>
 
+    <!-- Partner: formulieren-status -->
+    <div v-if="auth.isPartner && eigen && formStatus.length" class="kaart" data-test="form-status">
+      <h2>📋 Jouw formulieren</h2>
+      <router-link v-for="f in formStatus" :key="f.id" class="formrij klik" :data-test="'form-status-' + f.id" :to="{ name: 'formulieren' }">
+        <span class="vink" :class="{ ok: f.done }">{{ f.done ? '✓' : '○' }}</span>
+        <span>{{ f.naam }}</span>
+        <span class="mo">{{ f.done ? 'ingevuld' : 'nog niet ingevuld' }}</span>
+      </router-link>
+    </div>
+
+    <!-- Partner: documenten -->
+    <DocumentenBlok v-if="auth.isPartner && eigen" :snelstart="eigen.snelstart" />
+
     <!-- Partner: geur van de week -->
     <div v-if="auth.isPartner && eigen" class="kaart spotlight" data-test="spotlight">
       <div class="spkop"><span class="splbl">Geur van de week</span><b>{{ SPOTLIGHT.code }}</b></div>
@@ -554,4 +582,11 @@ h2{margin:0 0 10px;font-size:15px}
 .abalk{flex:1.4;height:8px;background:#f0ebe3;overflow:hidden;min-width:80px}
 .abalk i{display:block;height:100%;background:var(--coral)}
 .amee{font-size:12.5px;color:var(--grey);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.formrij{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit;font-size:13.5px}
+.formrij:last-child{border-bottom:0}
+.formrij.klik:hover span:nth-child(2){color:var(--coral)}
+.formrij .vink{width:20px;height:20px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--grey);flex-shrink:0}
+.formrij .vink.ok{background:var(--green-soft);color:#2c5a12}
+.formrij .mo{margin-left:auto}
 </style>
