@@ -175,6 +175,22 @@ const week = computed(() => {
   return { flessen, doel, pct, koers: doel > 0 && flessen >= doel }
 })
 
+// Weekrooster (v71 mijnplan weekGridHTML): flessen per weekdag, laatste 7 dagen.
+const weekGrid = computed(() => {
+  const t = eigen.value
+  if (!auth.isPartner || !t) return []
+  const map = {}
+  ;(t.flesLog || []).forEach(e => { map[e.at] = (map[e.at] || 0) + (+e.n || 0) })
+  const DAG = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za']
+  const uit = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 864e5)
+    uit.push({ dag: DAG[d.getDay()], n: map[d.toISOString().slice(0, 10)] || 0 })
+  }
+  const mx = Math.max(1, ...uit.map(x => x.n))
+  return uit.map(x => ({ ...x, pct: Math.round(x.n / mx * 100) }))
+})
+
 // Vooruitblik/projectie (v71 r.3723): in dit tempo eindig je rond €X -> niveau Y.
 const projectie = computed(() => {
   const t = eigen.value
@@ -383,6 +399,13 @@ const meterLabel = computed(() => {
         <div class="balk"><div class="vul" :style="{ width: week.pct + '%' }"></div></div>
         <p class="regel">{{ week.koers ? 'Op koers 🔥 — weekdoel gehaald!' : `Nog ${Math.max(0, week.doel - week.flessen)} flessen tot je weekdoel.` }}</p>
         <p v-if="projectie" class="regel proj" data-test="projectie">📈 In dit tempo eindig je rond <b>{{ eur0(projectie.winkelomzet) }}</b> — niveau <b>{{ projectie.niveau }}</b> ({{ projectie.niveauR }}).</p>
+        <div class="weekgrid" data-test="weekgrid" aria-label="Flessen per dag deze week">
+          <div v-for="(d, i) in weekGrid" :key="i" class="wgcol">
+            <span class="wgn">{{ d.n || '' }}</span>
+            <span class="wgbar" :style="{ height: Math.max(4, d.pct * 0.4) + 'px' }" :class="{ leeg: !d.n }"></span>
+            <span class="wgdag">{{ d.dag }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -589,4 +612,11 @@ h2{margin:0 0 10px;font-size:15px}
 .formrij .vink{width:20px;height:20px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--grey);flex-shrink:0}
 .formrij .vink.ok{background:var(--green-soft);color:#2c5a12}
 .formrij .mo{margin-left:auto}
+
+.weekgrid{display:flex;gap:8px;align-items:flex-end;margin-top:12px}
+.wgcol{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.wgn{font-size:10px;font-weight:800;color:var(--coral-d);height:12px;font-variant-numeric:tabular-nums}
+.wgbar{width:70%;max-width:22px;background:var(--coral);border-radius:2px 2px 0 0}
+.wgbar.leeg{background:#eadfce}
+.wgdag{font-size:10px;color:var(--grey);font-weight:700;text-transform:uppercase}
 </style>
