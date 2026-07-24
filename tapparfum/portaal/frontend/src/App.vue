@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAuth } from './stores/auth.js'
 import { useTappunten } from './modules/tappunten/store.js'
 import { useRouter, useRoute } from 'vue-router'
@@ -86,6 +86,18 @@ const initialen = computed(() => {
   const e = (auth.user && auth.user.email) || ''
   return e.slice(0, 2).toUpperCase() || 'TP'
 })
+
+// "/"-sneltoets opent zoeken (v71 r.4337) — behalve tijdens typen in een veld.
+function sneltoets(e) {
+  if (e.key !== '/' || !auth.ingelogd || auth.role === 'partner') return
+  const t = e.target
+  const tag = (t && t.tagName) || ''
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (t && t.isContentEditable)) return
+  e.preventDefault()
+  zoekOpen.value = true
+}
+onMounted(() => window.addEventListener('keydown', sneltoets))
+onUnmounted(() => window.removeEventListener('keydown', sneltoets))
 
 async function uitloggen() {
   await auth.signOut()

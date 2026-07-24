@@ -13,6 +13,7 @@ const bezig = ref(false)
 const winkel = ref('')
 const formId = ref('')
 const inv = reactive({})          // huidige invoer { veldKey: waarde }
+function print() { window.print() }
 
 const tappunt = computed(() => st.items.find(t => t.snelstart === winkel.value) || null)
 const form = computed(() => FORMS.find(f => f.id === formId.value) || null)
@@ -56,7 +57,10 @@ async function opslaan() {
 
 <template>
   <div>
-    <h1>📋 Formulieren</h1>
+    <div class="titelrij">
+      <h1>📋 Formulieren</h1>
+      <button class="print geen-print" type="button" data-test="form-print" @click="print">🖨 Print / PDF</button>
+    </div>
     <p class="sub">De officiële voorwaarden- en checklistformulieren — samen met de ondernemer invullen en vastleggen.</p>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
@@ -119,6 +123,9 @@ async function opslaan() {
 
 <style scoped>
 h1{margin:0 0 4px;font-size:22px}
+.titelrij{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.print{background:#fff;border:1.5px solid var(--line);padding:8px 13px;font-weight:800;font-size:12.5px;cursor:pointer;text-transform:uppercase;letter-spacing:.4px}
+.print:hover{border-color:var(--coral);color:var(--coral)}
 h2{margin:0 0 6px;font-size:17px}
 h3{margin:16px 0 8px;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--coral-d)}
 .sub{color:var(--grey);margin:0 0 14px;font-size:13.5px}

@@ -74,3 +74,11 @@ input[type=month], input[type=number], input[type=search], textarea, select {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Afdrukken (v71 Print/PDF): verberg de chrome en print alleen de inhoud. */
+@media print {
+  .side, .topbar, .bdg, .geen-print { display: none !important; }
+  .shell { display: block !important; }
+  .content { max-width: none !important; padding: 0 !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

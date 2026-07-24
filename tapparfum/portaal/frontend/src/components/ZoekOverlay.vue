@@ -13,11 +13,23 @@ const st = useTappunten()
 const router = useRouter()
 const q = ref('')
 const veld = ref(null)
+const paneel = ref(null)
 
 onMounted(async () => {
   if (!st.items.length) { try { await st.laad() } catch { /* leeg blijft leeg */ } }
   veld.value?.focus()
 })
+
+// Toetsen in de dialoog: Esc sluit; Tab blijft binnen de dialoog (focus-trap).
+function onKey(e) {
+  if (e.key === 'Escape') { emit('sluit'); return }
+  if (e.key !== 'Tab' || !paneel.value) return
+  const f = paneel.value.querySelectorAll('input, button')
+  if (!f.length) return
+  const first = f[0], last = f[f.length - 1]
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+}
 
 /* v71 globalSearch: minimaal 2 tekens, vier secties, max 8 per sectie. */
 const hits = computed(() => {
@@ -44,8 +56,8 @@ function open(t) {
 </script>
 
 <template>
-  <div class="laag" role="dialog" aria-modal="true" aria-label="Zoeken" @click.self="emit('sluit')" @keydown.esc="emit('sluit')">
-    <div class="paneel">
+  <div class="laag" role="dialog" aria-modal="true" aria-label="Zoeken" @click.self="emit('sluit')" @keydown="onKey">
+    <div ref="paneel" class="paneel">
       <div class="balk">
         <input ref="veld" v-model="q" placeholder="Zoek winkel, code, notitie, afspraak of ordernummer…"
                aria-label="Zoekterm" data-test="zoek-veld" />

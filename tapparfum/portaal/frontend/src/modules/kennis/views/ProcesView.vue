@@ -4,11 +4,12 @@
 // cadans. Naslag; leunt op bestaande data (SETUP, AFTERSALES).
 import { SALE_STEPS, AFTERSALES } from '../data.js'
 import { SETUP } from '../../setup/logic.js'
+function print() { window.print() }
 </script>
 
 <template>
   <div>
-    <h1>🧭 Het proces</h1>
+    <div class="titelrij"><h1>🧭 Het proces</h1><button class="print geen-print" type="button" data-test="proces-print" @click="print">🖨 Print / PDF</button></div>
     <p class="sub">Van eerste contact tot een zelfstandig draaiend tappunt — en hoe je het daarna volgt.</p>
 
     <section class="kaart">
@@ -43,6 +44,9 @@ import { SETUP } from '../../setup/logic.js'
 
 <style scoped>
 h1{margin:0 0 4px;font-size:22px}
+.titelrij{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.print{background:#fff;border:1.5px solid var(--line);padding:8px 13px;font-weight:800;font-size:12.5px;cursor:pointer;text-transform:uppercase;letter-spacing:.4px}
+.print:hover{border-color:var(--coral);color:var(--coral)}
 h2{margin:0 0 10px;font-size:15px}
 .sub{color:var(--grey);margin:0 0 14px;font-size:13.5px}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px}
