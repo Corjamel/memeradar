@@ -3,12 +3,12 @@
 // t.academy = { cursusKey: { lesIndex: true } }. Eerst leren, dan verdienen:
 // de beloningen-engine eist per spaarcadeau de bijbehorende training, dus elke
 // afgevinkte les kan een beloning vrijspelen (checkBeloningen draait mee).
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { COURSES, academyPct, checkBeloningen } from '../../beloningen/logic.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
-import { LESINHOUD } from '../data.js'
+import { LESINHOUD, ACADEMY_VIDEOS, videoCloudBron } from '../data.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -24,6 +24,14 @@ function lesStof(c, i) { return (LESINHOUD[c[0]] || [])[i] || null }
 function toggleLes(c, i) {
   const k = c[0] + '-' + i
   openLes.value = openLes.value === k ? '' : k
+}
+
+/* Videotheek: alleen kijken (geen download-knop, nodownload in de speler).
+   Ontbreekt het lokale bestand, dan schakelt de bron door naar Supabase. */
+const vsrc = reactive({})
+function vidFout(v) {
+  const alt = videoCloudBron(v.src)
+  if (alt && vsrc[v.src] !== alt) vsrc[v.src] = alt
 }
 
 const CAT_KLEUR = { Onboarding: '#f9c5af', Verkoop: '#bfe3fb', Tool: '#ecdfc6', Beleving: '#dcd9e8' }
@@ -150,6 +158,22 @@ async function vink(c, i, v) {
       </div>
     </template>
     <p v-else class="stil">Geen winkel gevonden.</p>
+
+    <!-- Videotheek: de officiële merkvideo's — alleen kijken, niet downloaden -->
+    <div class="vidkop">
+      <div class="vt">🎬 Videotheek</div>
+      <p class="vsub">De officiële TapParfum-video's bij je training — bekijk ze hier en gebruik wat je ziet op de winkelvloer.</p>
+    </div>
+    <div class="videos">
+      <figure v-for="v in ACADEMY_VIDEOS" :key="v.src" class="vcard" data-test="academy-video">
+        <video :src="vsrc[v.src] || v.src" controls controlslist="nodownload noremoteplayback" disablepictureinpicture
+               preload="metadata" playsinline @error="vidFout(v)" @contextmenu.prevent></video>
+        <figcaption>
+          <b>{{ v.t }}</b><small>{{ v.cursus }}</small>
+          <p>{{ v.sub }}</p>
+        </figcaption>
+      </figure>
+    </div>
   </div>
 </template>
 
@@ -196,4 +220,17 @@ h1{margin:4px 0;font-size:22px;color:#3a2f5a}
 .klaar:disabled{opacity:.6}
 .fout{color:#b3261e}
 .stil{color:var(--grey)}
+/* Videotheek */
+.vidkop{margin:22px 0 10px}
+.vt{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--coral-d)}
+.vsub{color:var(--grey);font-size:12.5px;margin:4px 0 0}
+.videos{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.videos{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.videos{grid-template-columns:1fr}}
+.vcard{margin:0;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.vcard video{width:100%;aspect-ratio:9/16;max-height:340px;object-fit:cover;background:#1c1512;display:block}
+.vcard figcaption{padding:10px 14px 12px}
+.vcard b{font-size:13.5px}
+.vcard small{display:block;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--coral-d);margin-top:2px}
+.vcard p{margin:4px 0 0;color:var(--grey);font-size:12px;line-height:1.45}
 </style>

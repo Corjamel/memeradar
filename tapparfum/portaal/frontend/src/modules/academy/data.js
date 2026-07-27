@@ -1,3 +1,20 @@
+// Videotheek — de officiële merkvideo's horen bij het léren (besluit kantoor):
+// kijken in de Academy, niet downloaden. src verwijst naar /assets/video/;
+// ontbreekt het lokale bestand (Netlify-upload zonder video's), dan valt de
+// speler automatisch terug op Supabase Storage (publieke bucket 'merk').
+const SB_URL = import.meta.env.VITE_SUPABASE_URL || ''
+export const videoCloudBron = (src) =>
+  SB_URL ? SB_URL + '/storage/v1/object/public/merk/' + src.split('/').pop() : ''
+
+export const ACADEMY_VIDEOS = [
+  { t: 'Het refill-concept', cursus: 'Onboarding', sub: 'Flesje leeg? Tappen, niet weggooien — de kern van TapParfum.', src: '/assets/video/refill.mp4' },
+  { t: 'De geurbeleving', cursus: 'Beleving', sub: 'Ruiken, ontdekken, verliefd worden op een geur.', src: '/assets/video/scent.mp4' },
+  { t: '“Lekker luchtje, hè”', cursus: 'Verkoop', sub: 'Zo voelt de Tapbar in de winkel — laagdrempelig en met een knipoog.', src: '/assets/video/lekker-luchtje.mp4' },
+  { t: 'Nieuwe geuren', cursus: 'Assortiment', sub: 'Zo kondigen we nieuwe geuren aan richting de klant.', src: '/assets/video/nieuwe-geuren.mp4' },
+  { t: 'Social reel · 6', cursus: 'Inspiratie', sub: 'Voorbeeld voor je eigen kanalen.', src: '/assets/video/reel-6.mp4' },
+  { t: 'Social reel · 7', cursus: 'Inspiratie', sub: 'Voorbeeld voor je eigen kanalen.', src: '/assets/video/reel-7.mp4' }
+]
+
 // Academy-lesinhoud — de invulling van de 28 lessen uit COURSES
 // (beloningen/logic.js). v71 toonde alleen lestitels met een vinkje; hier
 // krijgt elke les échte stof: korte uitleg, kernpunten en een praktijktip.

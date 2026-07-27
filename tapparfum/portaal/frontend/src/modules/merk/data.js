@@ -4,23 +4,8 @@
 // hervullen, geurbeleving, de winkelervaring) en PRODUCT (kale productfoto's
 // uit de sell-sheets). De merkwereld-tegels en materialen blijven v71.
 
-// HET CONCEPT — merkvideo's: laten de beleving zien, niet het artikel.
-// src verwijst naar /assets/video/; die bestanden zijn te groot om mee te
-// uploaden naar Netlify, dus de pagina valt per video automatisch terug op
-// Supabase Storage (publieke bucket 'merk', zelfde bestandsnaam) zodra het
-// lokale pad ontbreekt. preload=metadata houdt de pagina licht.
-const SB_URL = import.meta.env.VITE_SUPABASE_URL || ''
-export const videoCloudBron = (src) =>
-  SB_URL ? SB_URL + '/storage/v1/object/public/merk/' + src.split('/').pop() : ''
-export const CONCEPT_VIDEOS = [
-  { t: 'Het refill-concept', cat: 'Duurzaam', sub: 'Flesje leeg? Tappen, niet weggooien — de kern van TapParfum.', src: '/assets/video/refill.mp4' },
-  { t: 'De geurbeleving', cat: 'Beleving', sub: 'Ruiken, ontdekken, verliefd worden op een geur.', src: '/assets/video/scent.mp4' },
-  { t: '“Lekker luchtje, hè”', cat: 'Winkelvloer', sub: 'Zo voelt de Tapbar in de winkel — laagdrempelig en met een knipoog.', src: '/assets/video/lekker-luchtje.mp4' },
-  { t: 'Nieuwe geuren', cat: 'Assortiment', sub: 'Zo kondigen we nieuwe geuren aan richting de klant.', src: '/assets/video/nieuwe-geuren.mp4' },
-  { t: 'Social reel · 6', cat: 'Social', sub: 'Voorbeeld-reel voor je eigen kanalen.', src: '/assets/video/reel-6.mp4' },
-  { t: 'Social reel · 7', cat: 'Social', sub: 'Voorbeeld-reel voor je eigen kanalen.', src: '/assets/video/reel-7.mp4' }
-]
-
+// De merkvideo's staan in de Academy (videotheek, academy/data.js) — daar
+// wordt geleerd; hier blijven de merkwereld, productfoto's en materialen.
 // DE PRODUCTEN — productfotografie uit de officiële sell-sheets (PDF's):
 // gewoon het artikel laten zien, zonder verhaal eromheen.
 export const PRODUCT_FOTOS = [

@@ -41,6 +41,11 @@ with sync_playwright() as p:
     ck("lesstof open: uitleg + tip aanwezig", 'podium' in stof and '💡' in stof)
     ck("elke tapbar-les heeft een lesstof-knop", pg.locator('[data-test^=les-open-tapbar-]').count()==5)
     ck("afgeronde les heeft geen 'Les afronden'-knop", pg.locator('[data-test=les-klaar-tapbar-0]').count()==0)
+    # Videotheek: 6 merkvideo's, alleen kijken (nodownload, geen download-knop)
+    ck("videotheek: 6 video's", pg.locator('[data-test=academy-video] video').count()==6)
+    ck("video bestaat echt", pg.evaluate("fetch('/assets/video/refill.mp4',{method:'HEAD'}).then(r=>r.ok)"))
+    ck("geen download-knop bij video's", pg.locator('[data-test=academy-video] a[download]').count()==0)
+    ck("speler verbergt download (nodownload)", 'nodownload' in (pg.get_attribute('[data-test=academy-video] video >> nth=0','controlslist') or ''))
     # De open les (4) afronden via de knop in de lesstof
     pg.click('[data-test=les-open-tapbar-4]'); pg.wait_for_timeout(200)
     pg.click('[data-test=les-klaar-tapbar-4]'); pg.wait_for_timeout(600)
