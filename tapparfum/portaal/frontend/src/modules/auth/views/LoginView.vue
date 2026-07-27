@@ -69,8 +69,8 @@ async function stuurReset() {
       <div class="ls-veil"></div>
       <div class="ls-txt">
         <div class="ls-brand" translate="no">TAP<b>PARFUM</b></div>
-        <div class="ls-concept">Hervullen is<br>het nieuwe normaal.</div>
-        <div class="ls-tag">We hebben goud in handen: een geur-lifestyle waar klanten voor terugkomen. Ruiken met je neus, niet je portemonnee.</div>
+        <div class="ls-concept">Ruiken met je neus,<br>niet je portemonnee.</div>
+        <div class="ls-tag">Easy to build, easy to scale — hervulbaar parfum is het nieuwe normaal.</div>
       </div>
     </div>
 
