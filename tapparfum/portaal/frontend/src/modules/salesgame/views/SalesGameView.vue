@@ -98,7 +98,7 @@ async function opslaan() {
             <div class="medal">{{ ['🥇','🥈','🥉'][i] }}</div>
             <div class="pnaam">{{ x.t.name }}</div>
             <div class="pscore">{{ podiumIsGroei ? x.sc.score + ' ptn' + (x.sc.groeiPct != null ? ' · +' + x.sc.groeiPct + '%' : '') : eur0(x.jo) + ' omzet' }}</div>
-            <div class="staaf" :style="{ height: [46, 32, 24][i] + 'px' }"></div>
+            <div class="staaf" :style="{ height: [58, 42, 30][i] + 'px' }">{{ i + 1 }}</div>
           </div>
         </div>
         <p class="klas-lbl">{{ podiumIsGroei ? 'Groei-klassement' : '🌱 Nieuwkomers van het jaar' }}</p>
@@ -163,7 +163,8 @@ input:focus,textarea:focus{border-color:var(--coral)}
 .plek.p0 .medal{font-size:38px}
 .pnaam{font-weight:800;font-size:13px;max-width:120px;margin:0 auto}
 .pscore{font-size:12px;font-weight:700;opacity:.9}
-.staaf{background:rgba(255,255,255,.3);border-radius:10px 10px 0 0;margin-top:6px}
+.staaf{width:78px;margin:8px auto 0;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.26));border-radius:10px 10px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:5px;color:#fff;font-weight:900;font-size:15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 6px 14px -8px rgba(0,0,0,.4);font-variant-numeric:tabular-nums}
+.plek.p0 .staaf{background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.34))}
 .klas-lbl{text-align:center;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.9;margin:8px 0 0}
 .eigen .regel{margin:4px 0;font-size:14px}
 .regel.groen{color:#2c5a12;font-weight:700}
