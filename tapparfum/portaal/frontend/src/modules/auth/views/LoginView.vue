@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../../../stores/auth.js'
+import { ICONS } from '../../../lib/icons.js'
 
 const auth = useAuth()
 const router = useRouter()
@@ -53,12 +54,28 @@ async function stuurReset() {
 
 <template>
   <div class="loginsplit">
-    <!-- Visueel paneel: merk + belofte, in de signatuur-gradient (v71-split) -->
+    <!-- Visueel paneel: het CONCEPT — hervullen, niet weggooien (besluit kantoor:
+         geen productfoto, het verhaal zelf is het beeld) -->
     <div class="ls-visual" aria-hidden="true">
       <div class="ls-veil"></div>
+      <svg class="ls-fles" viewBox="0 0 120 240" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M48 14h24"/>
+        <path d="M52 14v18M68 14v18"/>
+        <rect x="44" y="32" width="32" height="14" rx="3"/>
+        <path d="M40 60c0-8 6-14 14-14h12c8 0 14 6 14 14v130a16 16 0 0 1-16 16H56a16 16 0 0 1-16-16V60Z"/>
+        <path d="M40 96h40"/>
+        <path d="M50 140c0-8 10-8 10-16 0 8 10 8 10 16a10 10 0 0 1-20 0Z"/>
+        <path d="M92 40l10-6M96 52l12-2M90 30l7-9"/>
+      </svg>
       <div class="ls-txt">
         <div class="ls-brand" translate="no">TAP<b>PARFUM</b></div>
-        <div class="ls-tag">Ruiken met je neus, niet je portemonnee</div>
+        <div class="ls-concept">Flesje leeg?<br>Gewoon weer tappen.</div>
+        <div class="ls-tag">Hervulbaar parfum van topkwaliteit — ruiken met je neus, niet je portemonnee.</div>
+        <ul class="ls-pijlers">
+          <li><span class="pic" v-html="ICONS.refresh"></span>Hervulbaar: tap je flesje bij in de winkel</li>
+          <li><span class="pic" v-html="ICONS.euro"></span>Luxe geuren voor een eerlijke prijs</li>
+          <li><span class="pic" v-html="ICONS.tappunten"></span>400+ tappunten — en het netwerk groeit</li>
+        </ul>
       </div>
     </div>
 
@@ -133,13 +150,20 @@ async function stuurReset() {
 <style scoped>
 /* v71-inlogscherm: split-screen — visueel merkpaneel links, formulier rechts. */
 .loginsplit{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr;background:var(--pagebg)}
-/* Écht campagnebeeld als merkpaneel; de gradient blijft als vangnet eronder. */
-.ls-visual{position:relative;overflow:hidden;background-image:url('/assets/giftset-50ml-2vials.jpg'),var(--sig);background-size:cover;background-position:center 40%;background-repeat:no-repeat}
-.ls-veil{position:absolute;inset:0;background:radial-gradient(120% 90% at 85% -10%, rgba(255,255,255,.16), transparent 55%),linear-gradient(180deg, rgba(42,33,28,.05) 40%, rgba(42,33,28,.62))}
-.ls-txt{position:absolute;left:0;bottom:0;padding:48px 44px;color:#fff}
-.ls-brand{font-weight:800;letter-spacing:.18em;font-size:26px;text-shadow:0 2px 12px rgba(0,0,0,.25)}
+/* Concept-paneel: het refill-verhaal in de signatuur-gradient — de grote
+   tapfles-lijntekening is het beeld, de belofte is de kop. */
+.ls-visual{position:relative;overflow:hidden;background:var(--sig)}
+.ls-veil{position:absolute;inset:0;background:radial-gradient(120% 90% at 85% -10%, rgba(255,255,255,.28), transparent 55%),linear-gradient(160deg, rgba(217,84,60,.15), rgba(42,33,28,.35))}
+.ls-fles{position:absolute;top:6%;right:-4%;width:min(46%,320px);color:rgba(255,255,255,.5);transform:rotate(8deg)}
+.ls-txt{position:absolute;left:0;bottom:0;right:0;padding:48px 44px;color:#fff}
+.ls-brand{font-weight:800;letter-spacing:.18em;font-size:22px;text-shadow:0 2px 12px rgba(0,0,0,.25)}
 .ls-brand b{font-weight:900}
-.ls-tag{margin-top:10px;font-size:17px;font-weight:600;max-width:340px;line-height:1.4;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+.ls-concept{font-family:var(--font-display);font-weight:600;font-size:clamp(30px,3.6vw,44px);line-height:1.12;margin-top:14px;text-shadow:0 2px 14px rgba(0,0,0,.28);text-wrap:balance}
+.ls-tag{margin-top:12px;font-size:15.5px;font-weight:600;max-width:400px;line-height:1.45;text-shadow:0 1px 8px rgba(0,0,0,.3);opacity:.95}
+.ls-pijlers{list-style:none;margin:22px 0 0;padding:16px 0 0;border-top:1px solid rgba(255,255,255,.35);display:flex;flex-direction:column;gap:9px}
+.ls-pijlers li{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;text-shadow:0 1px 6px rgba(0,0,0,.25)}
+.pic{display:inline-flex;width:20px;height:20px;flex-shrink:0;color:#fff;background:rgba(255,255,255,.18);border-radius:6px;padding:3px}
+.pic svg{width:100%;height:100%}
 .ls-form{display:flex;flex-direction:column;justify-content:center;padding:40px 48px;max-width:520px;width:100%;margin:0 auto}
 .fbox{display:flex;flex-direction:column;gap:12px;width:100%;max-width:400px}
 .brand{font-weight:800;letter-spacing:.16em;color:var(--coral);font-size:15px}
