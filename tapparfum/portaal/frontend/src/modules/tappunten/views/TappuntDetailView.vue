@@ -176,7 +176,8 @@ async function wisselBlokkade() {
 <style scoped>
 .terug{display:inline-block;margin-bottom:10px;color:var(--coral);font-weight:700;text-decoration:none}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px}
-.kop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+/* Kop van de winkelkaart: gradient-band die tot de kaartranden doorloopt */
+.kop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(120deg,var(--soft),#fff 75%);border-bottom:1px solid var(--line);margin:-22px -22px 16px;padding:18px 22px}
 .alspartner{margin-left:auto;font-size:12px;font-weight:800;color:var(--coral-d);background:var(--soft);border:1.5px solid var(--peach);border-radius:999px;padding:5px 12px;text-decoration:none;white-space:nowrap}
 .alspartner:hover{background:var(--peach)}
 h1{margin:0;font-size:20px}
@@ -184,10 +185,10 @@ h1{margin:0;font-size:20px}
 .badge{background:#333;color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px}
 .badge.sit{border-radius:6px}
 .niveau{width:30px;height:30px;border-radius:9px;background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12.5px}
-.metricrow{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);margin-bottom:12px}
-.metricrow .m{padding:12px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
-.metricrow .m:last-child{border-right:0}
-.metricrow .mv{font-size:20px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.metricrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+@media(max-width:640px){.metricrow{grid-template-columns:repeat(2,1fr)}}
+.metricrow .m{padding:12px 14px;background:var(--cream);border:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.metricrow .mv{font-size:21px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums;color:var(--coral-d)}
 .metricrow .mv.up{color:var(--green)}.metricrow .mv.down{color:var(--coral-d)}
 .metricrow .ml{font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
 @media(max-width:620px){.metricrow{grid-template-columns:repeat(2,1fr)}.metricrow .m:nth-child(2){border-right:0}}
