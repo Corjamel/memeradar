@@ -35,7 +35,17 @@ with sync_playwright() as p:
     ck("tapbar-kaart: 4/5 lessen", '4/5' in (pg.text_content('[data-test=cursus-stand-tapbar]') or ''))
     pg.click('[data-test=cursus-open-tapbar]'); pg.wait_for_timeout(200)
     ck("5 lessen zichtbaar, exacte v71-titel les 1", pg.locator('[data-test^=les-tapbar-]').count()==5 and 'De Tapbar opzetten' in (pg.text_content('[data-test=cursus]:has-text("Tapbar")') or ''))
-    pg.check('[data-test=les-tapbar-4]'); pg.wait_for_timeout(600)
+    # Lesinhoud: titel opent echte lesstof (uitleg + kernpunten + praktijktip)
+    pg.click('[data-test=les-open-tapbar-0]'); pg.wait_for_timeout(200)
+    stof=pg.text_content('[data-test=les-stof-tapbar-0]') or ''
+    ck("lesstof open: uitleg + tip aanwezig", 'podium' in stof and '💡' in stof)
+    ck("elke tapbar-les heeft een lesstof-knop", pg.locator('[data-test^=les-open-tapbar-]').count()==5)
+    ck("afgeronde les heeft geen 'Les afronden'-knop", pg.locator('[data-test=les-klaar-tapbar-0]').count()==0)
+    # De open les (4) afronden via de knop in de lesstof
+    pg.click('[data-test=les-open-tapbar-4]'); pg.wait_for_timeout(200)
+    pg.click('[data-test=les-klaar-tapbar-4]'); pg.wait_for_timeout(600)
+    ck("'Les afronden' vinkt de les af", pg.locator('[data-test=les-tapbar-4]').is_checked())
+    pg.check('[data-test=les-tapbar-4]'); pg.wait_for_timeout(300)
     d=pg.evaluate("window.__UPSERTS.filter(u=>u[0]==='tappunten').slice(-1)[0][1]['data']")
     ck("les afvinken -> t.academy.tapbar[4]=true (v71-veld)", d['academy']['tapbar']['4']==True or d['academy']['tapbar'].get(4)==True)
     ck("training compleet -> homegeuren-beloning uitgekeerd", d.get('beloond',{}).get('home')==VANDAAG)

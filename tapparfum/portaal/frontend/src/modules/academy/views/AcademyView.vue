@@ -8,6 +8,7 @@ import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { COURSES, academyPct, checkBeloningen } from '../../beloningen/logic.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
+import { LESINHOUD } from '../data.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -16,7 +17,14 @@ const bezig = ref(false)
 const marge = ref(1)
 const gekozen = ref('')          // AM/kantoor: snelstart van de gekozen winkel
 const open = ref(null)           // cursuskey waarvan de lessen open staan
+const openLes = ref('')          // 'cursuskey-lesindex' waarvan de lestekst open staat
 const viering = ref('')
+
+function lesStof(c, i) { return (LESINHOUD[c[0]] || [])[i] || null }
+function toggleLes(c, i) {
+  const k = c[0] + '-' + i
+  openLes.value = openLes.value === k ? '' : k
+}
 
 const CAT_KLEUR = { Onboarding: '#f9c5af', Verkoop: '#bfe3fb', Tool: '#ecdfc6', Beleving: '#dcd9e8' }
 
@@ -114,11 +122,28 @@ async function vink(c, i, v) {
                       @click="open = open === c[0] ? null : c[0]">{{ open === c[0] ? 'Verberg' : 'Lessen →' }}</button>
             </div>
             <div v-if="open === c[0]" class="lessen">
-              <label v-for="(les, i) in c[4]" :key="i" class="les" :class="{ af: lesAf(c, i) }">
-                <input type="checkbox" :checked="lesAf(c, i)" :disabled="bezig"
-                       :data-test="'les-' + c[0] + '-' + i" @change="vink(c, i, $event.target.checked)" />
-                <span>{{ les }}</span>
-              </label>
+              <div v-for="(les, i) in c[4]" :key="i" class="lesblok">
+                <div class="les" :class="{ af: lesAf(c, i) }">
+                  <input type="checkbox" :checked="lesAf(c, i)" :disabled="bezig"
+                         :data-test="'les-' + c[0] + '-' + i" @change="vink(c, i, $event.target.checked)" />
+                  <button v-if="lesStof(c, i)" class="lestitel" type="button"
+                          :data-test="'les-open-' + c[0] + '-' + i" @click="toggleLes(c, i)">
+                    {{ les }}<span class="pijl">{{ openLes === c[0] + '-' + i ? '▴' : '▾' }}</span>
+                  </button>
+                  <span v-else>{{ les }}</span>
+                </div>
+                <div v-if="openLes === c[0] + '-' + i && lesStof(c, i)" class="stof" :data-test="'les-stof-' + c[0] + '-' + i">
+                  <p class="uitleg">{{ lesStof(c, i).d }}</p>
+                  <ul>
+                    <li v-for="p in lesStof(c, i).p" :key="p">{{ p }}</li>
+                  </ul>
+                  <p class="tip">💡 {{ lesStof(c, i).tip }}</p>
+                  <button v-if="!lesAf(c, i)" class="klaar" type="button" :disabled="bezig"
+                          :data-test="'les-klaar-' + c[0] + '-' + i" @click="vink(c, i, true); toggleLes(c, i)">
+                    ✓ Les afronden
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -158,7 +183,17 @@ h1{margin:4px 0;font-size:22px;color:#3a2f5a}
 .lessen{margin-top:12px;border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column}
 .les{display:flex;align-items:flex-start;gap:9px;padding:6px 0;font-size:13.5px;cursor:pointer}
 .les input{width:16px;height:16px;accent-color:var(--coral);margin-top:1px;flex-shrink:0}
-.les.af span{color:var(--grey)}
+.les.af span,.les.af .lestitel{color:var(--grey)}
+.lestitel{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px}
+.lestitel:hover{color:var(--coral-d)}
+.lestitel .pijl{color:var(--coral-d);font-size:11px}
+.stof{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:2px 0 8px 25px;font-size:12.5px;line-height:1.55}
+.stof .uitleg{margin:0 0 8px}
+.stof ul{margin:0 0 8px;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.stof .tip{margin:0;background:#fff;border:1px dashed var(--peach);border-radius:8px;padding:7px 10px;color:var(--coral-d);font-weight:600}
+.klaar{margin-top:10px;background:var(--coral);color:#fff;border:0;border-radius:8px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer}
+.klaar:hover{background:var(--coral-d)}
+.klaar:disabled{opacity:.6}
 .fout{color:#b3261e}
 .stil{color:var(--grey)}
 </style>

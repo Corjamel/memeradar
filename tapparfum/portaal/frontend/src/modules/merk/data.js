@@ -5,8 +5,13 @@
 // uit de sell-sheets). De merkwereld-tegels en materialen blijven v71.
 
 // HET CONCEPT — merkvideo's: laten de beleving zien, niet het artikel.
-// src verwijst naar /assets/video/ (meegebundeld); preload=metadata houdt
-// de pagina licht (alleen het eerste frame wordt opgehaald).
+// src verwijst naar /assets/video/; die bestanden zijn te groot om mee te
+// uploaden naar Netlify, dus de pagina valt per video automatisch terug op
+// Supabase Storage (publieke bucket 'merk', zelfde bestandsnaam) zodra het
+// lokale pad ontbreekt. preload=metadata houdt de pagina licht.
+const SB_URL = import.meta.env.VITE_SUPABASE_URL || ''
+export const videoCloudBron = (src) =>
+  SB_URL ? SB_URL + '/storage/v1/object/public/merk/' + src.split('/').pop() : ''
 export const CONCEPT_VIDEOS = [
   { t: 'Het refill-concept', cat: 'Duurzaam', sub: 'Flesje leeg? Tappen, niet weggooien — de kern van TapParfum.', src: '/assets/video/refill.mp4' },
   { t: 'De geurbeleving', cat: 'Beleving', sub: 'Ruiken, ontdekken, verliefd worden op een geur.', src: '/assets/video/scent.mp4' },

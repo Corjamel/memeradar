@@ -4,12 +4,19 @@
 //      (hervullen, geurbeleving, de winkelvloer), plus de merkwereld-tegels.
 //   2. DE PRODUCTEN — kale productfotografie uit de sell-sheets, met download.
 // Daaronder de downloadbare materialen en de korte merkregels (v71).
-import { ref } from 'vue'
-import { MERKWERELD, MERK_ASSETS, MERKREGELS, CONCEPT_VIDEOS, PRODUCT_FOTOS } from '../data.js'
+import { reactive, ref } from 'vue'
+import { MERKWERELD, MERK_ASSETS, MERKREGELS, CONCEPT_VIDEOS, PRODUCT_FOTOS, videoCloudBron } from '../data.js'
 const melding = ref('')
 function download() {
   melding.value = 'Download volgt zodra de portal online staat.'
   setTimeout(() => { melding.value = '' }, 2500)
+}
+/* De video's zijn te groot voor de Netlify-upload: staat het lokale bestand
+   er niet, dan schakelt de video door naar Supabase Storage (bucket 'merk'). */
+const vsrc = reactive({})
+function vidFout(v) {
+  const alt = videoCloudBron(v.src)
+  if (alt && vsrc[v.src] !== alt) vsrc[v.src] = alt
 }
 </script>
 
@@ -23,11 +30,11 @@ function download() {
     <p class="uitleg">Video's die het verhaal vertellen: hervullen in plaats van weggooien, geur als beleving en de sfeer op de winkelvloer. Gebruik ze op je socials of laat ze in de winkel zien.</p>
     <div class="concept">
       <figure v-for="v in CONCEPT_VIDEOS" :key="v.src" class="vcard" data-test="concept-video">
-        <video :src="v.src" controls preload="metadata" playsinline></video>
+        <video :src="vsrc[v.src] || v.src" controls preload="metadata" playsinline @error="vidFout(v)"></video>
         <figcaption>
           <div class="mlab">{{ v.t }}<small>{{ v.cat }}</small></div>
           <p class="vsub">{{ v.sub }}</p>
-          <a class="btn ghost dl" :href="v.src" download>Download</a>
+          <a class="btn ghost dl" :href="vsrc[v.src] || v.src" download>Download</a>
         </figcaption>
       </figure>
     </div>
