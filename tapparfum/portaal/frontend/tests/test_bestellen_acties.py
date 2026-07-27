@@ -44,6 +44,11 @@ with sync_playwright() as p:
     bomtxt=pg.text_content('[data-test="bom-80 geuren"]') or ''
     ck("stuklijst 80 geuren: inhoud + gratis + prijs", 'Labelprinter QL700' in bomtxt and 'Beachvlag' in bomtxt and '3.950' in bomtxt)
     ck("gratis materialen gemarkeerd", 'Gratis erbij' in bomtxt)
+    # v71-diepte: samenstelling + incl. btw + per geur op de pakketkaart
+    sv=pg.text_content('[data-test="samenvat-100 geuren (incl. 15 Exclusive)"]') or ''
+    ck("samenstelling: 100 geuren · 15 Exclusive + 85 regulier", '100 geuren' in sv and '15 Exclusive' in sv and '85 regulier' in sv)
+    ck("prijs incl. btw getoond (4702.5 -> 5690)", '5.690' in sv and 'incl. btw' in sv)
+    ck("prijs per geur getoond", 'per geur' in sv)
 
     # Acties: meedoen + gezien-markering
     pg.click('nav >> text=Acties'); pg.wait_for_timeout(700)

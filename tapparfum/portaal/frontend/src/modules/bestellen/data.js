@@ -1,6 +1,19 @@
 // Pakketten & stuklijsten — EXACT uit v71 (r.674-681). Dit zijn commerciele
 // data (prijzen excl. btw + wat er in elk pakket zit incl. gratis materialen);
 // nooit handmatig 'verbeteren' — bijwerken alleen op aanwijzing van kantoor.
+// Samenstelling uit de pakketnaam afleiden (v71 pakSamenstelling): totaal
+// aantal geuren, hoeveel Exclusive, hoeveel regulier. null als de naam geen
+// geuren-aantal noemt (bv. losse modules).
+export function pakSamenstelling(naam) {
+  const mG = /(\d+)\s*geuren/i.exec(naam)
+  const tot = mG ? +mG[1] : null
+  const mE = /(\d+)\s*Exclusive/i.exec(naam)
+  const exc = mE ? +mE[1] : 0
+  return { tot, exc, reg: tot != null ? Math.max(tot - exc, 0) : null }
+}
+// Prijs incl. 21% btw (v71 pakBtw).
+export const pakBtw = (v) => Math.round((+v || 0) * 1.21)
+
 export const PAKKETTEN=[
  {seg:"Klein assortiment",items:[["40 geuren",2507.5],["60 geuren",3137.5],["80 geuren",3950],["100 geuren (incl. 15 Exclusive)",4702.5],["120 geuren (incl. 15 Exclusive)",5332.5]]},
  {seg:"Tapbar (vanaf 160)",items:[["160 geuren (incl. 20 Exclusive)",6692.5],["160 geuren (incl. 20 Exclusive + 12 Niventi)",7206.4],["200 geuren (incl. 30 Exclusive)",8370],["200 geuren (incl. 30 Exclusive + 12 Niventi)",8883.9]]},

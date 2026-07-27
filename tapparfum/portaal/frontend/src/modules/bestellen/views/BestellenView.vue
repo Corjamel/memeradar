@@ -3,10 +3,11 @@
 // naslagwerk in het verkoopgesprek): startpakketten per segment, uitbreidingen
 // (bijproducten) en per pakket de volledige stuklijst incl. gratis materialen.
 // Bestellen zelf gebeurt in het bestelportaal (central shopUrl).
+import Icoon from '../../../components/Icoon.vue'
 import { onMounted, ref } from 'vue'
 import { eur0 } from '../../../lib/format.js'
 import { haalCentral } from '../../beheer/api.js'
-import { PAKKETTEN, BIJPRODUCTEN, PAK_BOM } from '../data.js'
+import { PAKKETTEN, BIJPRODUCTEN, PAK_BOM, pakSamenstelling, pakBtw } from '../data.js'
 
 const shopUrl = ref('')
 const open = ref(null)          // pakketnaam waarvan de stuklijst open staat
@@ -17,14 +18,23 @@ onMounted(async () => {
 
 const eur = (v) => eur0(v).replace(',00', '')
 function bom(naam) { return PAK_BOM[naam] || null }
+// Samenstelling-strook (v71): geuren/Exclusive/regulier · incl. btw · per geur.
+function samenvatting(naam, prijs) {
+  const s = pakSamenstelling(naam)
+  return { ...s, incl: pakBtw(prijs), perGeur: s.tot ? Math.round(prijs / s.tot) : null }
+}
 </script>
 
 <template>
   <div>
-    <h1>🛒 Bestellen</h1>
-    <p class="sub">De startpakketten en uitbreidingen — met per pakket precies wat je krijgt (prijzen excl. btw). Bestellen doe je in het bestelportaal.</p>
-    <a v-if="shopUrl" class="btn portaal" :href="shopUrl" target="_blank" rel="noopener noreferrer" data-test="shop-knop">🛒 Naar het bestelportaal →</a>
-    <p v-else class="mo">Het bestelportaal is nog niet gekoppeld — kantoor stelt de link in bij Beheer → Instellingen.</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Assortiment</p>
+      <h1><Icoon naam="bestellen" /> Bestellen</h1>
+      <p class="sub">De startpakketten en uitbreidingen — met per pakket precies wat je krijgt (prijzen excl. btw). Bestellen doe je in het bestelportaal.</p>
+    </div>
+      <a v-if="shopUrl" class="btn portaal" :href="shopUrl" target="_blank" rel="noopener noreferrer" data-test="shop-knop">Naar het bestelportaal →</a>
+      <p v-else class="mo">Het bestelportaal is nog niet gekoppeld — kantoor stelt de link in bij Beheer → Instellingen.</p>
+    </header>
 
     <template v-for="seg in PAKKETTEN" :key="seg.seg">
       <h2 :data-test="'seg-' + seg.seg">{{ seg.seg }}</h2>
@@ -33,6 +43,11 @@ function bom(naam) { return PAK_BOM[naam] || null }
           <div class="pkop">
             <b>{{ naam }}</b>
             <span class="prijs">{{ eur(prijs) }}</span>
+          </div>
+          <div class="samenvat" :data-test="'samenvat-' + naam">
+            <span v-if="samenvatting(naam, prijs).tot" class="chip">🧴 {{ samenvatting(naam, prijs).tot }} geuren<template v-if="samenvatting(naam, prijs).exc"> · {{ samenvatting(naam, prijs).exc }} Exclusive + {{ samenvatting(naam, prijs).reg }} regulier</template></span>
+            <span class="chip">{{ eur(prijs) }} excl. · <b>{{ eur(samenvatting(naam, prijs).incl) }}</b> incl. btw</span>
+            <span v-if="samenvatting(naam, prijs).perGeur" class="chip">≈ {{ eur(samenvatting(naam, prijs).perGeur) }} per geur</span>
           </div>
           <button v-if="bom(naam)" class="klein" type="button" :data-test="'bom-knop-' + naam"
                   @click="open = open === naam ? null : naam">
@@ -61,6 +76,9 @@ function bom(naam) { return PAK_BOM[naam] || null }
         <div class="pkop">
           <b>{{ naam }}</b>
           <span class="prijs">{{ eur(prijs) }}</span>
+        </div>
+        <div class="samenvat">
+          <span class="chip">{{ eur(prijs) }} excl. · <b>{{ eur(samenvatting(naam, prijs).incl) }}</b> incl. btw</span>
         </div>
         <button v-if="bom(naam)" class="klein" type="button" @click="open = open === naam ? null : naam">
           {{ open === naam ? 'Verberg inhoud ▴' : 'Wat zit erin? ▾' }}
@@ -96,6 +114,9 @@ h3.gratis{color:#2c5a12}
 .pkop{display:flex;align-items:baseline;gap:10px}
 .pkop b{flex:1;font-size:13.5px;line-height:1.35}
 .prijs{font-weight:800;color:var(--coral-d);font-variant-numeric:tabular-nums;white-space:nowrap}
+.samenvat{display:flex;flex-wrap:wrap;gap:6px}
+.samenvat .chip{background:var(--cream);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--grey)}
+.samenvat .chip b{color:var(--ink)}
 .klein{align-self:flex-start;background:none;border:1.5px solid var(--line);border-radius:8px;padding:4px 11px;font-size:12px;font-weight:700;color:var(--grey);cursor:pointer}
 .klein:hover{border-color:var(--coral);color:var(--coral-d)}
 .bom{border-top:1px solid var(--line);padding-top:6px}
