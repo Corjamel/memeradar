@@ -141,7 +141,7 @@ summary{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14.5px;
 .mo{color:var(--grey);font-size:12.5px}
 .mo.uitleg{margin:8px 0 4px}
 .mo.rechts{margin-left:auto}
-.coral{color:var(--coral)}
+.coral{color:var(--coral-d)}
 .winkel{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px}
 .wkop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .actierij{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}

@@ -29,7 +29,7 @@ h1{margin:0 0 4px;font-size:22px}
 .blok{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
 .kop{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;padding:14px 18px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;text-align:left;color:var(--ink)}
 .kop:hover{color:var(--coral-d)}
-.chev{color:var(--coral);font-size:13px}
+.chev{color:var(--coral-d);font-size:13px}
 .body{padding:0 18px 16px;font-size:14px;line-height:1.6}
 .body p{margin:0 0 8px}
 .lead{font-weight:800;font-size:15px;color:var(--coral-d)}

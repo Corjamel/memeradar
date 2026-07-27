@@ -205,7 +205,7 @@ h2{margin:0 0 10px;font-size:15px}
 .chip.grijs{background:var(--cream);color:var(--ink);border:1px solid var(--line)}
 .rij{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:inherit;text-decoration:none}
 .rij:last-of-type{border-bottom:0}
-.rij.klik:hover b{color:var(--coral)}
+.rij.klik:hover b{color:var(--coral-d)}
 .bedrag{font-weight:700;font-variant-numeric:tabular-nums}
 .bedrag.rood{color:var(--coral-d)}
 .fout{color:#b3261e}

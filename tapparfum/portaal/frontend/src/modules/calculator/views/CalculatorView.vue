@@ -264,7 +264,7 @@ select:focus,input:focus{border-color:var(--coral);outline:none}
 .btn:hover{background:var(--coral-d)}
 /* Verkoopschema */
 .schema{margin-top:14px}
-.sec-t{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral);font-weight:800;margin-bottom:12px}
+.sec-t{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral-d);font-weight:800;margin-bottom:12px}
 .weekgrid{display:flex;gap:18px;align-items:flex-end;height:96px;padding:0 4px}
 .wkol{display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end}
 .wn{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}

@@ -6,7 +6,7 @@
 // Contrast-bewaking: --coral-d wordt op tekst gebruikt, dus die maken we zo
 // nodig automatisch donkerder tot hij ≥4.5:1 haalt op wit — nooit onleesbaar.
 
-export const BRAND_STD = { coral: '#EE644D', corald: '#D9543C', green: '#3B6D11', amber: '#BA7517' }
+export const BRAND_STD = { coral: '#EE644D', corald: '#C2492F', green: '#3B6D11', amber: '#BA7517' }
 
 function lum(h) {
   h = String(h).replace('#', '')

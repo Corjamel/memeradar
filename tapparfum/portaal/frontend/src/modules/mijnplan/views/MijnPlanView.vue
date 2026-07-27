@@ -92,7 +92,7 @@ function schema(perWk) {
 h1{margin:0;font-size:22px}
 .sub{color:var(--grey);margin:0;font-size:13.5px}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:12px}
-.zh{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral);font-weight:800;margin-bottom:8px}
+.zh{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral-d);font-weight:800;margin-bottom:8px}
 .regel{margin:0 0 10px;font-size:13.5px;line-height:1.55}
 .binfo{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:5px}
 .sterk{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}

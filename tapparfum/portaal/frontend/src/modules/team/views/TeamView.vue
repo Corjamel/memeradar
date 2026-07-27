@@ -148,7 +148,7 @@ h2{margin:0 0 10px;font-size:15px}
 .amnaam b{font-size:16px}
 .score{background:var(--soft);color:var(--coral-d);font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 10px}
 .ammeta{color:var(--grey);font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.chev{color:var(--coral);font-size:12px}
+.chev{color:var(--coral-d);font-size:12px}
 .badge{font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px}
 .badge.amber{background:var(--amber);color:#412402}
 .badge.coral{background:var(--soft);color:var(--coral-d)}
@@ -157,7 +157,7 @@ h2{margin:0 0 10px;font-size:15px}
 .wrij:last-child{border-bottom:0}
 .niveau{width:28px;height:28px;flex-shrink:0;border-radius:8px;background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
 .wnaam{font-weight:700;color:inherit;text-decoration:none}
-.wnaam:hover{color:var(--coral)}
+.wnaam:hover{color:var(--coral-d)}
 .mo{color:var(--grey);font-size:12.5px}
 .klein{margin-left:auto;background:none;border:1.5px solid var(--line);border-radius:8px;padding:4px 11px;font-size:12px;font-weight:700;color:var(--grey);cursor:pointer}
 .klein:hover{border-color:var(--coral);color:var(--coral-d)}
@@ -169,7 +169,7 @@ h2{margin:0 0 10px;font-size:15px}
 .fic{width:22px;text-align:center;flex-shrink:0}
 .fdatum{color:var(--grey);font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0}
 .fnaam{font-weight:700;color:inherit;text-decoration:none;flex-shrink:0}
-.fnaam:hover{color:var(--coral)}
+.fnaam:hover{color:var(--coral-d)}
 .ftxt{color:var(--grey);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ok{color:#2c5a12;font-size:13px}
 .fout{color:#b3261e}

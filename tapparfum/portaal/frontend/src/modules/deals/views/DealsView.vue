@@ -107,7 +107,7 @@ select:focus,input:focus{border-color:var(--coral)}
 .kolom.verloren{opacity:.7}
 .kolomkop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
 .kolomkop b{font-size:13px}
-.totaal{font-size:11.5px;font-weight:800;color:var(--coral)}
+.totaal{font-size:11.5px;font-weight:800;color:var(--coral-d)}
 .dealkaart{display:flex;flex-direction:column;gap:3px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:#faf7f2}
 .dt{font-size:13.5px}
 .mo{color:var(--grey);font-size:12px}

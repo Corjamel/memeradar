@@ -158,7 +158,7 @@ async function stuurReset() {
 .ls-tag{margin-top:12px;font-size:15.5px;font-weight:600;max-width:400px;line-height:1.45;text-shadow:0 1px 8px rgba(0,0,0,.3);opacity:.95}
 .ls-form{display:flex;flex-direction:column;justify-content:center;padding:40px 48px;max-width:520px;width:100%;margin:0 auto}
 .fbox{display:flex;flex-direction:column;gap:12px;width:100%;max-width:400px}
-.brand{font-weight:800;letter-spacing:.16em;color:var(--coral);font-size:15px}
+.brand{font-weight:800;letter-spacing:.16em;color:var(--coral-d);font-size:15px}
 .brand b{font-weight:900}
 h1{margin:0;font-size:26px;letter-spacing:-.5px}
 .uitleg{margin:0;font-size:13.5px;color:var(--grey);line-height:1.55}

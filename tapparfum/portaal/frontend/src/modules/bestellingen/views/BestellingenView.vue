@@ -114,7 +114,7 @@ h2{margin:0 0 10px;font-size:15px}
 .kaart{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
 .rij{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:inherit;text-decoration:none}
 .rij:last-of-type{border-bottom:0}
-.rij.klik:hover b{color:var(--coral)}
+.rij.klik:hover b{color:var(--coral-d)}
 .badge{font-size:11.5px;font-weight:800;border-radius:6px;padding:2px 9px}
 .badge.amber{background:var(--amber);color:#412402}
 .mo{color:var(--grey);font-size:12.5px}

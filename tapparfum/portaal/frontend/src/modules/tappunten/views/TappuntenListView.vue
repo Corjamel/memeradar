@@ -233,7 +233,7 @@ h2{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter
 .badge.zwart{background:#333;color:#fff}
 .rij2{margin-top:2px}
 .mo{color:var(--grey);font-size:12.5px}
-.coral{color:var(--coral)}
+.coral{color:var(--coral-d)}
 .ns{margin-top:3px;font-size:12px;color:var(--coral-d);font-weight:600}
 /* Niveau-voortgang rechts op de kaart */
 .lvlkol{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;width:150px}

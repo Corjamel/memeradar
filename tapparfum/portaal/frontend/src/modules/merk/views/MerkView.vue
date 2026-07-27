@@ -88,7 +88,7 @@ h1{margin:0 0 4px;font-size:22px}
 .btn{border:1.5px solid var(--line);background:#fff;color:var(--ink);padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer}
 .btn:hover{border-color:var(--coral);color:var(--coral)}
 .regels{background:#fff;border:1px solid var(--line);padding:16px;margin-top:16px}
-.zh{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral);font-weight:800;margin-bottom:8px}
+.zh{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral-d);font-weight:800;margin-bottom:8px}
 .regels p{margin:0;color:var(--grey);font-size:13.5px;line-height:1.6}
 .melding{color:#2c5a12;font-size:13px;margin-top:10px}
 </style>

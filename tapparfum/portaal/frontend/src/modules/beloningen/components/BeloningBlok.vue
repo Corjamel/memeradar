@@ -275,7 +275,7 @@ h2{margin:0;font-size:16px;flex:1}
 .herosub{font-size:13px;opacity:.96}
 .heroring{background:rgba(255,255,255,.92);color:var(--coral-d);font-weight:900;font-size:18px;padding:10px 14px;font-variant-numeric:tabular-nums}
 /* Concept/top secties */
-.zh{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral);font-weight:800;margin:18px 0 6px}
+.zh{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--coral-d);font-weight:800;margin:18px 0 6px}
 .zh.top{margin-top:22px}
 .intro{margin:0 0 10px;color:var(--grey);font-size:13px;line-height:1.55}
 .intro.slot{margin-top:12px}

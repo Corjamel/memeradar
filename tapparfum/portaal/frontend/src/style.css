@@ -6,7 +6,7 @@
    ============================================================ */
 :root {
   --coral: #EE644D;        /* merkkoraal (v71) */
-  --coral-d: #D9543C;      /* donker koraal — tekst/hover op licht */
+  --coral-d: #C2492F;      /* donker koraal — tekst op licht, WCAG AA (4.9:1) */
   --peach: #F9C5AF;
   --ink: #2A211C;          /* warme hoofdtekst */
   --ink-2: #5C524B;

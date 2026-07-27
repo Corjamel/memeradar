@@ -259,6 +259,9 @@ async function uitloggen() {
   .nav-a.on{border-left:none;border-bottom-color:var(--coral)}
   .navgroup{width:100%}
   .topbar{padding:12px 18px}
+  /* Touch-targets: minimaal 44px op aanraakschermen */
+  .tb-terug,.tb-zoek,.tb-help,.tb-av{width:44px;height:44px}
+  .nav-a{padding-top:13px;padding-bottom:13px}
   .tb-title{display:none}
   .content{padding:18px}
 }
