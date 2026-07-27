@@ -79,6 +79,7 @@ const isPartner = computed(() => auth.role === 'partner')
 const GROEPEN = computed(() => [
   { groep: 'Dagelijks', items: [
     { naam: 'home', label: 'Start', ic: 'dashboard' },
+    isPartner.value && { naam: 'mijnplan', label: 'Mijn plan', ic: 'omzet' },
     !isPartner.value && { naam: 'vandaag', label: 'Vandaag', ic: 'vandaag' },
     !isPartner.value && { naam: 'trajecten', label: 'Trajecten', ic: 'refresh' },
     { naam: 'winkels', label: 'Winkels', ic: 'tappunten' },

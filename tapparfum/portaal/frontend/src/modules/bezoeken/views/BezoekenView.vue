@@ -5,15 +5,48 @@
 // met een filter. Loggen zelf gebeurt per winkel op de winkelpagina; dit is de
 // vogelvlucht. "✉️ Mail de klant" opent een mailto naar de winkel.
 import Icoon from '../../../components/Icoon.vue'
+import MailCompose from '../../mail/MailCompose.vue'
 import { computed, onMounted, ref } from 'vue'
+import { useToast } from '../../../stores/toast.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { LOG_TYPES, fmtDuur, dagenSindsBezoek, bezoekStil, BEZOEK_RITME_DAGEN } from '../../logboek/logic.js'
+import { parseEml, koppelEmlAanWinkels } from '../../mail/eml.js'
 
 const st = useTappunten()
+const toast = useToast()
 const filter = ref('alle')       // alle | bezoek | telefoon | mail | notitie
 const maand = new Date().toISOString().slice(0, 7)
 
 onMounted(async () => { if (!st.items.length) await st.laad() })
+
+// ---- Mail (v71 r.3830): schrijven mét registratie + .eml-import -------
+const mailWinkel = ref('')            // snelstart voor de compose
+const composeOpen = ref(false)
+const mailMelding = ref('')
+const composeTap = computed(() => st.byCode(mailWinkel.value) || null)
+function openCompose() {
+  if (!composeTap.value) return
+  if (!String(composeTap.value.email || '').trim()) {
+    toast.fout(`Geen e-mailadres bekend bij ${composeTap.value.name} — vul het aan onder Gegevens.`)
+    return
+  }
+  composeOpen.value = true
+}
+async function emlImport(ev) {
+  mailMelding.value = ''
+  const fl = ev.target && ev.target.files ? Array.from(ev.target.files) : []
+  if (!fl.length) return
+  try {
+    const raws = await Promise.all(fl.map(f => f.text().catch(() => '')))
+    const res = koppelEmlAanWinkels(raws.filter(Boolean).map(parseEml), st.items)
+    for (const t2 of res.gewijzigd) await st.bewaar(t2)
+    mailMelding.value = `✓ ${res.ok} mail${res.ok === 1 ? '' : 's'} gekoppeld` +
+      (res.dup ? ` · ${res.dup} dubbel (overgeslagen)` : '') +
+      (res.onbekend ? ` · ${res.onbekend} zonder klant-match (mailadres onbekend)` : '')
+    if (res.ok) toast.ok(`${res.ok} mail${res.ok === 1 ? '' : 's'} in het logboek gezet`)
+  } catch (e) { mailMelding.value = 'Import mislukt: ' + e.message }
+  if (ev.target) ev.target.value = ''
+}
 
 // Alle logregels van alle zichtbare winkels, met winkel-context, nieuwste eerst.
 const alleLogs = computed(() => {
@@ -50,6 +83,20 @@ const ritme = computed(() => st.items
       <h1><Icoon naam="agenda" /> Bezoeken &amp; notities</h1>
       <p class="sub">Het netwerkbrede overzicht — wie is er lang niet bezocht, welke opvolgingen staan open, en de laatste contactmomenten.</p>
     </div></header>
+
+    <!-- Mail-werkbalk (v71): schrijven mét registratie + ontvangen mail loggen -->
+    <div class="mailbalk kaart" data-test="mailbalk">
+      <select v-model="mailWinkel" aria-label="Winkel voor de mail" data-test="mail-winkel">
+        <option value="">Kies een winkel…</option>
+        <option v-for="t in st.items" :key="t.snelstart" :value="t.snelstart">{{ t.name }}</option>
+      </select>
+      <button class="knop" type="button" :disabled="!composeTap" data-test="mail-open" @click="openCompose">✉️ Mail de klant</button>
+      <label class="emlknop" title="Open in Outlook het bericht → ⋯ → Downloaden → kies hier de .eml-bestanden">
+        📥 Ontvangen mail loggen (.eml)
+        <input type="file" multiple accept=".eml,message/rfc822" data-test="eml-input" @change="emlImport" />
+      </label>
+      <span v-if="mailMelding" class="mailmsg" role="status" data-test="eml-melding">{{ mailMelding }}</span>
+    </div>
 
     <div class="kpirow">
       <div class="kpi"><b>{{ kpi.bezoekenMaand }}</b><span>bezoeken deze maand</span></div>
@@ -96,6 +143,8 @@ const ritme = computed(() => st.items
       <p v-if="!zichtbaar.length" class="stil">Geen logregels{{ filter === 'alle' ? '' : ' van dit type' }}.</p>
       <p v-else-if="zichtbaar.length > 40" class="mo">… en nog {{ zichtbaar.length - 40 }} oudere regels — verfijn met het filter.</p>
     </div>
+
+    <MailCompose v-if="composeOpen && composeTap" :tappunt="composeTap" @sluit="composeOpen = false" />
   </div>
 </template>
 
@@ -103,6 +152,15 @@ const ritme = computed(() => st.items
 h1{margin:0 0 4px;font-size:22px}
 h2{margin:0 0 10px;font-size:15px}
 .sub{color:var(--grey);margin:0 0 14px;font-size:13.5px}
+/* Mail-werkbalk */
+.mailbalk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.mailbalk select{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;min-width:180px;font-family:inherit}
+.mailbalk .knop{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:9px 14px;font-weight:800;font-size:12.5px;cursor:pointer}
+.mailbalk .knop:disabled{opacity:.5;cursor:default}
+.emlknop{display:inline-block;border:1.5px solid var(--line);border-radius:10px;padding:8px 13px;font-weight:700;font-size:12.5px;color:var(--grey);cursor:pointer}
+.emlknop:hover{border-color:var(--coral);color:var(--coral-d)}
+.emlknop input{display:none}
+.mailmsg{font-size:12.5px;font-weight:700;color:var(--green)}
 .kpirow{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);background:#fff;margin-bottom:14px}
 .kpi{padding:14px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
 .kpi:last-child{border-right:0}

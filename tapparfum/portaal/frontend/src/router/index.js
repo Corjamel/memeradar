@@ -25,6 +25,7 @@ import KennisView from '../modules/kennis/views/KennisView.vue'
 import ProcesView from '../modules/kennis/views/ProcesView.vue'
 import SalesGameView from '../modules/salesgame/views/SalesGameView.vue'
 import GeurbibView from '../modules/geurbib/views/GeurbibView.vue'
+import MijnPlanView from '../modules/mijnplan/views/MijnPlanView.vue'
 import TeamView from '../modules/team/views/TeamView.vue'
 import FormulierenView from '../modules/formulieren/views/FormulierenView.vue'
 import BestellingenView from '../modules/bestellingen/views/BestellingenView.vue'
@@ -59,6 +60,7 @@ const routes = [
   { path: '/proces', name: 'proces', component: ProcesView, meta: { roles: ALLE_ROLLEN } },
   { path: '/game', name: 'game', component: SalesGameView, meta: { roles: ALLE_ROLLEN } },
   { path: '/geuren', name: 'geuren', component: GeurbibView, meta: { roles: ALLE_ROLLEN } },
+  { path: '/mijn-plan', name: 'mijnplan', component: MijnPlanView, meta: { roles: ['partner'] } },
   { path: '/community', name: 'community', component: CommunityView, meta: { roles: ALLE_ROLLEN } },
   { path: '/merk', name: 'merk', component: MerkView, meta: { roles: ALLE_ROLLEN } },
   { path: '/team', name: 'team', component: TeamView, meta: { roles: ['kantoor', 'am'] } },

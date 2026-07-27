@@ -25,18 +25,18 @@
 | 14 | statusKey/levels/margeFactor/groei (rekenhart) | 1 | ✅ klaar (cockpit-groepering op status volgt bij #15/#22) |
 | 15 | Partner-dashboard-fasering (onboarding→break-even→jaardoel) + nudges | 1 | ✅ klaar — **alle 16 prio-1-onderdelen af** |
 | 16 | Actie-detail (deelname, feedback, punten, materialen) | 1 | ✅ klaar (bestelDeadline-veld kan later) |
-| 17 | Formulieren (7 stuks, t.forms) | 2 | ontbreekt |
-| 18 | Mail (compose + .eml-import) | 2 | ontbreekt |
-| 19 | Ritten/werkdag (GPS-momentopnames) | 2 | ontbreekt |
+| 17 | Formulieren (7 stuks, t.forms) | 2 | ✅ klaar |
+| 18 | Mail (compose + .eml-import) | 2 | ✅ klaar (Bezoeken: mail de klant + .eml-import; logboek-type mail) |
+| 19 | Ritten/werkdag (GPS-momentopnames) | 2 | ✅ klaar (am_locaties + RittenView) |
 | 20 | Vieringen + milestones (checkMilestones) | 2 | ✅ klaar (bij omzet-, flessen- en kassamutaties + dashboard-banners) |
-| 21 | Geurbibliotheek + refill-bestellen | 2 | ontbreekt |
+| 21 | Geurbibliotheek + refill-bestellen | 2 | ✅ klaar |
 | 22 | Kantoor-analyse/activiteit/team (kanalyse ✅ · kactFeed/kteam nog) | 2 | grotendeels |
 | 23 | Globale zoekfunctie | 2 | ✅ klaar (winkels/notities/afspraken/bestellingen, AM+kantoor) |
 | 24 | Academy (6 cursussen, 28 lessen, t.academy) | 2 | ✅ klaar (gekoppeld aan de beloningen-engine) |
-| 25 | Sales Game (klassementen, podium) | 2/3 | ontbreekt |
+| 25 | Sales Game (klassementen, podium) | 2/3 | ✅ klaar |
 | 26 | Heractiveren (t.react) | 2 | ✅ klaar (4 trajecten + heractivatie-acties, opvolging in Vandaag) |
 | 27 | Community | 3 | ✅ klaar (besloten tijdlijn per AM-portefeuille, eigen tabel + RLS, migratie 013) |
-| 28 | Welkom/rondleiding, SPOTLIGHT, merk & assets, teksten-editor, layout-regie | 3 | ontbreekt |
+| 28 | Welkom/rondleiding, SPOTLIGHT, merk & assets, teksten-editor, layout-regie | 3 | ✅ klaar (+ Mijn plan-partnerpagina) |
 
 ## Kritieke datacompatibiliteit (veldnamen — NOOIT wijzigen)
 
