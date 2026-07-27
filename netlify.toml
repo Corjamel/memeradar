@@ -1,0 +1,11 @@
+# Netlify-configuratie voor het TapParfum Portaal.
+# De Vue-app staat in een submap; deze base + publish wijzen Netlify de weg,
+# zodat een GitHub-koppeling meteen goed bouwt. De _redirects-file (in
+# public/) zorgt dat diep-linken naar subpagina's blijft werken.
+[build]
+  base    = "tapparfum/portaal/frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
