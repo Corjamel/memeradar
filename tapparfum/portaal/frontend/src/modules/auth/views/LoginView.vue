@@ -4,12 +4,17 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../../../stores/auth.js'
 
 /* Eigen campagnebeeld (aangeleverd door kantoor): zet login-hero.jpg in
-   public/assets/ en het paneel pakt hem automatisch als achtergrond. */
+   public/assets/ en het paneel pakt hem automatisch als achtergrond.
+   We laden het beeld écht (via Image) i.p.v. een HEAD-check: een SPA-fallback
+   (Netlify `/* -> index.html 200`) geeft anders altijd 200 terug, waardoor het
+   fotopaneel ten onrechte aanging met een kapot beeld. Nu telt alleen een
+   geldig geladen afbeelding — anders blijft het rustige koraalpaneel staan. */
 const hero = ref(false)
 onMounted(() => {
-  fetch('/assets/login-hero.jpg', { method: 'HEAD' })
-    .then(r => { hero.value = r.ok })
-    .catch(() => { hero.value = false })
+  const img = new Image()
+  img.onload = () => { hero.value = img.naturalWidth > 0 }
+  img.onerror = () => { hero.value = false }
+  img.src = '/assets/login-hero.jpg'
 })
 
 const auth = useAuth()
@@ -70,8 +75,8 @@ async function stuurReset() {
       <div class="ls-veil"></div>
       <div class="ls-txt">
         <div class="ls-brand" translate="no">TAP<b>PARFUM</b></div>
-        <div class="ls-concept">Ruiken met je neus,<br>niet je portemonnee.</div>
-        <div class="ls-tag">Easy to build, easy to scale — hervulbaar parfum is het nieuwe normaal.</div>
+        <div class="ls-concept">Ruiken met je neus,<br>niet je portemonnee</div>
+        <div class="ls-tag">Easy to build, easy to scale</div>
       </div>
     </div>
 
@@ -145,27 +150,34 @@ async function stuurReset() {
 </template>
 
 <style scoped>
-/* v71-inlogscherm: één gecentreerde, afgeronde kaart die op de crème-pagina
-   zweeft — links het merkpaneel, rechts het formulier. */
-.loginsplit{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;background:var(--pagebg)}
-.logincard{display:grid;grid-template-columns:1.05fr 1fr;width:100%;max-width:920px;min-height:560px;
-  background:#fff;border:1px solid var(--line);border-radius:22px;overflow:hidden;
-  box-shadow:0 2px 6px rgba(42,33,28,.05),0 30px 60px -30px rgba(42,33,28,.35)}
-/* Merkpaneel: signatuur-gradient; met kantoor-beeld (login-hero.jpg) als achtergrond. */
-.ls-visual{position:relative;overflow:hidden;background:var(--sig)}
-.ls-visual.metfoto{background-image:url('/assets/login-hero.jpg'),var(--sig);background-size:cover;background-position:center;background-repeat:no-repeat}
-.ls-veil{position:absolute;inset:0;background:radial-gradient(120% 90% at 85% -10%, rgba(255,255,255,.28), transparent 55%),linear-gradient(160deg, rgba(217,84,60,.15), rgba(42,33,28,.35))}
-.metfoto .ls-veil{background:linear-gradient(180deg, rgba(42,33,28,.05) 40%, rgba(42,33,28,.62))}
-.ls-txt{position:absolute;left:0;bottom:0;right:0;padding:40px 36px;color:#fff}
-.ls-brand{font-weight:800;letter-spacing:.18em;font-size:20px;text-shadow:0 2px 12px rgba(0,0,0,.25)}
+/* v71-inlogscherm, brandbook-lijn: één gecentreerde, afgeronde kaart die op een
+   warme crème-gloed zweeft. Brandbook = ÉÉN primaire kleur (koraal), vaste
+   logo-lockup en display-type in kapitalen/licht (Gravesend Sans → Jost). */
+.loginsplit{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;
+  background:radial-gradient(120% 90% at 90% -10%, #FDEEE7 0%, #F6F4F0 50%),
+             radial-gradient(90% 80% at 0% 110%, #FBE0D4 0%, transparent 55%)}
+.logincard{display:grid;grid-template-columns:1.05fr 1fr;width:100%;max-width:880px;min-height:560px;
+  background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+  box-shadow:0 2px 6px rgba(42,33,28,.05),0 30px 70px -30px rgba(60,30,18,.35)}
+/* Merkpaneel: koraal — één primaire kleur (donker→licht koraal), geen tweede hue.
+   Met kantoor-beeld (login-hero.jpg) als achtergrond zodra dat er is. */
+.ls-visual{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--coral),var(--coral-d))}
+.ls-visual.metfoto{background-image:url('/assets/login-hero.jpg');background-size:cover;background-position:center;background-repeat:no-repeat}
+.ls-veil{position:absolute;inset:0;background:linear-gradient(150deg, rgba(238,100,77,.82) 0%, rgba(217,84,60,.58) 50%, rgba(249,197,175,.42) 100%)}
+.metfoto .ls-veil{background:linear-gradient(180deg, rgba(42,33,28,.06) 38%, rgba(42,33,28,.66))}
+.ls-txt{position:absolute;left:0;bottom:0;right:0;padding:36px 34px;color:#fff}
+.ls-brand{display:inline-flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.14em;font-size:15px;text-transform:uppercase;text-shadow:0 2px 12px rgba(0,0,0,.22)}
 .ls-brand b{font-weight:900}
-.ls-concept{font-family:var(--font-display);font-weight:600;font-size:clamp(26px,2.6vw,34px);line-height:1.14;margin-top:12px;text-shadow:0 2px 14px rgba(0,0,0,.28);text-wrap:balance}
-.ls-tag{margin-top:12px;font-size:14px;font-weight:600;max-width:340px;line-height:1.45;text-shadow:0 1px 8px rgba(0,0,0,.3);opacity:.95}
-.ls-form{display:flex;flex-direction:column;justify-content:center;padding:44px 44px}
+.ls-concept{font-family:var(--font-display);font-weight:300;text-transform:uppercase;letter-spacing:.04em;
+  font-size:clamp(21px,2.3vw,27px);line-height:1.25;margin-top:16px;max-width:340px;
+  text-shadow:0 2px 14px rgba(0,0,0,.26)}
+.ls-tag{margin-top:14px;font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  opacity:.9;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+.ls-form{display:flex;flex-direction:column;justify-content:center;padding:44px 42px}
 .fbox{display:flex;flex-direction:column;gap:12px;width:100%}
-.brand{font-weight:800;letter-spacing:.16em;color:var(--coral-d);font-size:14px}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.16em;color:var(--coral-d);font-size:13px;text-transform:uppercase}
 .brand b{font-weight:900}
-h1{margin:0;font-size:26px;letter-spacing:-.3px;font-family:var(--font-display);font-weight:600}
+h1{margin:0;font-size:27px;font-family:var(--font-display);font-weight:400;text-transform:uppercase;letter-spacing:.05em}
 .uitleg{margin:0;font-size:13.5px;color:var(--grey);line-height:1.55}
 label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--grey)}
 input{padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;background:#fff;color:var(--ink)}
