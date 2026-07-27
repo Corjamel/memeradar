@@ -23,6 +23,7 @@ const marge = ref(1)
 const maten = ref([])
 const geladen = ref(false)
 const netUitgekeerd = ref([])   // vieringsbanner voor deze sessie
+const fotoFout = ref({})        // beloningen waarvan de foto (nog) niet laadt -> merkvlak
 
 const t = computed(() => props.tappunt)
 const lv = computed(() => levelOf(jaaromzet(t.value), marge.value))
@@ -172,9 +173,12 @@ watch(() => props.tappunt, keurUit)
     <div class="cadeaus">
       <div v-for="k in kaarten" :key="k.rw.key" class="cadeau"
            :class="{ unlocked: k.unlocked, next: k.rw.key === volgendeKey }" :data-test="'rew-' + k.rw.key">
-        <img v-if="k.rw.foto" class="cfoto" :src="k.rw.foto" :alt="k.rw.r" loading="lazy" :data-test="'rew-foto-' + k.rw.key">
-        <!-- Nog geen productfoto? Dan een merkeigen beeldvlak i.p.v. een leeg,
-             onaantrekkelijk kaartkopje — elke beloning ziet er even begeerlijk uit. -->
+        <img v-if="k.rw.foto && !fotoFout[k.rw.key]" class="cfoto" :src="k.rw.foto" :alt="k.rw.r"
+             loading="lazy" :data-test="'rew-foto-' + k.rw.key" @error="fotoFout[k.rw.key] = true">
+        <!-- Geen (geldige) productfoto? Dan een merkeigen beeldvlak i.p.v. een
+             leeg, onaantrekkelijk kaartkopje — elke beloning ziet er even
+             begeerlijk uit. Zodra kantoor het echte bestand in public/assets/
+             zet, pakt de <img> hierboven het vanzelf op (deze val is de terugval). -->
         <div v-else class="cfoto cfoto-ph" :data-test="'rew-ph-' + k.rw.key" aria-hidden="true">
           <span class="phic">{{ k.rw.ic }}</span>
         </div>
