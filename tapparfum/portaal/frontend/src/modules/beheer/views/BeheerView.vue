@@ -450,8 +450,11 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
 
 <template>
   <div>
-    <h1>Beheer</h1>
-    <p class="sub">Het kantoorpaneel — mensen, winkels, instellingen, AVG en audit.</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Kantoorpaneel</p>
+      <h1>Beheer</h1>
+      <p class="sub">Het kantoorpaneel — mensen, winkels, instellingen, AVG en audit.</p>
+    </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
     <p v-if="melding" class="ok" role="status">{{ melding }}</p>
 

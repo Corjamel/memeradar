@@ -111,6 +111,21 @@ input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px var(--soft); }
 /* Filterchips en tabs bewegen mee. */
 .chip, .tabs button, .seg button { transition: background .12s ease, color .12s ease, border-color .12s ease; }
 
+/* Herbruikbare paginakop (gradient-band, zoals Winkels/Dashboard/Academy).
+   Views wikkelen hun h1 + .sub in <header class="vheld"><div>…</div></header>;
+   de selectors hieronder winnen bewust van de scoped h1/.sub-marges. */
+.vheld {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+  background: linear-gradient(120deg, var(--soft), #fff 70%);
+  border: 1px solid var(--line); border-radius: 18px;
+  padding: 16px 20px; margin-bottom: 14px;
+  box-shadow: 0 1px 2px rgba(42, 33, 28, .03), 0 8px 22px -14px rgba(42, 33, 28, .18);
+}
+header.vheld h1 { margin: 0 0 2px; }
+.vheld .eyebrow { margin: 0 0 2px; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--coral-d); }
+.vheld div .sub { margin: 0; }
+
 /* Rustige, warme schuifbalk. */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 5px; border: 2px solid var(--pagebg); }

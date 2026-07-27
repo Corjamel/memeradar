@@ -52,8 +52,11 @@ async function importeer() {
 
 <template>
   <div>
-    <h1>📦 Bestellingen</h1>
-    <p class="sub">Het bestelritme is de hartslag van een winkel — stilte die je vroeg hoort, is een klant die je nog kunt redden.</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Bestelritme</p>
+      <h1>📦 Bestellingen</h1>
+      <p class="sub">Het bestelritme is de hartslag van een winkel — stilte die je vroeg hoort, is een klant die je nog kunt redden.</p>
+    </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
     <div class="tegels">

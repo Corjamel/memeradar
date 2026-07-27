@@ -208,15 +208,16 @@ async function uitloggen() {
 
 <style scoped>
 .shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
-.side{background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-.logo{display:flex;align-items:center;gap:10px;padding:22px 22px 18px;font-weight:800;letter-spacing:.16em;font-size:16px;text-transform:uppercase;border-bottom:1px solid var(--line)}
+.side{background:#fff;border-right:1px solid var(--line);box-shadow:2px 0 20px -14px rgba(42,33,28,.28);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:21}
+.logo{display:flex;align-items:center;gap:10px;padding:22px 22px 18px;font-family:var(--font-display);font-weight:600;letter-spacing:.18em;font-size:16px;text-transform:uppercase;border-bottom:1px solid var(--line)}
 .logo b{color:var(--ink)}
-.logo .dot{width:14px;height:14px;border-radius:50%;background:var(--sig);flex-shrink:0}
+.logo .dot{width:14px;height:14px;border-radius:50%;background:var(--sig);flex-shrink:0;box-shadow:0 0 0 4px var(--soft)}
 .nav{flex:1;padding:8px 0;overflow:auto}
 .navgroup{font-size:10px;font-weight:800;letter-spacing:1.2px;color:var(--grey);text-transform:uppercase;padding:14px 22px 5px}
-.nav-a{display:flex;align-items:center;gap:11px;padding:11px 22px;font-size:13.5px;font-weight:600;color:var(--ink-2);text-decoration:none;border-left:3px solid transparent}
-.nav-a:hover{background:var(--soft)}
-.nav-a.on{border-left-color:var(--coral);color:var(--coral);background:var(--soft)}
+.nav-a{display:flex;align-items:center;gap:11px;padding:11px 22px;font-size:13.5px;font-weight:600;color:var(--ink-2);text-decoration:none;border-left:3px solid transparent;transition:background .12s ease,color .12s ease,border-color .12s ease,padding-left .12s ease}
+.nav-a:hover{background:var(--soft);padding-left:26px}
+.nav-a.on{border-left-color:var(--coral-d);color:#fff;background:var(--sig);font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.12)}
+.nav-a.on .bdg{background:#fff;color:var(--coral-d)}
 .ic{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .ic :deep(svg){width:19px;height:19px}
 .bdg{margin-left:auto;background:var(--coral);color:#fff;font-size:10px;font-weight:800;min-width:18px;text-align:center;border-radius:9px;padding:1px 6px}
@@ -227,7 +228,7 @@ async function uitloggen() {
 .profilebox .lo:hover{text-decoration:underline}
 .col{min-width:0}
 .topbar{display:flex;align-items:center;gap:14px;padding:14px 32px;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
-.tb-title{font-size:16px;font-weight:800;letter-spacing:-.2px;color:var(--ink)}
+.tb-title{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:.3px;color:var(--ink)}
 .tb-terug{background:#fff;border:1.5px solid var(--line);width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font-size:16px;font-weight:800;flex-shrink:0}
 .tb-terug:hover{border-color:var(--coral);color:var(--coral)}
 .tb-sp{flex:1}

@@ -61,8 +61,11 @@ function scrollNaar(k) { document.getElementById('traj-' + k)?.scrollIntoView({ 
 
 <template>
   <div>
-    <h1>🚀 Trajecten</h1>
-    <p class="sub">Elke winkel zit in één van vier trajecten — met per traject een eigen focus. Stagneert = jouw prioriteit.</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Groei</p>
+      <h1>🚀 Trajecten</h1>
+      <p class="sub">Elke winkel zit in één van vier trajecten — met per traject een eigen focus. Stagneert = jouw prioriteit.</p>
+    </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
     <!-- KPI-tegels -->

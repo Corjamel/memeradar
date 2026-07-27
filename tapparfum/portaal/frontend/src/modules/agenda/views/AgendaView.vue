@@ -46,9 +46,14 @@ async function status(i, s) {
 
 <template>
   <div>
-    <h1>Agenda</h1>
-    <p class="sub" v-if="auth.isPartner">Bezoekvoorstellen van je accountmanager — accepteer of wijs af.</p>
-    <p class="sub" v-else>Plan bezoeken; de winkel accepteert of wijst af.</p>
+    <header class="vheld">
+      <div>
+        <p class="eyebrow">Planning</p>
+        <h1>Agenda</h1>
+        <p class="sub" v-if="auth.isPartner">Bezoekvoorstellen van je accountmanager — accepteer of wijs af.</p>
+        <p class="sub" v-else>Plan bezoeken; de winkel accepteert of wijst af.</p>
+      </div>
+    </header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
     <!-- AM/kantoor: bezoek plannen -->

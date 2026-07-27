@@ -111,9 +111,12 @@ async function archiveer(p) {
 
 <template>
   <div>
-    <h1>🧴 Nieuwe producten</h1>
-    <p class="sub" v-if="auth.isPartner">Wat er aankomt bij TapParfum — en wanneer je het kunt bestellen.</p>
-    <p class="sub" v-else>Lanceringen met tijdlijn en adoptie: wie heeft er al besteld?</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Assortiment</p>
+      <h1>🧴 Nieuwe producten</h1>
+      <p class="sub" v-if="auth.isPartner">Wat er aankomt bij TapParfum — en wanneer je het kunt bestellen.</p>
+      <p class="sub" v-else>Lanceringen met tijdlijn en adoptie: wie heeft er al besteld?</p>
+    </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
     <p v-if="melding" class="melding" role="status">{{ melding }}</p>
 

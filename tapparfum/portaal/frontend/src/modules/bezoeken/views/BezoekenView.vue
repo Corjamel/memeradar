@@ -44,8 +44,11 @@ const ritme = computed(() => st.items
 
 <template>
   <div>
-    <h1>🗓️ Bezoeken &amp; notities</h1>
-    <p class="sub">Het netwerkbrede overzicht — wie is er lang niet bezocht, welke opvolgingen staan open, en de laatste contactmomenten.</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Relatiebeheer</p>
+      <h1>🗓️ Bezoeken &amp; notities</h1>
+      <p class="sub">Het netwerkbrede overzicht — wie is er lang niet bezocht, welke opvolgingen staan open, en de laatste contactmomenten.</p>
+    </div></header>
 
     <div class="kpirow">
       <div class="kpi"><b>{{ kpi.bezoekenMaand }}</b><span>bezoeken deze maand</span></div>

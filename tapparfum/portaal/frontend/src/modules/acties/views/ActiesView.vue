@@ -111,10 +111,15 @@ function stappen(a) { return String(a.todo || '').split(/\r?\n/).map(s => s.trim
 
 <template>
   <div>
-    <h1>Acties</h1>
-    <p class="sub" v-if="auth.isKantoor">Netwerkbrede campagnes — met deelname, feedbackronde en actiepunten.</p>
-    <p class="sub" v-else-if="auth.isPartner">Doe mee met de lopende campagnes — na afloop vertel je kort of het werkte en verdien je actiepunten.</p>
-    <p class="sub" v-else>Rol campagnes uit bij je winkels en vul na afloop de feedback in.</p>
+    <header class="vheld">
+      <div>
+        <p class="eyebrow">Campagnes</p>
+        <h1>Acties</h1>
+        <p class="sub" v-if="auth.isKantoor">Netwerkbrede campagnes — met deelname, feedbackronde en actiepunten.</p>
+        <p class="sub" v-else-if="auth.isPartner">Doe mee met de lopende campagnes — na afloop vertel je kort of het werkte en verdien je actiepunten.</p>
+        <p class="sub" v-else>Rol campagnes uit bij je winkels en vul na afloop de feedback in.</p>
+      </div>
+    </header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
     <p v-if="melding" class="melding" role="status" data-test="actie-melding">{{ melding }}</p>
 

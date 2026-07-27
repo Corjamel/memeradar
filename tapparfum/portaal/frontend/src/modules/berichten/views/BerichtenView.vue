@@ -82,10 +82,15 @@ async function beantwoordVraagItem(v) {
 
 <template>
   <div>
-    <h1>Berichten</h1>
-    <p class="sub" v-if="auth.isKantoor">Vragen & taken aan accountmanagers, en meldingen uit de winkels.</p>
-    <p class="sub" v-else-if="auth.isAm">Vragen en taken van kantoor, en meldingen uit jouw winkels.</p>
-    <p class="sub" v-else>Vraag, probleem of retour? Meld het hier — je accountmanager reageert.</p>
+    <header class="vheld">
+      <div>
+        <p class="eyebrow">Communicatie</p>
+        <h1>Berichten</h1>
+        <p class="sub" v-if="auth.isKantoor">Vragen & taken aan accountmanagers, en meldingen uit de winkels.</p>
+        <p class="sub" v-else-if="auth.isAm">Vragen en taken van kantoor, en meldingen uit jouw winkels.</p>
+        <p class="sub" v-else>Vraag, probleem of retour? Meld het hier — je accountmanager reageert.</p>
+      </div>
+    </header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
     <!-- ===== PARTNER: melden ===== -->

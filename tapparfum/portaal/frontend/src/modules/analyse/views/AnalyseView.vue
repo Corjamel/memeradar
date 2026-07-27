@@ -94,8 +94,11 @@ const stilte = computed(() => st.items
 
 <template>
   <div>
-    <h1>📊 Analyse</h1>
-    <p class="sub">Het netwerk in cijfers — sturen op feiten. Bedragen = inkoop bij TapParfum; kassa = geregistreerde winkelverkoop.</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Cijfers</p>
+      <h1>📊 Analyse</h1>
+      <p class="sub">Het netwerk in cijfers — sturen op feiten. Bedragen = inkoop bij TapParfum; kassa = geregistreerde winkelverkoop.</p>
+    </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
     <!-- Sell-through (kassa): activatie + geregistreerde winkelverkoop -->

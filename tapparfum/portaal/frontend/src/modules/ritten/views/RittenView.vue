@@ -99,8 +99,11 @@ function winkelLabel(s) { return s.tappunt_snelstart ? (winkelNaam.value[s.tappu
 
 <template>
   <div>
-    <h1>🚗 Ritten & locatie</h1>
-    <p class="sub">{{ auth.isKantoor ? 'De werkdag-stempels van alle accountmanagers — permanent archief.' : 'Je eigen werkdag-stempels. Alleen jij en kantoor zien dit.' }}</p>
+    <header class="vheld"><div>
+      <p class="eyebrow">Onderweg</p>
+      <h1>🚗 Ritten & locatie</h1>
+      <p class="sub">{{ auth.isKantoor ? 'De werkdag-stempels van alle accountmanagers — permanent archief.' : 'Je eigen werkdag-stempels. Alleen jij en kantoor zien dit.' }}</p>
+    </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
 
     <!-- AM: registratie + aan/uit -->
