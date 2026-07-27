@@ -2,6 +2,7 @@
 // Trajecten / heractiveren — v71 VIEWS.heractiveren (r.3011-3016): elke winkel
 // zit op basis van zijn status in één van vier trajecten, elk met een eigen
 // focus en actielijst. Stagneert = de heractivatie-werklijst (t.react).
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
 import { eur0 } from '../../../lib/format.js'
@@ -63,7 +64,7 @@ function scrollNaar(k) { document.getElementById('traj-' + k)?.scrollIntoView({ 
   <div>
     <header class="vheld"><div>
       <p class="eyebrow">Groei</p>
-      <h1>🚀 Trajecten</h1>
+      <h1><Icoon naam="spark" /> Trajecten</h1>
       <p class="sub">Elke winkel zit in één van vier trajecten — met per traject een eigen focus. Stagneert = jouw prioriteit.</p>
     </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>

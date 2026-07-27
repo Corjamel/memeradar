@@ -2,6 +2,7 @@
 // Bestellingen — de hartslag van het netwerk (v71 'am:bestellingen').
 // Alle bestellingen over de zichtbare winkels, de stiltelijst (60+ dagen) en
 // de CSV-import: één poort voor handwerk, CSV én straks de B2B-API.
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
@@ -54,7 +55,7 @@ async function importeer() {
   <div>
     <header class="vheld"><div>
       <p class="eyebrow">Bestelritme</p>
-      <h1>📦 Bestellingen</h1>
+      <h1><Icoon naam="bestellen" /> Bestellingen</h1>
       <p class="sub">Het bestelritme is de hartslag van een winkel — stilte die je vroeg hoort, is een klant die je nog kunt redden.</p>
     </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>

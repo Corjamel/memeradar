@@ -2,6 +2,7 @@
 // Merk & Assets (v71 VIEWS.merk) — de merkwereld, de productfotografie en de
 // downloadbare materialen. De merkvideo's staan bewust in de Academy
 // (videotheek): daar wordt geleerd, hier wordt gedownload.
+import Icoon from '../../../components/Icoon.vue'
 import { ref } from 'vue'
 import { MERKWERELD, MERK_ASSETS, MERKREGELS, PRODUCT_FOTOS } from '../data.js'
 const melding = ref('')
@@ -13,7 +14,7 @@ function download() {
 
 <template>
   <div>
-    <h1>🎨 Merk &amp; Assets</h1>
+    <h1><Icoon naam="merk" /> Merk &amp; Assets</h1>
     <p class="sub">Officiële logo’s, kleuren en materialen — alles om TapParfum consistent neer te zetten. De merkvideo's vind je in de <router-link :to="{ name: 'academy' }">Academy</router-link>.</p>
 
     <div class="blk-t">De merkwereld van TapParfum</div>

@@ -3,6 +3,7 @@
 // t.academy = { cursusKey: { lesIndex: true } }. Eerst leren, dan verdienen:
 // de beloningen-engine eist per spaarcadeau de bijbehorende training, dus elke
 // afgevinkte les kan een beloning vrijspelen (checkBeloningen draait mee).
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
@@ -161,7 +162,7 @@ async function vink(c, i, v) {
 
     <!-- Videotheek: de officiële merkvideo's — alleen kijken, niet downloaden -->
     <div class="vidkop">
-      <div class="vt">🎬 Videotheek</div>
+      <div class="vt"><Icoon naam="video" /> Videotheek</div>
       <p class="vsub">De officiële TapParfum-video's bij je training — bekijk ze hier en gebruik wat je ziet op de winkelvloer.</p>
     </div>
     <div class="videos">

@@ -3,6 +3,7 @@
 // Partner: ziet de tijdlijn en meldt "wij hebben besteld" (t.prodBesteld).
 // AM/kantoor: ziet de adoptie per product en vinkt per winkel af.
 // Kantoor: beheert de lanceringen (naam, fase, verwachte leverdatum).
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
@@ -113,7 +114,7 @@ async function archiveer(p) {
   <div>
     <header class="vheld"><div>
       <p class="eyebrow">Assortiment</p>
-      <h1>🧴 Nieuwe producten</h1>
+      <h1><Icoon naam="vial" /> Nieuwe producten</h1>
       <p class="sub" v-if="auth.isPartner">Wat er aankomt bij TapParfum — en wanneer je het kunt bestellen.</p>
       <p class="sub" v-else>Lanceringen met tijdlijn en adoptie: wie heeft er al besteld?</p>
     </div></header>

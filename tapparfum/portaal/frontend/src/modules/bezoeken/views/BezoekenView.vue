@@ -4,6 +4,7 @@
 // bezoekritme per winkel (stilste eerst), en één netwerkbrede logboek-stroom
 // met een filter. Loggen zelf gebeurt per winkel op de winkelpagina; dit is de
 // vogelvlucht. "✉️ Mail de klant" opent een mailto naar de winkel.
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
 import { LOG_TYPES, fmtDuur, dagenSindsBezoek, bezoekStil, BEZOEK_RITME_DAGEN } from '../../logboek/logic.js'
@@ -46,7 +47,7 @@ const ritme = computed(() => st.items
   <div>
     <header class="vheld"><div>
       <p class="eyebrow">Relatiebeheer</p>
-      <h1>🗓️ Bezoeken &amp; notities</h1>
+      <h1><Icoon naam="agenda" /> Bezoeken &amp; notities</h1>
       <p class="sub">Het netwerkbrede overzicht — wie is er lang niet bezocht, welke opvolgingen staan open, en de laatste contactmomenten.</p>
     </div></header>
 

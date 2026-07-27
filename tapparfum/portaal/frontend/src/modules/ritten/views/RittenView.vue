@@ -6,6 +6,7 @@
 //
 // Toegang loopt via RLS (server): kantoor ziet alle AM's, een AM alleen zichzelf,
 // een partner niets. Verwijderen mag alleen kantoor (permanent archief).
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useToast } from '../../../stores/toast.js'
@@ -101,7 +102,7 @@ function winkelLabel(s) { return s.tappunt_snelstart ? (winkelNaam.value[s.tappu
   <div>
     <header class="vheld"><div>
       <p class="eyebrow">Onderweg</p>
-      <h1>🚗 Ritten & locatie</h1>
+      <h1><Icoon naam="auto" /> Ritten & locatie</h1>
       <p class="sub">{{ auth.isKantoor ? 'De werkdag-stempels van alle accountmanagers — permanent archief.' : 'Je eigen werkdag-stempels. Alleen jij en kantoor zien dit.' }}</p>
     </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>

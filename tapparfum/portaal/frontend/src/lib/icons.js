@@ -31,5 +31,16 @@ export const ICONS = {
   megafoon: sv('<path d="M4 13.5v-3l10-4.5v12L4 13.5Z"/><path d="M14 8.5c2 .6 3.2 1.6 3.2 3s-1.2 2.4-3.2 3"/><path d="M6.5 14v4a1.5 1.5 0 0 0 1.5 1.5h1a1.5 1.5 0 0 0 1.5-1.5v-2.8"/>'),
   vandaag: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   trofee: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0V4zM7 5H4.5a1 1 0 0 0-1 1c0 2.2 1.6 4 3.7 4.4M17 5h2.5a1 1 0 0 1 1 1c0 2.2-1.6 4-3.7 4.4M12 13v3.5M8.5 20.5h7M12 16.5c-1.4 0-2.5 1-2.8 2.3-.1.4-.2 1.7-.2 1.7h6s-.1-1.3-.2-1.7c-.3-1.3-1.4-2.3-2.8-2.3z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  vial: sv('<path d="M9.5 3.5h5"/><path d="M10.5 3.5v4L7.5 14a4.8 4.8 0 1 0 9 0l-3-6.5v-4"/><path d="M8.5 15.5h7"/>')
+  vial: sv('<path d="M9.5 3.5h5"/><path d="M10.5 3.5v4L7.5 14a4.8 4.8 0 1 0 9 0l-3-6.5v-4"/><path d="M8.5 15.5h7"/>'),
+  // Aanvullingen in dezelfde v71-lijnstijl — voor koppen, tabs en kaarten.
+  auto: sv('<path d="M5 16.5 6.3 10a2 2 0 0 1 2-1.5h7.4a2 2 0 0 1 2 1.5L19 16.5"/><path d="M4 16.5h16v3h-2.5v-1.5h-11V19.5H4v-3Z"/><circle cx="8" cy="18" r=".4"/><circle cx="16" cy="18" r=".4"/>'),
+  gear: sv('<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"/>'),
+  pen: sv('<path d="m4.5 19.5.8-3.4L16.5 4.9a1.6 1.6 0 0 1 2.3 0l.3.3a1.6 1.6 0 0 1 0 2.3L7.9 18.7l-3.4.8Z"/><path d="m14.5 6.9 2.6 2.6"/>'),
+  slot: sv('<rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/><path d="M12 14.5v2"/>'),
+  waarschuwing: sv('<path d="M12 4 21 19.5H3L12 4Z"/><path d="M12 10v4M12 16.8v.2"/>'),
+  video: sv('<rect x="3" y="6" width="13" height="12" rx="2.2"/><path d="M16 10.5 21 8v8l-5-2.5"/>'),
+  chat: sv('<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-7Z"/><path d="M8.5 9h7M8.5 12h4.5"/>'),
+  doc: sv('<path d="M6.5 3.5h8L18 7v13a1 1 0 0 1-1 1H6.5a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-.5Z"/><path d="M14 3.5V7h3.5"/><path d="M8.5 11.5h7M8.5 14.5h7M8.5 17.5h4"/>'),
+  importeer: sv('<path d="M12 3.5v10M8 10l4 4 4-4"/><path d="M4.5 16.5v2.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2.5"/>'),
+  exporteer: sv('<path d="M12 14V4M8 7.5l4-4 4 4"/><path d="M4.5 16.5v2.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2.5"/>')
 }

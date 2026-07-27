@@ -3,6 +3,7 @@
 // feiten: alle bedragen zijn inkoop bij TapParfum; kassa = door partners
 // geregistreerde winkelverkoop. Kantoor ziet het hele netwerk, een AM die
 // hier komt alleen de eigen portefeuille (RLS bepaalt de uitsnede).
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
 import { haalAms } from '../../dashboard/api.js'
@@ -96,7 +97,7 @@ const stilte = computed(() => st.items
   <div>
     <header class="vheld"><div>
       <p class="eyebrow">Cijfers</p>
-      <h1>📊 Analyse</h1>
+      <h1><Icoon naam="omzet" /> Analyse</h1>
       <p class="sub">Het netwerk in cijfers — sturen op feiten. Bedragen = inkoop bij TapParfum; kassa = geregistreerde winkelverkoop.</p>
     </div></header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>

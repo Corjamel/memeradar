@@ -1,6 +1,7 @@
 <script setup>
 // Beheer — het kantoorpaneel, opgezet zoals v71: tabbladen per taakgebied.
 // Mensen | Winkels | Instellingen | AVG & back-up | Audit
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useToast } from '../../../stores/toast.js'
@@ -20,13 +21,13 @@ const toast = useToast()
 const st = useTappunten()
 const tab = ref('mensen')
 const TABS = [
-  ['mensen', '🚗 Mensen'],
-  ['winkels', '🏬 Winkels'],
-  ['instellingen', '⚙️ Instellingen'],
-  ['regels', '⚖️ Regels'],
-  ['teksten', '✏️ Teksten'],
-  ['avg', '🔐 AVG & back-up'],
-  ['audit', '📜 Audit']
+  ['mensen', 'Mensen', 'users'],
+  ['winkels', 'Winkels', 'tappunten'],
+  ['instellingen', 'Instellingen', 'gear'],
+  ['regels', 'Regels', 'proces'],
+  ['teksten', 'Teksten', 'pen'],
+  ['avg', 'AVG & back-up', 'slot'],
+  ['audit', 'Audit', 'kennis']
 ]
 // Schermtitels die kantoor mag herbenoemen (v71 title.<route>).
 const TEKST_SCHERMEN = [
@@ -466,9 +467,9 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
     </div>
 
     <div class="tabs" role="tablist">
-      <button v-for="[k, lbl] in TABS" :key="k" type="button" role="tab"
+      <button v-for="[k, lbl, ic] in TABS" :key="k" type="button" role="tab"
               :class="{ aan: tab === k }" :aria-selected="tab === k"
-              :data-test="'tab-' + k" @click="tab = k; wis = null; anon = null">{{ lbl }}</button>
+              :data-test="'tab-' + k" @click="tab = k; wis = null; anon = null"><Icoon :naam="ic" /> {{ lbl }}</button>
     </div>
 
     <!-- ===== MENSEN ===== -->
@@ -552,7 +553,7 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
 
       <!-- CSV-import met kolomkoppeling: bestand kiezen -> koppelen -> import -->
       <div class="kaart">
-        <h2>📥 Winkels importeren (CSV)</h2>
+        <h2><Icoon naam="importeer" /> Winkels importeren (CSV)</h2>
         <template v-if="!csvData">
           <p class="note">Kies je klantenbestand (Excel: opslaan als CSV). Daarna koppel je zelf de kolommen aan de juiste velden — het maakt dus niet uit hoe de kolommen in jouw bestand heten. Bestaande winkels (zelfde code of naam) worden overgeslagen, nooit gedupliceerd.</p>
           <label class="csvknop" :class="{ bezig: csvBezig }">
@@ -599,7 +600,7 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
 
       <!-- Export: het hele klantenbestand als CSV (back-up of Excel-analyse) -->
       <div class="kaart">
-        <h2>📤 Winkels exporteren (CSV)</h2>
+        <h2><Icoon naam="exporteer" /> Winkels exporteren (CSV)</h2>
         <p class="note">Alle winkels met contactgegevens, accountmanager en omzet — voor een back-up of om in Excel verder te werken.</p>
         <button class="knop" type="button" data-test="csv-export" @click="exporteerWinkels">⬇ Download klantenbestand ({{ st.items.length }})</button>
       </div>

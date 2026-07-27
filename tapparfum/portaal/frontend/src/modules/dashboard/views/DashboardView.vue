@@ -1,6 +1,7 @@
 <script setup>
 // Startscherm per rol: kantoor (netwerk-cockpit), AM (mijn winkels), partner
 // (eigen winkel). Alleen weergave — alle data komt RLS-gescoped uit de modules.
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
@@ -375,7 +376,7 @@ const meterLabel = computed(() => {
 
     <!-- Kantoor: bestellingen-KPI's -->
     <div v-if="!preview && bestelKpi" class="kaart bestelkpi" data-test="bestel-kpi">
-      <h2>📦 Bestellingen (team)</h2>
+      <h2><Icoon naam="bestellen" /> Bestellingen (team)</h2>
       <div class="kpirij">
         <div class="kpi"><b>{{ eur0(bestelKpi.inkoop) }}</b><span>inkoop dit jaar</span></div>
         <div class="kpi"><b>{{ bestelKpi.maandN }}</b><span>bestellingen deze maand</span></div>
@@ -385,7 +386,7 @@ const meterLabel = computed(() => {
 
     <!-- Kantoor/AM: actieve acties · deelname -->
     <div v-if="!preview && actieDeelname.length" class="kaart" data-test="actie-deelname">
-      <h2>📣 Actieve acties · deelname</h2>
+      <h2><Icoon naam="megafoon" /> Actieve acties · deelname</h2>
       <router-link v-for="a in actieDeelname" :key="a.id" class="deelnamerij klik" :data-test="'deelname-' + a.id" :to="{ name: 'acties' }">
         <span class="atitel">{{ a.titel }}</span>
         <span class="abalk"><i :style="{ width: a.pct + '%' }"></i></span>
@@ -395,7 +396,7 @@ const meterLabel = computed(() => {
 
     <!-- Kantoor/AM: stagnatie-aandachtslijst -->
     <div v-if="!preview && (auth.isKantoor || auth.isAm) && stagneerders.length" class="kaart" data-test="aandacht">
-      <h2>⚠️ Vraagt aandacht — stagnerende tappunten</h2>
+      <h2><Icoon naam="waarschuwing" /> Vraagt aandacht — stagnerende tappunten</h2>
       <router-link v-for="t in stagneerders" :key="t.snelstart" class="rij klik" data-test="aandacht-rij"
                    :to="{ name: 'winkel', params: { code: t.snelstart } }">
         <b>{{ t.name }}</b>
@@ -459,7 +460,7 @@ const meterLabel = computed(() => {
 
     <!-- Partner: trofeeën-strip -->
     <div v-if="trofeeen.length" class="kaart" :style="{ order: ord('trofee') }" data-test="trofeeen">
-      <h2>🏆 Jullie spaarcadeaus</h2>
+      <h2><Icoon naam="trofee" /> Jullie spaarcadeaus</h2>
       <div class="trofeeen">
         <router-link v-for="tr in trofeeen" :key="tr.key" class="trof" :class="{ gewonnen: tr.gewonnen }" :to="{ name: 'beloningen' }" :title="tr.r">
           <span class="tic">{{ tr.ic }}</span>
@@ -471,7 +472,7 @@ const meterLabel = computed(() => {
 
     <!-- Partner: berichtenkaart (v71 berichtKnopKaart) — vraag/bezoek/probleem/retour -->
     <div v-if="alsPartner && eigen" class="kaart" data-test="berichtkaart">
-      <h2>💬 Contact met je accountmanager</h2>
+      <h2><Icoon naam="chat" /> Contact met je accountmanager</h2>
       <p class="regel">Een vraag, bezoekverzoek, probleem of retour? Kies waar het over gaat.</p>
       <div class="soorten">
         <button v-for="s in BERICHT_SOORTEN" :key="s.k" type="button" class="soort" :class="{ aan: berSoort === s.k }"
@@ -491,7 +492,7 @@ const meterLabel = computed(() => {
 
     <!-- Partner: formulieren-status -->
     <div v-if="alsPartner && eigen && formStatus.length" class="kaart" data-test="form-status">
-      <h2>📋 Jouw formulieren</h2>
+      <h2><Icoon naam="doc" /> Jouw formulieren</h2>
       <router-link v-for="f in formStatus" :key="f.id" class="formrij klik" :data-test="'form-status-' + f.id" :to="{ name: 'formulieren' }">
         <span class="vink" :class="{ ok: f.done }">{{ f.done ? '✓' : '○' }}</span>
         <span>{{ f.naam }}</span>
@@ -504,7 +505,7 @@ const meterLabel = computed(() => {
 
     <!-- Partner: merkstrip — écht campagnebeeld + de kern van het concept -->
     <router-link v-if="alsPartner && eigen" class="merkstrip" :to="{ name: 'merk' }" data-test="merkstrip">
-      <img src="/assets/bodymist.jpg" alt="TapParfum campagnebeeld" loading="lazy">
+      <img src="/assets/giftset-30ml-2x15.jpg" alt="TapParfum productbeeld" loading="lazy">
       <div class="mstxt">
         <span class="mslbl">De merkwereld</span>
         <b>Verkoop de beleving, niet het flesje</b>

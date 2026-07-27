@@ -134,7 +134,7 @@ async function stuurReset() {
 /* v71-inlogscherm: split-screen — visueel merkpaneel links, formulier rechts. */
 .loginsplit{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr;background:var(--pagebg)}
 /* Écht campagnebeeld als merkpaneel; de gradient blijft als vangnet eronder. */
-.ls-visual{position:relative;overflow:hidden;background-image:url('/assets/bodymist.jpg'),var(--sig);background-size:cover;background-position:center 30%;background-repeat:no-repeat}
+.ls-visual{position:relative;overflow:hidden;background-image:url('/assets/giftset-50ml-2vials.jpg'),var(--sig);background-size:cover;background-position:center 40%;background-repeat:no-repeat}
 .ls-veil{position:absolute;inset:0;background:radial-gradient(120% 90% at 85% -10%, rgba(255,255,255,.16), transparent 55%),linear-gradient(180deg, rgba(42,33,28,.05) 40%, rgba(42,33,28,.62))}
 .ls-txt{position:absolute;left:0;bottom:0;padding:48px 44px;color:#fff}
 .ls-brand{font-weight:800;letter-spacing:.18em;font-size:26px;text-shadow:0 2px 12px rgba(0,0,0,.25)}

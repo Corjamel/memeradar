@@ -3,6 +3,7 @@
 // De engine keurt zelf uit: zodra alle eisen + training binnen zijn wordt de
 // beloning eenmalig in t.beloond gezet (met viering) en ziet iedereen
 // "Van jou!". Kantoor/AM regelt daarna de fysieke uitkering.
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
@@ -117,7 +118,7 @@ watch(() => props.tappunt, keurUit)
 <template>
   <section v-if="inTraject(t)" class="blok">
     <div class="kop">
-      <h2>🎁 Niveau & beloningen</h2>
+      <h2><Icoon naam="gift" /> Niveau & beloningen</h2>
       <span class="badge" :style="{ background: status.bg, color: status.fg }" data-test="status-badge">{{ status.l }}</span>
       <span class="niveau" data-test="niveau-badge">{{ lv.k }}</span>
     </div>

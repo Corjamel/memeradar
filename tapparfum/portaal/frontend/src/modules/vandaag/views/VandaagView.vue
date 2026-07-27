@@ -4,6 +4,7 @@
 //   🔥 Nu       — te laat/vandaag: opvolgcadans, logboek-opvolgingen, open winkelvragen
 //   📋 Deze week — opvolgingen binnen 7 dagen, open afspraken, geplande/controle-bezoeken
 //   🔁 Ritme    — bezoekritme (90 dgn), bestelritme (60 dgn), acties zonder deelname
+import Icoon from '../../../components/Icoon.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
@@ -125,7 +126,7 @@ async function plan(i) {
   <div>
     <header class="held">
       <div>
-        <h1>{{ groet }} ☀️</h1>
+        <h1>{{ groet }} <Icoon naam="vandaag" /></h1>
         <p class="sub" data-test="vandaag-sub">Je dagstart — wat nú aandacht vraagt{{ items.length ? ` · ${nu.length ? nu.length + ' urgent, ' : ''}alles direct af te handelen vanuit deze lijst.` : ' · alles bij — geen openstaande acties. Sterk!' }}</p>
       </div>
     </header>
