@@ -577,12 +577,15 @@ const meterLabel = computed(() => {
 .simbanner{display:block;background:var(--ink);color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 16px;border-radius:12px;margin-bottom:12px}
 .simbanner b{color:var(--peach)}
 .simbanner:hover{background:#000}
-.held{display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(115deg,var(--soft),#fff 72%);border:1px solid var(--line);border-radius:18px;padding:18px 22px;margin-bottom:14px}
+.held{display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(115deg,var(--soft),#fff 72%);border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin-bottom:14px;position:relative;overflow:hidden}
+/* Écht productbeeld dat rechts zacht het vlak in loopt */
+.held::before{content:'';position:absolute;top:0;right:0;bottom:0;width:44%;background:url('/assets/giftset-algemeen.jpg') center 32%/cover no-repeat;-webkit-mask-image:linear-gradient(90deg,transparent,#000 55%);mask-image:linear-gradient(90deg,transparent,#000 55%);opacity:.5;pointer-events:none}
+.held>*{position:relative;z-index:1}
 .eyebrow{margin:0 0 3px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--coral-d)}
 h1{margin:0;font-size:24px}
 h2{margin:0 0 10px;font-size:15px}
 .tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-.tegel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:inherit;text-decoration:none;display:block}
+.tegel{background:#fff;border:1px solid var(--line);border-top:3px solid var(--peach);border-radius:14px;padding:14px 16px;color:inherit;text-decoration:none;display:block}
 .tegel.klik:hover{border-color:var(--coral)}
 .cijfer{font-size:22px;font-weight:800;color:var(--coral)}
 .lbl{font-size:12px;color:var(--grey);font-weight:700}
