@@ -104,6 +104,7 @@ const GROEPEN = computed(() => {
       { naam: 'geuren', label: 'Geurbibliotheek', ic: 'geur' },
       { naam: 'academy', label: 'Academy', ic: 'academy' },
       { naam: 'acties', label: 'Acties', ic: 'spark' },
+      { naam: 'game', label: 'Sales Game', ic: 'trofee' },
       { naam: 'bestellen', label: 'Bestellen', ic: 'bestellen' },
       { naam: 'producten', label: 'Producten', ic: 'vial' },
       { naam: 'merk', label: 'Merk & Assets', ic: 'merk' },

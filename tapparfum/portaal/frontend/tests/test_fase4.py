@@ -125,7 +125,7 @@ with sync_playwright() as p:
     # ===== KANTOOR: taak toewijzen aan AM =====
     pg.evaluate("""window.__MOCK.signin={data:{user:{id:'u-staff',email:'kantoor@tp.nl',app_metadata:{role:'staff'}}},error:null};""")
     login(pg,"kantoor@tp.nl")
-    pg.click('nav >> text=Taken'); pg.wait_for_timeout(500)
+    pg.click('[data-test=nav-taken]'); pg.wait_for_timeout(500)
     ck("kantoor heeft AM-keuzeveld", pg.locator('[data-test=taak-am]').count()==1)
     pg.fill('[data-test=taak-titel]','Rapport Q3 opleveren')
     pg.select_option('[data-test=taak-am]','am-1')
