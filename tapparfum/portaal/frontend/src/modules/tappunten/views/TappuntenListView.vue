@@ -62,12 +62,16 @@ const ORDER = [
 ]
 
 onMounted(async () => {
-  if (!st.items.length) await st.laad()
+  // Winkels en rekenconfig hangen niet van elkaar af — parallel laden
+  // scheelt een netwerk-rondje bij elk bezoek aan dit scherm.
+  const [, cfg] = await Promise.all([
+    st.items.length ? Promise.resolve() : st.laad(),
+    haalRekenConfig().catch(() => null)
+  ])
+  if (cfg) marge.value = cfg.marge
   if (auth.isPartner && st.items.length === 1) {
     router.replace({ name: 'winkel', params: { code: st.items[0].snelstart } })
-    return
   }
-  try { marge.value = (await haalRekenConfig()).marge } catch { /* factor 1 */ }
 })
 
 function info(t) {

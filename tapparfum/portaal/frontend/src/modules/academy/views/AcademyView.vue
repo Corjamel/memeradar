@@ -39,9 +39,13 @@ const CAT_KLEUR = { Onboarding: '#f9c5af', Verkoop: '#bfe3fb', Tool: '#ecdfc6', 
 
 onMounted(async () => {
   try {
-    if (!st.items.length) await st.laad()
+    // Winkels en rekenconfig zijn onafhankelijk — parallel laden.
+    const [, cfg] = await Promise.all([
+      st.items.length ? Promise.resolve() : st.laad(),
+      haalRekenConfig().catch(() => null)
+    ])
+    if (cfg) marge.value = cfg.marge
     if (!auth.isPartner && st.items.length) gekozen.value = st.items[0].snelstart
-    marge.value = (await haalRekenConfig()).marge
   } catch (e) { fout.value = 'Kon de Academy niet laden: ' + e.message }
 })
 

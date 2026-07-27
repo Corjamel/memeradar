@@ -3,36 +3,39 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '../stores/auth.js'
 
+// Login + dashboard laden direct mee (dat is de eerste render); alle andere
+// views zijn lazy — Vite splitst ze in eigen chunks die pas laden wanneer de
+// route opent. Dat haalt honderden kB uit de startbundel.
 import LoginView from '../modules/auth/views/LoginView.vue'
 import DashboardView from '../modules/dashboard/views/DashboardView.vue'
-import TappuntenListView from '../modules/tappunten/views/TappuntenListView.vue'
-import TappuntDetailView from '../modules/tappunten/views/TappuntDetailView.vue'
-import BerichtenView from '../modules/berichten/views/BerichtenView.vue'
-import AgendaView from '../modules/agenda/views/AgendaView.vue'
-import ActiesView from '../modules/acties/views/ActiesView.vue'
-import BeloningenView from '../modules/beloningen/views/BeloningenView.vue'
-import DealsView from '../modules/deals/views/DealsView.vue'
-import TakenView from '../modules/taken/views/TakenView.vue'
-import BeheerView from '../modules/beheer/views/BeheerView.vue'
-import CalculatorView from '../modules/calculator/views/CalculatorView.vue'
-import ProductenView from '../modules/producten/views/ProductenView.vue'
-import VandaagView from '../modules/vandaag/views/VandaagView.vue'
-import BestellenView from '../modules/bestellen/views/BestellenView.vue'
-import AcademyView from '../modules/academy/views/AcademyView.vue'
-import AnalyseView from '../modules/analyse/views/AnalyseView.vue'
-import TrajectenView from '../modules/trajecten/views/TrajectenView.vue'
-import KennisView from '../modules/kennis/views/KennisView.vue'
-import ProcesView from '../modules/kennis/views/ProcesView.vue'
-import SalesGameView from '../modules/salesgame/views/SalesGameView.vue'
-import GeurbibView from '../modules/geurbib/views/GeurbibView.vue'
-import MijnPlanView from '../modules/mijnplan/views/MijnPlanView.vue'
-import TeamView from '../modules/team/views/TeamView.vue'
-import FormulierenView from '../modules/formulieren/views/FormulierenView.vue'
-import BestellingenView from '../modules/bestellingen/views/BestellingenView.vue'
-import CommunityView from '../modules/community/views/CommunityView.vue'
-import MerkView from '../modules/merk/views/MerkView.vue'
-import BezoekenView from '../modules/bezoeken/views/BezoekenView.vue'
-import RittenView from '../modules/ritten/views/RittenView.vue'
+const TappuntenListView = () => import('../modules/tappunten/views/TappuntenListView.vue')
+const TappuntDetailView = () => import('../modules/tappunten/views/TappuntDetailView.vue')
+const BerichtenView = () => import('../modules/berichten/views/BerichtenView.vue')
+const AgendaView = () => import('../modules/agenda/views/AgendaView.vue')
+const ActiesView = () => import('../modules/acties/views/ActiesView.vue')
+const BeloningenView = () => import('../modules/beloningen/views/BeloningenView.vue')
+const DealsView = () => import('../modules/deals/views/DealsView.vue')
+const TakenView = () => import('../modules/taken/views/TakenView.vue')
+const BeheerView = () => import('../modules/beheer/views/BeheerView.vue')
+const CalculatorView = () => import('../modules/calculator/views/CalculatorView.vue')
+const ProductenView = () => import('../modules/producten/views/ProductenView.vue')
+const VandaagView = () => import('../modules/vandaag/views/VandaagView.vue')
+const BestellenView = () => import('../modules/bestellen/views/BestellenView.vue')
+const AcademyView = () => import('../modules/academy/views/AcademyView.vue')
+const AnalyseView = () => import('../modules/analyse/views/AnalyseView.vue')
+const TrajectenView = () => import('../modules/trajecten/views/TrajectenView.vue')
+const KennisView = () => import('../modules/kennis/views/KennisView.vue')
+const ProcesView = () => import('../modules/kennis/views/ProcesView.vue')
+const SalesGameView = () => import('../modules/salesgame/views/SalesGameView.vue')
+const GeurbibView = () => import('../modules/geurbib/views/GeurbibView.vue')
+const MijnPlanView = () => import('../modules/mijnplan/views/MijnPlanView.vue')
+const TeamView = () => import('../modules/team/views/TeamView.vue')
+const FormulierenView = () => import('../modules/formulieren/views/FormulierenView.vue')
+const BestellingenView = () => import('../modules/bestellingen/views/BestellingenView.vue')
+const CommunityView = () => import('../modules/community/views/CommunityView.vue')
+const MerkView = () => import('../modules/merk/views/MerkView.vue')
+const BezoekenView = () => import('../modules/bezoeken/views/BezoekenView.vue')
+const RittenView = () => import('../modules/ritten/views/RittenView.vue')
 
 const ALLE_ROLLEN = ['kantoor', 'am', 'partner']
 
