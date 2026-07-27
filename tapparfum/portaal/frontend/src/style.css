@@ -49,27 +49,14 @@ h1, h2, h3 { text-wrap: balance; }
 .bedrag, .cijfer, .totaal, .tegel b, .pct b { font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------------------
-   Vormtaal-laag: v71 is consequent RECHT (border-radius 0) op vlakken,
-   knoppen, chips en invoer. De modulecomponenten stylen zichzelf met
-   afgeronde hoeken; deze laag trekt de identiteit centraal recht zonder
-   38 bestanden aan te hoeven raken. Ronde elementen die rond hóren te
-   zijn (avatars, rol-pillen, voortgangsbalken, de flesmeter) blijven
-   ongemoeid — die dragen geen van deze klassenamen.
+   Vormtaal-laag: v71 is juist consequent ROND — zachte kaarten (14-16px),
+   pill-vormige knoppen en afgeronde invoer. De modulecomponenten zetten
+   hun eigen radii; deze laag zorgt alleen dat knoppen die geen eigen
+   radius hebben tóch de v71-pill krijgen, en dat de tekst normaal blijft
+   (v71 zet knoppen NIET in hoofdletters).
    ------------------------------------------------------------------ */
-.kaart, .blok, .tegel, .paneel, .card,
-.btn, .knop,
-.chip, .fchip,
-input[type=text], input[type=email], input[type=password], input[type=date],
-input[type=month], input[type=number], input[type=search], textarea, select {
-  border-radius: 0 !important;
-}
-
-/* Knoppen dragen v71's kapitale, gespatieerde signatuur. */
-.btn, .knop {
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  font-weight: 800;
-}
+.btn, .knop { border-radius: 999px; font-weight: 800; }
+.chip, .fchip { border-radius: 999px; }
 
 /* ------------------------------------------------------------------
    Diepte & leven — de visuele lat van de Calculator, portaal-breed.
@@ -111,16 +98,12 @@ input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px var(--soft); }
 /* Filterchips en tabs bewegen mee. */
 .chip, .tabs button, .seg button { transition: background .12s ease, color .12s ease, border-color .12s ease; }
 
-/* Herbruikbare paginakop (gradient-band, zoals Winkels/Dashboard/Academy).
-   Views wikkelen hun h1 + .sub in <header class="vheld"><div>…</div></header>;
-   de selectors hieronder winnen bewust van de scoped h1/.sub-marges. */
+/* Herbruikbare paginakop — v71 heeft op de gewone pagina's een VLAKKE kop
+   (geen gradient-band; die zit alleen op het dashboard/cockpit-hero). Dus
+   .vheld is nu een simpele kop-rij: titel + subtekst, geen vlak eromheen. */
 .vheld {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 14px; flex-wrap: wrap;
-  background: linear-gradient(120deg, var(--soft), #fff 70%);
-  border: 1px solid var(--line); border-radius: 18px;
-  padding: 16px 20px; margin-bottom: 14px;
-  box-shadow: 0 1px 2px rgba(42, 33, 28, .03), 0 8px 22px -14px rgba(42, 33, 28, .18);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
 }
 header.vheld h1 { margin: 0 0 2px; }
 .vheld .eyebrow { margin: 0 0 2px; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--coral-d); }
