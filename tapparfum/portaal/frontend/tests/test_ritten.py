@@ -37,6 +37,8 @@ with sync_playwright() as p:
     pg.click('[data-test=rit-checkin]'); pg.wait_for_timeout(500)
     ins=pg.evaluate("window.__INSERTS.filter(u=>u[0]==='am_locaties').map(u=>u[1])")
     ck("bezoek-stempel met winkel + coords", ins[-1]['type']=='bezoek' and ins[-1]['tappunt_snelstart']=='kl-1' and 'lat' in ins[-1])
+    ck("verslag-doorsteek na check-in", pg.locator('[data-test=rit-verslag-link]').count()==1 and 'bezoekverslag' in (pg.text_content('[data-test=rit-verslag-link]') or ''))
+    ck("bezoek-stempel heeft '→ verslag'-link", pg.locator('[data-test^=rit-naar-log-]').count()>=1)
 
     # toggle UIT -> volgende stempel zonder coords
     pg.click('[data-test=rit-toggle-input]'); pg.wait_for_timeout(150)

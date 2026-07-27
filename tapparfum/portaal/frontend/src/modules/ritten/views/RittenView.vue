@@ -22,6 +22,7 @@ const ams = ref([])
 const fout = ref('')
 const bezig = ref(false)
 const kiesWinkel = ref('')
+const laatsteCheckin = ref(null)   // { code, naam } — voor de verslag-doorsteek
 
 // Aan/uit-knop: de AM pauzeert het locatie-loggen. Per account in localStorage —
 // puur een consent-schakelaar op het eigen apparaat; het peilen gebeurt sowieso
@@ -75,6 +76,10 @@ async function plaats(type, tappunt_snelstart = null) {
     await stempel({ type, tappunt_snelstart, gps })
     if (locatieAan.value && !gps) toast.info('Locatie niet beschikbaar — stempel zonder coördinaten opgeslagen')
     else toast.ok(type === 'start' ? 'Werkdag gestart' : type === 'stop' ? 'Werkdag gestopt' : 'Bezoek ingecheckt')
+    // Check-in? Bied meteen de doorsteek naar het bezoekverslag aan.
+    laatsteCheckin.value = type === 'bezoek' && tappunt_snelstart
+      ? { code: tappunt_snelstart, naam: winkelNaam.value[tappunt_snelstart] || tappunt_snelstart }
+      : null
     kiesWinkel.value = ''
     await laad()
   } catch (e) { fout.value = 'Stempel plaatsen mislukt: ' + e.message; toast.fout('Stempel mislukt') }
@@ -116,6 +121,10 @@ function winkelLabel(s) { return s.tappunt_snelstart ? (winkelNaam.value[s.tappu
         <span>Locatie vastleggen {{ locatieAan ? 'aan' : 'uit' }}</span>
       </label>
       <p class="note">Locatie wordt alleen gepeild bij start/stop en een check-in — nooit op de achtergrond. Zet je 'm uit, dan worden je handelingen zonder locatie vastgelegd.</p>
+      <router-link v-if="laatsteCheckin" class="verslag" data-test="rit-verslag-link"
+                   :to="{ name: 'winkel', params: { code: laatsteCheckin.code } }">
+        ✅ Ingecheckt bij <b>{{ laatsteCheckin.naam }}</b> — maak direct het bezoekverslag in het logboek →
+      </router-link>
     </div>
 
     <!-- AM: eigen dagen -->
@@ -126,6 +135,8 @@ function winkelLabel(s) { return s.tappunt_snelstart ? (winkelNaam.value[s.tappu
           <span class="tt">{{ tijd(s) }}</span>
           <span class="tp">{{ TYPE_LABEL[s.type] }}</span>
           <span v-if="winkelLabel(s)" class="wn">{{ winkelLabel(s) }}</span>
+          <router-link v-if="s.type === 'bezoek' && s.tappunt_snelstart" class="naarlog" :data-test="'rit-naar-log-' + s.id"
+                       :to="{ name: 'winkel', params: { code: s.tappunt_snelstart } }">→ verslag</router-link>
           <a v-if="mapsLink(s)" class="pin" :href="mapsLink(s)" target="_blank" rel="noopener noreferrer" :title="'±' + (s.acc || '?') + ' m' + (s.loc ? ' · ' + s.loc : '')">📍</a>
           <span v-else class="geenloc">geen locatie</span>
         </div>
@@ -170,6 +181,10 @@ h2{margin:0 0 8px;font-size:15px}
 .toggle{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;font-weight:700;cursor:pointer}
 .toggle input{width:16px;height:16px;accent-color:var(--coral)}
 .note{font-size:12px;color:var(--grey);background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin:10px 0 0}
+.verslag{display:block;margin-top:10px;background:var(--green-soft);border:1px solid #bcd9a0;color:#2c5a12;border-radius:10px;padding:10px 12px;font-size:13px;text-decoration:none}
+.verslag:hover{border-color:#8fbf68}
+.naarlog{color:var(--coral-d);font-weight:700;font-size:12px;text-decoration:none}
+.naarlog:hover{text-decoration:underline}
 .dag{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 .dag:first-of-type{border-top:0;margin-top:0}
 .dagkop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13.5px;margin-bottom:4px}
