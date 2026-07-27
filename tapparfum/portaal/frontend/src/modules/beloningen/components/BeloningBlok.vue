@@ -173,6 +173,11 @@ watch(() => props.tappunt, keurUit)
       <div v-for="k in kaarten" :key="k.rw.key" class="cadeau"
            :class="{ unlocked: k.unlocked, next: k.rw.key === volgendeKey }" :data-test="'rew-' + k.rw.key">
         <img v-if="k.rw.foto" class="cfoto" :src="k.rw.foto" :alt="k.rw.r" loading="lazy" :data-test="'rew-foto-' + k.rw.key">
+        <!-- Nog geen productfoto? Dan een merkeigen beeldvlak i.p.v. een leeg,
+             onaantrekkelijk kaartkopje — elke beloning ziet er even begeerlijk uit. -->
+        <div v-else class="cfoto cfoto-ph" :data-test="'rew-ph-' + k.rw.key" aria-hidden="true">
+          <span class="phic">{{ k.rw.ic }}</span>
+        </div>
         <div class="ckop">
           <span class="ic" aria-hidden="true">{{ k.rw.ic }}</span>
           <span class="chip">{{ k.rw.chip }}</span>
@@ -245,6 +250,12 @@ h2{margin:0;font-size:16px;flex:1}
 .cadeau{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:#fff;overflow:hidden}
 /* Productfoto van het cadeau — bovenaan de kaart, van rand tot rand */
 .cfoto{width:calc(100% + 28px);margin:-14px -14px 0;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--cream)}
+/* Merkeigen beeldvlak als er (nog) geen productfoto is: zacht koraal-crème
+   verloop met het beloningsicoon groot in beeld — even af als een echte foto. */
+.cfoto-ph{display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 130% at 28% 18%, var(--soft) 0%, var(--cream) 62%, var(--sand) 100%);
+  border-bottom:1px solid var(--line)}
+.cfoto-ph .phic{font-size:46px;line-height:1;filter:drop-shadow(0 6px 14px rgba(42,33,28,.16))}
 .cadeau.next{border-color:var(--coral);box-shadow:0 0 0 3px var(--soft)}
 .cadeau.unlocked{border-color:#bcd9a0;background:linear-gradient(180deg,#fbfdf8,#fff)}
 .ckop{display:flex;align-items:center;gap:8px}
