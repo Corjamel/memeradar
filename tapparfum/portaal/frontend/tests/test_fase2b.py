@@ -106,7 +106,7 @@ with sync_playwright() as p:
     ck("lijst ververst na upload (2 documenten)", pg.locator('[data-test=doc-item]').count()==2)
 
     # ===== PARTNER: winkelvraag (retour) melden =====
-    pg.click('nav >> text=Berichten'); pg.wait_for_timeout(500)
+    pg.click('[data-test=nav-berichten]'); pg.wait_for_timeout(500)
     ck("partner heeft meldformulier", pg.locator('[data-test=vraag-verstuur]').count()==1)
     pg.select_option('[data-test=vraag-type]','retour')
     pg.fill('[data-test=vraag-txt]','Fles lekt bij de dop, klant wil ruilen')
@@ -128,7 +128,7 @@ with sync_playwright() as p:
     ck("afronden -> update status=afgerond", any(u[0]=='agenda' and u[1].get('status')=='afgerond' for u in upd))
 
     # ===== AM: winkelvraag van zijn winkel beantwoorden =====
-    pg.click('nav >> text=Berichten'); pg.wait_for_timeout(500)
+    pg.click('[data-test=nav-berichten]'); pg.wait_for_timeout(500)
     ck("AM ziet de melding uit zijn winkel", pg.locator('[data-test=winkelvraag]').count()==1)
     pg.fill('[data-test=vraag-antwoord-veld]','Nieuwe fles gaat vandaag mee, retour halen we op bij het bezoek.')
     pg.click('[data-test=vraag-antwoord-knop]'); pg.wait_for_timeout(500)

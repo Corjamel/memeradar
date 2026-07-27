@@ -17,7 +17,7 @@ with sync_playwright() as p:
     login(pg,"m@t.nl")
     ck("berichten-badge = 2 open vragen", pg.locator('[data-test=bdg-berichten]').count()==1 and (pg.text_content('[data-test=bdg-berichten]') or '').strip()=='2')
     ck("taken-badge = 1 open taak", pg.locator('[data-test=bdg-taken]').count()==1 and (pg.text_content('[data-test=bdg-taken]') or '').strip()=='1')
-    pg.click('nav >> text=Berichten'); pg.wait_for_timeout(400)
+    pg.click('[data-test=nav-berichten]'); pg.wait_for_timeout(400)
     ck("nav-klik Berichten werkt met badge erin", '/berichten' in pg.url)
     ck("geen pageerrors", len(errs)==0)
     for e in errs[:5]: print("   XX", e)

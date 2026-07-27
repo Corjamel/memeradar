@@ -86,7 +86,7 @@ with sync_playwright() as p:
     ck("blokkeren -> update geblokkeerd=true", any(u[0]=='tappunten' and u[1].get('geblokkeerd')==True for u in upd))
 
     # bericht sturen aan AM
-    pg.click('nav >> text=Berichten'); pg.wait_for_timeout(400)
+    pg.click('[data-test=nav-berichten]'); pg.wait_for_timeout(400)
     pg.select_option('[data-test=am-select]','am-1')
     pg.fill('textarea','Bel Zwolle over de zomeractie')
     pg.click('[data-test=verstuur]'); pg.wait_for_timeout(400)
@@ -103,7 +103,7 @@ with sync_playwright() as p:
     pg.click('nav >> text=Winkels'); pg.wait_for_timeout(400)
     ck("AM ziet alleen eigen winkels (2)", pg.locator('[data-test=tappunt-rij]').count()==2)
     # bericht beantwoorden
-    pg.click('nav >> text=Berichten'); pg.wait_for_timeout(400)
+    pg.click('[data-test=nav-berichten]'); pg.wait_for_timeout(400)
     ck("AM ziet het bericht van kantoor", pg.locator('[data-test=bericht]').count()==1)
     pg.fill('[data-test=antwoord-veld]','Gedaan — gebeld en actie staat.')
     pg.click('[data-test=antwoord-knop]'); pg.wait_for_timeout(400)
@@ -120,7 +120,7 @@ with sync_playwright() as p:
     pg.click('nav >> text=Winkels'); pg.wait_for_timeout(600)
     ck("partner -> direct op eigen winkel-detail", 'Eigen Winkel' in (pg.text_content('h1') or ''))
     ck("partner ziet GEEN blokkeer-knop", pg.locator('[data-test=blok-knop]').count()==0)
-    ck("partner ziet WEL een Berichten-tab (winkelvragen)", pg.locator('nav >> text=Berichten').count()==1)
+    ck("partner ziet WEL een Berichten-tab (winkelvragen)", pg.locator('[data-test=nav-berichten]').count()==1)
 
     ck("geen pageerrors", len(errs)==0)
     for e in errs[:5]: print("   XX", e)

@@ -60,58 +60,127 @@ const badges = computed(() => ({ berichten: openVragen.value, taken: openTaken.v
 
 // Titel in de topbar = het label van de actieve navigatie-ingang.
 const TITELS = {
-  home: 'Mijn winkels', vandaag: 'Vandaag', trajecten: 'Trajecten', winkels: 'Winkels',
+  home: 'Mijn winkels', vandaag: 'Vandaag', trajecten: 'Trajecten', winkels: 'Mijn winkels',
   winkel: 'Winkel', 'winkel-partner': 'Partnerweergave', agenda: 'Agenda', bezoeken: 'Bezoeken', ritten: 'Ritten', berichten: 'Berichten', acties: 'Acties',
   beloningen: 'Beloningen', game: 'Sales Game', producten: 'Producten', bestellen: 'Bestellen',
   geuren: 'Geurbibliotheek', community: 'Community', academy: 'Academy', kennisbank: 'Kennisbank',
   proces: 'Proces', formulieren: 'Formulieren', bestellingen: 'Bestellingen', deals: 'Deals',
   taken: 'Taken', calculator: 'Calculator', analyse: 'Analyse', team: 'Accountmanagers', beheer: 'Beheer'
 }
+// Enkele schermen dragen per rol een andere titel (v71 heeft er aparte routes
+// voor: kdash/pfeedback/inbox). Bij ons is het één route, dus kiezen we op rol.
+const ROL_TITEL = {
+  home: { kantoor: 'Kantoor-cockpit', partner: 'Dashboard', am: 'Cockpit' },
+  berichten: { kantoor: 'Vragen & taken', partner: 'Feedback', am: 'Inbox' }
+}
 // Kantoor kan de schermtitels overschrijven (central 'teksten', v71 title.<route>).
 const teksten = ref({})
-const titel = computed(() => teksten.value['title.' + route.name] || TITELS[route.name] || 'TapParfum')
+const titel = computed(() => {
+  const n = route.name
+  if (teksten.value['title.' + n]) return teksten.value['title.' + n]
+  const rol = ROL_TITEL[n]
+  if (rol && rol[auth.role]) return rol[auth.role]
+  return TITELS[n] || 'TapParfum'
+})
 // De navigatie-labels mogen dezelfde override volgen (title.<route>).
 function navLabel(naam, standaard) { return teksten.value['title.' + naam] || standaard }
 
-// Navigatie-opbouw: drie groepen zoals in v71 (Dagelijks / Assortiment & leren /
-// Beheer & inzicht). `p` = ook voor partner zichtbaar; anders alleen AM/kantoor.
+// Navigatie-opbouw: precies zoals v71 — elke rol z'n eigen indeling.
+//   - AM      : Werk / Hulpmiddel / Naslag           (v71 NAVGROUPS, r.691)
+//   - Partner : één groep "Partner"                  (v71 go(), r.2568)
+//   - Kantoor : "Kantoor" (+ "Meer" voor extra tools)(v71 go(), r.2560)
+// Alle bestaande (verbeterde) schermen blijven bereikbaar — v71-look, niets
+// weggegooid. `it.ic` verwijst naar een sleutel in ICONS. De rechten sturen bij
+// kantoor de zichtbaarheid; de echte grens blijft RLS.
 const isPartner = computed(() => auth.role === 'partner')
-const GROEPEN = computed(() => [
-  { groep: 'Dagelijks', items: [
-    { naam: 'home', label: 'Start', ic: 'dashboard' },
-    isPartner.value && { naam: 'mijnplan', label: 'Mijn plan', ic: 'omzet' },
-    !isPartner.value && { naam: 'vandaag', label: 'Vandaag', ic: 'vandaag' },
-    !isPartner.value && { naam: 'trajecten', label: 'Trajecten', ic: 'refresh' },
-    { naam: 'winkels', label: 'Winkels', ic: 'tappunten' },
-    { naam: 'agenda', label: 'Agenda', ic: 'agenda' },
-    !isPartner.value && { naam: 'bezoeken', label: 'Bezoeken', ic: 'bezoek' },
-    !isPartner.value && { naam: 'ritten', label: 'Ritten', ic: 'bezoek' },
-    { naam: 'berichten', label: 'Berichten', ic: 'inbox' },
-    { naam: 'acties', label: 'Acties', ic: 'spark' },
-    { naam: 'beloningen', label: 'Beloningen', ic: 'gift' },
-    auth.magGameBeheren && { naam: 'game', label: 'Game', ic: 'trofee' }
-  ].filter(Boolean) },
-  { groep: 'Assortiment & leren', items: [
-    { naam: 'producten', label: 'Producten', ic: 'vial' },
-    isPartner.value && { naam: 'bestellen', label: 'Bestellen', ic: 'bestellen' },
-    { naam: 'geuren', label: 'Geuren', ic: 'geur' },
-    { naam: 'merk', label: 'Merk & Assets', ic: 'merk' },
-    { naam: 'community', label: 'Community', ic: 'community' },
-    { naam: 'academy', label: 'Academy', ic: 'academy' },
-    { naam: 'kennisbank', label: 'Kennis', ic: 'kennis' },
-    !isPartner.value && { naam: 'proces', label: 'Proces', ic: 'proces' },
-    !isPartner.value && { naam: 'formulieren', label: 'Formulieren', ic: 'check' }
-  ].filter(Boolean) },
-  !isPartner.value && { groep: 'Sturing', items: [
-    { naam: 'bestellingen', label: 'Bestellingen', ic: 'bestellen' },
-    { naam: 'deals', label: 'Deals', ic: 'procent' },
-    { naam: 'taken', label: 'Taken', ic: 'check' },
-    { naam: 'calculator', label: 'Calculator', ic: 'calculator' },
-    auth.magAnalyse && { naam: 'analyse', label: 'Analyse', ic: 'omzet' },
-    auth.magTeam && { naam: 'team', label: 'Team', ic: 'users' },
-    auth.magBeheer && { naam: 'beheer', label: 'Beheer', ic: 'spark' }
-  ].filter(Boolean) }
-].filter(Boolean))
+const GROEPEN = computed(() => {
+  const r = auth.role
+  if (r === 'partner') return [
+    { groep: 'Partner', items: [
+      { naam: 'home', label: 'Dashboard', ic: 'dashboard' },
+      { naam: 'mijnplan', label: 'Mijn plan', ic: 'omzet' },
+      { naam: 'winkels', label: 'Mijn winkels', ic: 'tappunten' },
+      { naam: 'beloningen', label: 'Beloningen', ic: 'ster' },
+      { naam: 'geuren', label: 'Geurbibliotheek', ic: 'geur' },
+      { naam: 'academy', label: 'Academy', ic: 'academy' },
+      { naam: 'acties', label: 'Acties', ic: 'spark' },
+      { naam: 'bestellen', label: 'Bestellen', ic: 'bestellen' },
+      { naam: 'producten', label: 'Producten', ic: 'vial' },
+      { naam: 'merk', label: 'Merk & Assets', ic: 'merk' },
+      { naam: 'community', label: 'Community', ic: 'community' },
+      { naam: 'agenda', label: 'Agenda', ic: 'agenda' },
+      { naam: 'kennisbank', label: 'Kennisbank', ic: 'kennis' },
+      { naam: 'berichten', label: 'Feedback', ic: 'inbox' }
+    ] }
+  ]
+  if (r === 'kantoor') return [
+    { groep: 'Kantoor', items: [
+      { naam: 'home', label: 'Kantoor-cockpit', ic: 'dashboard' },
+      auth.magAnalyse && { naam: 'analyse', label: 'Analyse', ic: 'omzet' },
+      { naam: 'berichten', label: 'Vragen & taken', ic: 'inbox' },
+      auth.magActiesBeheren && { naam: 'acties', label: 'Acties & campagnes', ic: 'megafoon' },
+      auth.magGameBeheren && { naam: 'game', label: 'Sales Game', ic: 'trofee' },
+      auth.magProductenBeheren && { naam: 'producten', label: 'Nieuwe producten', ic: 'vial' },
+      auth.magTeam && { naam: 'team', label: 'Accountmanagers', ic: 'users' },
+      { naam: 'kennisbank', label: 'Kennisbank', ic: 'kennis' },
+      auth.magBeheer && { naam: 'beheer', label: 'Beheer', ic: 'gear' }
+    ].filter(Boolean) },
+    { groep: 'Meer', items: [
+      { naam: 'winkels', label: 'Mijn winkels', ic: 'tappunten' },
+      { naam: 'vandaag', label: 'Vandaag', ic: 'vandaag' },
+      { naam: 'trajecten', label: 'Trajecten', ic: 'refresh' },
+      { naam: 'agenda', label: 'Agenda', ic: 'agenda' },
+      { naam: 'bezoeken', label: 'Bezoeken', ic: 'bezoek' },
+      { naam: 'ritten', label: 'Ritten', ic: 'bezoek' },
+      { naam: 'bestellingen', label: 'Bestellingen', ic: 'bestellen' },
+      { naam: 'deals', label: 'Deals', ic: 'procent' },
+      { naam: 'taken', label: 'Taken', ic: 'check' },
+      { naam: 'calculator', label: 'Calculator', ic: 'calculator' },
+      { naam: 'beloningen', label: 'Beloningen', ic: 'gift' },
+      { naam: 'formulieren', label: 'Formulieren', ic: 'check' },
+      { naam: 'proces', label: 'Proces', ic: 'proces' },
+      { naam: 'geuren', label: 'Geuren', ic: 'geur' },
+      { naam: 'merk', label: 'Merk & Assets', ic: 'merk' },
+      { naam: 'academy', label: 'Academy', ic: 'academy' },
+      { naam: 'community', label: 'Community', ic: 'community' }
+    ] }
+  ]
+  // AM (standaard) — v71 Werk / Hulpmiddel / Naslag
+  return [
+    { groep: 'Werk', items: [
+      { naam: 'home', label: 'Cockpit', ic: 'dashboard' },
+      { naam: 'vandaag', label: 'Vandaag', ic: 'vandaag' },
+      { naam: 'winkels', label: 'Mijn winkels', ic: 'tappunten' },
+      { naam: 'trajecten', label: 'Trajecten', ic: 'refresh' },
+      { naam: 'agenda', label: 'Agenda', ic: 'agenda' },
+      { naam: 'berichten', label: 'Inbox', ic: 'inbox' },
+      { naam: 'acties', label: 'Acties', ic: 'megafoon' },
+      { naam: 'bezoeken', label: 'Bezoeken', ic: 'bezoek' },
+      { naam: 'bestellingen', label: 'Bestellingen', ic: 'bestellen' }
+    ] },
+    { groep: 'Hulpmiddel', items: [
+      { naam: 'calculator', label: 'Calculator', ic: 'calculator' },
+      { naam: 'bestellen', label: 'Pakketten', ic: 'bestellen' },
+      { naam: 'beloningen', label: 'Beloningen', ic: 'gift' },
+      { naam: 'deals', label: 'Deals', ic: 'procent' },
+      { naam: 'taken', label: 'Taken', ic: 'check' },
+      { naam: 'ritten', label: 'Ritten', ic: 'bezoek' },
+      { naam: 'formulieren', label: 'Formulieren', ic: 'check' },
+      auth.magAnalyse && { naam: 'analyse', label: 'Analyse', ic: 'omzet' },
+      auth.magTeam && { naam: 'team', label: 'Accountmanagers', ic: 'users' },
+      auth.magGameBeheren && { naam: 'game', label: 'Sales Game', ic: 'trofee' }
+    ].filter(Boolean) },
+    { groep: 'Naslag', items: [
+      { naam: 'proces', label: 'Proces', ic: 'proces' },
+      { naam: 'kennisbank', label: 'Kennisbank', ic: 'kennis' },
+      { naam: 'producten', label: 'Producten', ic: 'vial' },
+      { naam: 'geuren', label: 'Geuren', ic: 'geur' },
+      { naam: 'merk', label: 'Merk & Assets', ic: 'merk' },
+      { naam: 'academy', label: 'Academy', ic: 'academy' },
+      { naam: 'community', label: 'Community', ic: 'community' }
+    ] }
+  ]
+})
 
 const initialen = computed(() => {
   const e = (auth.user && auth.user.email) || ''
@@ -171,7 +240,7 @@ async function uitloggen() {
         <template v-for="g in GROEPEN" :key="g.groep">
           <div class="navgroup">{{ g.groep }}</div>
           <router-link v-for="it in g.items" :key="it.naam" :to="{ name: it.naam }"
-                       class="nav-a" active-class="on">
+                       class="nav-a" active-class="on" :data-test="'nav-' + it.naam">
             <span class="ic" v-html="ICONS[it.ic]"></span>{{ navLabel(it.naam, it.label) }}
             <span v-if="badges[it.naam]" class="bdg" :data-test="'bdg-' + it.naam">{{ badges[it.naam] }}</span>
           </router-link>

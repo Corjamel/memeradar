@@ -14,7 +14,7 @@ with sync_playwright() as p:
     pg.evaluate("""window.__DB.tappunten=[{snelstart:'kl-1',name:'Zwolle',email:null,geblokkeerd:false,am_id:'am-1',data:{snelstart:'kl-1',name:'Zwolle'}}];
       window.__MOCK.signin={data:{user:{id:'u-p',app_metadata:{}}},error:null};""")
     login(pg,"winkel@tp.nl")
-    pg.click('nav >> text=Geuren'); pg.wait_for_timeout(500)
+    pg.click('[data-test=nav-geuren]'); pg.wait_for_timeout(500)
     ck("14 geuren in de bibliotheek", pg.locator('[data-test=geur-kaart]').count()==14)
     ck("6 lijnfilters (Alle/Dames/Heren/Unisex/Exclusive/Niventi)", all(pg.locator(f'[data-test=lijn-{l}]').count()==1 for l in ['Alle','Dames','Heren','Unisex','Exclusive','Niventi']))
     pg.click('[data-test=lijn-Heren]'); pg.wait_for_timeout(300)

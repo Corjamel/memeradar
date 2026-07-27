@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(600)
     for k in ['acties','game','producten','team','analyse']:
         ck(f"rechten-vinkje '{k}' aanwezig", pg.locator(f'[data-test="recht-{k}-collega@tp.nl"]').count()==1)
-    ck("volwaardige beheerder ziet Game/Team/Analyse in nav", pg.locator('nav >> text=Game').count()==1 and pg.locator('nav >> text=Team').count()==1 and pg.locator('nav >> text=Analyse').count()==1)
+    ck("volwaardige beheerder ziet Game/Team/Analyse in nav", pg.locator('nav >> text=Game').count()==1 and pg.locator('[data-test=nav-team]').count()==1 and pg.locator('nav >> text=Analyse').count()==1)
 
     # 2) Beperkt kantoor-account (game/team/analyse=false) ziet ze NIET
     pg2=b.new_context().new_page(); pg2.on("pageerror",lambda e:errs.append(str(e)[:180]))
@@ -26,7 +26,7 @@ with sync_playwright() as p:
     login(pg2,"beperkt@tp.nl")
     pg2.wait_for_timeout(400)
     ck("beperkt account: Game verborgen", pg2.locator('nav >> text=Game').count()==0)
-    ck("beperkt account: Team verborgen", pg2.locator('nav >> text=Team').count()==0)
+    ck("beperkt account: Team verborgen", pg2.locator('[data-test=nav-team]').count()==0)
     ck("beperkt account: Analyse verborgen", pg2.locator('nav >> text=Analyse').count()==0)
     ck("beperkt account: Winkels blijft zichtbaar", pg2.locator('nav >> text=Winkels').count()==1)
     ck("geen pageerrors", len(errs)==0)

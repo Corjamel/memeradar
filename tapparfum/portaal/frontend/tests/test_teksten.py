@@ -15,7 +15,7 @@ with sync_playwright() as p:
 
     # standaard-nav-label + topbar
     pg.click('nav >> text=Winkels'); pg.wait_for_timeout(400)
-    ck("standaard topbar-titel Winkels", (pg.text_content('.tb-title') or '').strip()=='Winkels')
+    ck("standaard topbar-titel Mijn winkels", (pg.text_content('.tb-title') or '').strip()=='Mijn winkels')
 
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(400)
     pg.click('[data-test=tab-teksten]'); pg.wait_for_timeout(300)

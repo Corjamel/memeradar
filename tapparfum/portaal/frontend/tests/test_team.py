@@ -25,7 +25,7 @@ with sync_playwright() as p:
          data:{{snelstart:'kl-3',name:'Kampen',jaaromzet:8000,vorigJaar:6000,setup:{{skipped:true}}}}}}];
       window.__MOCK.signin={{data:{{user:{{id:'u-staff',email:'kantoor@tp.nl',app_metadata:{{role:'staff'}}}}}},error:null}};""")
     login(pg,"kantoor@tp.nl")
-    pg.click('nav >> text=Team'); pg.wait_for_timeout(600)
+    pg.click('[data-test=nav-team]'); pg.wait_for_timeout(600)
     ck("2 AM-blokken (Marian + Peter)", pg.locator('[data-test=team-am]').count()==2)
     ck("AM-score zichtbaar", pg.locator('[data-test=am-score]').count()>=1)
     ck("Marian-blok toont stagneert-badge (Deventer)", 'stagneert' in (pg.locator('[data-test=team-am]', has_text='Marian').text_content() or '').lower())

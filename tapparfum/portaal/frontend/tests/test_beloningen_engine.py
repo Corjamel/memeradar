@@ -57,7 +57,7 @@ with sync_playwright() as p:
     n1=pg.evaluate("window.__UPSERTS.filter(u=>u[0]==='tappunten').length")
     pg.evaluate("window.__DB.tappunten[0].data.beloond="+str(bel).replace("True","true"))  # alsof Supabase het bewaarde
     pg.evaluate("window.__DB.tappunten[0].data.vieringen=[]")
-    pg.click('nav >> text=Start'); pg.wait_for_timeout(300)
+    pg.click('[data-test=nav-home]'); pg.wait_for_timeout(300)
     pg.click('nav >> text=Winkels'); pg.wait_for_timeout(900)
     n2=pg.evaluate("window.__UPSERTS.filter(u=>u[0]==='tappunten').length")
     ck("eenmalig uitkeren: geen nieuwe upsert bij herbezoek", n1==n2)

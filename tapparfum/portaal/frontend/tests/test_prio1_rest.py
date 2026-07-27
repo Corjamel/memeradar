@@ -28,7 +28,7 @@ with sync_playwright() as p:
     ck("fase-kaart: opstartfase (1/19)", pg.locator('[data-test=fase-onboarding]').count()==1 and 'Nog 18' in (pg.text_content('[data-test=fase-onboarding]') or ''))
 
     # retour melden met bewijsfoto
-    pg.click('nav >> text=Berichten'); pg.wait_for_timeout(500)
+    pg.click('[data-test=nav-berichten]'); pg.wait_for_timeout(500)
     pg.select_option('[data-test=vraag-type]','retour'); pg.wait_for_timeout(200)
     ck("foto-veld verschijnt bij retour", pg.locator('[data-test=vraag-foto]').count()==1)
     pg.fill('[data-test=vraag-txt]','Fles lekt bij de dop, zie foto.')
@@ -89,8 +89,9 @@ with sync_playwright() as p:
     pg.evaluate("""window.__MOCK.signin={data:{user:{id:'u-staff2',email:'collega@retail-brands.nl',app_metadata:{role:'staff'}}},error:null};""")
     login(pg,"collega@retail-brands.nl")
     ck("kantoor-rol: GEEN Beheer-link", pg.locator('nav >> text=Beheer').count()==0)
-    pg.click('nav >> text=Acties'); pg.wait_for_timeout(500)
-    ck("kantoor-rol zonder acties-recht: geen actie-formulier", pg.locator('[data-test=actie-toevoegen]').count()==0)
+    # v71: zonder acties-recht is de "Acties & campagnes"-navlink verborgen (r.2561) —
+    # een verborgen link betekent dat het scherm (en dus het formulier) niet bereikbaar is.
+    ck("kantoor-rol zonder acties-recht: Acties-navlink verborgen", pg.locator('[data-test=nav-acties]').count()==0)
     pg.click('nav >> text=Producten'); pg.wait_for_timeout(500)
     ck("producten-recht staat aan: wel lanceer-formulier", pg.locator('[data-test=prod-opslaan]').count()==1)
 
