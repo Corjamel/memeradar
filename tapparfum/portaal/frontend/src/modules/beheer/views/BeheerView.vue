@@ -10,7 +10,7 @@ import {
   haalCentral, bewaarCentral, haalLog, log, anonimiseer
 } from '../api.js'
 import { STANDAARD_MATEN } from '../../kassa/api.js'
-import { parseTappuntCSV, rijNaarNieuwTappunt } from '../csv.js'
+import { parseRuwCSV, raadKoppeling, rijViaKoppeling, rijNaarTappuntGekoppeld, CSV_DOELVELDEN } from '../csv.js'
 import { BRAND_STD, applyBrand } from '../../../lib/brand.js'
 import { eur0 } from '../../../lib/format.js'
 import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels } from '../../rekenhart/logic.js'
@@ -207,43 +207,112 @@ async function blok(t) {
   } catch (e) { fout.value = 'Blokkeren mislukt: ' + e.message }
 }
 
-// ---- CSV-import van winkels -------------------------------------------
+// ---- CSV-import van winkels: bestand kiezen -> kolommen koppelen -> import
 const csvBezig = ref(false)
 const csvMelding = ref('')
 const csvFout = ref('')
-async function csvImporteer(ev) {
+const csvData = ref(null)              // { headers, rows } na het kiezen
+const csvNaam = ref('')                // bestandsnaam (voor het koppelscherm)
+const csvMap = reactive({})            // doelveld -> kolomindex (-1 = niet)
+const csvVasteAm = ref('')             // fallback: alles naar deze AM
+
+async function csvKies(ev) {
   csvMelding.value = ''; csvFout.value = ''
   const f = ev.target && ev.target.files && ev.target.files[0]
   if (!f) return
-  csvBezig.value = true
   try {
-    const tekst = await f.text()
-    const rows = parseTappuntCSV(tekst)
-    if (!rows.length) { csvFout.value = 'Geen bruikbare regels — een kolom "naam" (of tappunt/winkel) is verplicht.'; return }
+    const ruw = parseRuwCSV(await f.text())
+    if (!ruw) { csvFout.value = 'Geen bruikbare regels — het bestand heeft een kopregel en minstens één rij nodig.'; return }
+    csvData.value = ruw
+    csvNaam.value = f.name
+    const geraden = raadKoppeling(ruw.headers)
+    Object.keys(geraden).forEach(k => { csvMap[k] = geraden[k] })
+    csvVasteAm.value = ''
+  } catch (e) {
+    csvFout.value = 'Bestand lezen mislukt: ' + e.message
+  } finally {
+    if (ev.target) ev.target.value = ''    // zelfde bestand nogmaals kunnen kiezen
+  }
+}
+function csvAnnuleer() { csvData.value = null; csvNaam.value = '' }
+const csvPreview = computed(() => csvData.value ? csvData.value.rows.slice(0, 3) : [])
+// AM op naam vinden (case-insensitief, ook als de CSV alleen de voornaam heeft).
+function vindAm(naam) {
+  const n = String(naam || '').trim().toLowerCase()
+  if (!n) return null
+  return ams.value.find(a => String(a.naam).toLowerCase() === n)
+    || ams.value.find(a => String(a.naam).toLowerCase().indexOf(n) >= 0 || n.indexOf(String(a.naam).toLowerCase()) >= 0)
+    || null
+}
+
+async function csvVoerUit() {
+  if (!csvData.value || csvBezig.value) return
+  if (csvMap.name < 0) { csvFout.value = 'Koppel eerst de kolom voor de winkelnaam — die is verplicht.'; return }
+  csvBezig.value = true; csvMelding.value = ''; csvFout.value = ''
+  try {
     // Dubbele winkels overslaan op code of naam (case-insensitief).
     const codes = new Set(st.items.map(t => String(t.snelstart || '').toLowerCase()))
     const namen = new Set(st.items.map(t => String(t.name || '').toLowerCase()))
-    let ok = 0, dup = 0
-    for (const r of rows) {
+    let ok = 0, dup = 0, metAm = 0
+    for (const cellen of csvData.value.rows) {
+      const r = rijViaKoppeling(cellen, csvMap)
+      if (!r.name) continue
       const code = String(r.snelstart || '').toLowerCase()
       const naam = String(r.name || '').toLowerCase()
       if ((code && codes.has(code)) || namen.has(naam)) { dup++; continue }
-      const t = rijNaarNieuwTappunt(r)
-      await st.bewaar(t)                     // RLS: alleen kantoor mag schrijven
+      const t = rijNaarTappuntGekoppeld(r)
+      await st.bewaar(t)                   // RLS: alleen kantoor mag schrijven
+      // AM-koppeling: kolom uit het bestand wint; anders de vaste keuze.
+      const am = vindAm(r.amNaam) || (csvVasteAm.value ? ams.value.find(a => a.id === csvVasteAm.value) : null)
+      if (am) { await zetWinkelAm(t.snelstart, am.id); metAm++ }
       codes.add(String(t.snelstart).toLowerCase()); namen.add(naam)
       ok++
     }
     await st.laad()
-    if (ok) await log(wie(), `CSV-import: ${ok} winkels toegevoegd${dup ? `, ${dup} overgeslagen` : ''}`)
-    csvMelding.value = `✓ ${ok} winkel${ok === 1 ? '' : 's'} geïmporteerd${dup ? ` · ${dup} bestond al (overgeslagen)` : ''}.`
+    if (ok) await log(wie(), `CSV-import: ${ok} winkels toegevoegd${metAm ? `, ${metAm} aan een AM gekoppeld` : ''}${dup ? `, ${dup} overgeslagen` : ''}`)
+    csvMelding.value = `✓ ${ok} winkel${ok === 1 ? '' : 's'} geïmporteerd${metAm ? ` · ${metAm} gekoppeld aan een accountmanager` : ''}${dup ? ` · ${dup} bestond al (overgeslagen)` : ''}.`
     if (ok) toast.ok(`${ok} winkel${ok === 1 ? '' : 's'} geïmporteerd`)
+    csvAnnuleer()
   } catch (e) {
     csvFout.value = 'Import mislukt: ' + e.message
   } finally {
     csvBezig.value = false
-    if (ev.target) ev.target.value = ''      // zelfde bestand nogmaals kunnen kiezen
   }
 }
+
+// ---- Export: klantenbestand als CSV ------------------------------------
+function exporteerWinkels() {
+  const kol = ['naam', 'code', 'contact', 'email', 'tel', 'adres', 'postcode', 'plaats', 'land', 'type', 'accountmanager', 'jaaromzet', 'vorig jaar', 'laatste bezoek', 'geblokkeerd']
+  const naamVan = Object.fromEntries(ams.value.map(a => [a.id, a.naam]))
+  const esc = v => { const s = String(v == null ? '' : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s }
+  const regels = st.items.map(t => [
+    t.name, t.snelstart, t.contact || '', t.email || '', t.tel || '', t.adres || '', t.postcode || '',
+    t.plaats || '', t.land || '', t.type || '', naamVan[t.am_id] || '', t.jaaromzet || 0, t.vorigJaar || 0,
+    t.laatsteBezoek || '', t.geblokkeerd ? 'ja' : ''
+  ].map(esc).join(';'))
+  const blob = new Blob(['﻿' + kol.join(';') + '\n' + regels.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'tapparfum-winkels-' + new Date().toISOString().slice(0, 10) + '.csv'
+  a.click()
+  URL.revokeObjectURL(a.href)
+  log(wie(), `Klantenbestand geëxporteerd (${st.items.length} winkels)`).catch(() => {})
+}
+
+// ---- KPI-kop: het beheer in één oogopslag -------------------------------
+const kpis = computed(() => {
+  const zonderAm = st.items.filter(t => !t.am_id).length
+  const blokN = st.items.filter(t => t.geblokkeerd).length
+  const omzet = st.items.reduce((a, t) => a + (Number(t.jaaromzet) || 0), 0)
+  const gekoppeld = ams.value.filter(a => a.auth_user_id).length
+  return [
+    ['winkels', st.items.length],
+    ['jaaromzet (inkoop)', eur0(omzet)],
+    ['accountmanagers', `${ams.value.length}` + (ams.value.length ? ` (${gekoppeld} actief)` : '')],
+    ['zonder AM', zonderAm],
+    ['geblokkeerd', blokN]
+  ]
+})
 
 // ---- Regels-editor ----------------------------------------------------
 const wegingTotaal = computed(() => Object.values(regels.weging).reduce((a, v) => a + (Number(v) || 0), 0))
@@ -386,6 +455,13 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
     <p v-if="melding" class="ok" role="status">{{ melding }}</p>
 
+    <!-- KPI-kop: het netwerk in één oogopslag -->
+    <div class="kpis" data-test="beheer-kpis">
+      <div v-for="[lbl, val] in kpis" :key="lbl" class="kpi">
+        <b>{{ val }}</b><span>{{ lbl }}</span>
+      </div>
+    </div>
+
     <div class="tabs" role="tablist">
       <button v-for="[k, lbl] in TABS" :key="k" type="button" role="tab"
               :class="{ aan: tab === k }" :aria-selected="tab === k"
@@ -471,16 +547,58 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
         <p v-if="!st.items.length" class="stil">Nog geen winkels.</p>
       </div>
 
-      <!-- CSV-import: klantenbestand in één keer binnenhalen (v71) -->
+      <!-- CSV-import met kolomkoppeling: bestand kiezen -> koppelen -> import -->
       <div class="kaart">
         <h2>📥 Winkels importeren (CSV)</h2>
-        <p class="note">Eén bestand met een kolom <b>naam</b> (of tappunt/winkel). Optioneel: snelstart/code, tel, e-mail, contact, adres, postcode, plaats, land, type, laatste bezoek. Scheidingsteken <b>;</b> of <b>,</b>. Bestaande winkels (zelfde code of naam) worden overgeslagen — nooit gedupliceerd.</p>
-        <label class="csvknop" :class="{ bezig: csvBezig }">
-          {{ csvBezig ? 'Bezig met importeren…' : '📄 Kies een CSV-bestand' }}
-          <input type="file" accept=".csv,text/csv" data-test="csv-input" :disabled="csvBezig" @change="csvImporteer" />
-        </label>
+        <template v-if="!csvData">
+          <p class="note">Kies je klantenbestand (Excel: opslaan als CSV). Daarna koppel je zelf de kolommen aan de juiste velden — het maakt dus niet uit hoe de kolommen in jouw bestand heten. Bestaande winkels (zelfde code of naam) worden overgeslagen, nooit gedupliceerd.</p>
+          <label class="csvknop" :class="{ bezig: csvBezig }">
+            📄 Kies een CSV-bestand
+            <input type="file" accept=".csv,text/csv" data-test="csv-input" :disabled="csvBezig" @change="csvKies" />
+          </label>
+        </template>
+
+        <template v-else>
+          <p class="note" data-test="csv-koppel"><b>{{ csvNaam }}</b> · {{ csvData.rows.length }} rijen gevonden.
+            Koppel hieronder de kolommen — ik heb ze alvast zo goed mogelijk herkend. Alleen de <b>winkelnaam</b> is verplicht.</p>
+          <div class="koppels">
+            <label v-for="[veld, lbl, verplicht] in CSV_DOELVELDEN" :key="veld" class="koppel">
+              <span>{{ lbl }}<b v-if="verplicht" class="ster">*</b></span>
+              <select v-model.number="csvMap[veld]" :data-test="'csv-map-' + veld">
+                <option :value="-1">— niet importeren —</option>
+                <option v-for="(h, i) in csvData.headers" :key="i" :value="i">{{ h || ('kolom ' + (i + 1)) }}</option>
+              </select>
+            </label>
+          </div>
+          <label class="koppel vast">
+            <span>Geen AM-kolom? Wijs alles toe aan</span>
+            <select v-model="csvVasteAm" data-test="csv-vaste-am">
+              <option value="">— geen accountmanager —</option>
+              <option v-for="a in ams" :key="a.id" :value="a.id">{{ a.naam }}</option>
+            </select>
+          </label>
+          <div class="tabelwrap">
+            <table class="preview">
+              <thead><tr><th v-for="(h, i) in csvData.headers" :key="i">{{ h || 'kolom ' + (i + 1) }}</th></tr></thead>
+              <tbody><tr v-for="(r, ri) in csvPreview" :key="ri"><td v-for="(c, ci) in r" :key="ci">{{ c }}</td></tr></tbody>
+            </table>
+          </div>
+          <div class="knoppenrij">
+            <button class="knop" type="button" :disabled="csvBezig" data-test="csv-import-uitvoeren" @click="csvVoerUit">
+              {{ csvBezig ? 'Bezig met importeren…' : `✓ Importeer ${csvData.rows.length} rijen` }}
+            </button>
+            <button class="klein" type="button" :disabled="csvBezig" data-test="csv-annuleer" @click="csvAnnuleer">Annuleren</button>
+          </div>
+        </template>
         <p v-if="csvMelding" class="ok" role="status" data-test="csv-melding">{{ csvMelding }}</p>
         <p v-if="csvFout" class="fout" role="alert" data-test="csv-fout">{{ csvFout }}</p>
+      </div>
+
+      <!-- Export: het hele klantenbestand als CSV (back-up of Excel-analyse) -->
+      <div class="kaart">
+        <h2>📤 Winkels exporteren (CSV)</h2>
+        <p class="note">Alle winkels met contactgegevens, accountmanager en omzet — voor een back-up of om in Excel verder te werken.</p>
+        <button class="knop" type="button" data-test="csv-export" @click="exporteerWinkels">⬇ Download klantenbestand ({{ st.items.length }})</button>
       </div>
     </template>
 
@@ -701,6 +819,22 @@ input:focus,select:focus{border-color:var(--coral)}
 .fout{color:#b3261e}
 .ok{color:#2c5a12;background:#f4faf0;border-radius:8px;padding:8px 10px;font-size:13.5px}
 .stil{color:var(--grey);font-size:13px}
+/* KPI-kop */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.kpi b{display:block;font-size:17px}
+.kpi span{color:var(--grey);font-size:11.5px}
+/* CSV-koppelscherm */
+.koppels{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 14px;margin:10px 0}
+.koppel{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:700;color:var(--grey)}
+.koppel select{flex-shrink:0;max-width:150px;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-family:inherit}
+.koppel.vast{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:10px;max-width:440px}
+.ster{color:var(--coral-d)}
+.tabelwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.preview{border-collapse:collapse;font-size:12px;min-width:100%}
+.preview th{background:var(--cream);text-align:left;padding:6px 10px;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.preview td{padding:5px 10px;border-top:1px solid var(--line);white-space:nowrap}
+.knoppenrij{display:flex;align-items:center;gap:10px}
 .csvknop{display:inline-block;background:var(--coral);color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:10px 16px;cursor:pointer}
 .csvknop:hover{background:var(--coral-d)}
 .csvknop.bezig{opacity:.6;pointer-events:none}
