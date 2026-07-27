@@ -24,6 +24,7 @@ with sync_playwright() as p:
     ck("trofeeen-strip: 5 spaarcadeaus", pg.locator('[data-test=trofeeen] .trof').count()==5)
     ck("spotlight geur van de week (TN056)", pg.locator('[data-test=spotlight]').count()==1 and 'TN056' in (pg.text_content('[data-test=spotlight]') or ''))
     ck("USP-blok: 4 kaarten", pg.locator('[data-test=usps] .usp').count()==4)
+    ck("merkstrip met campagnebeeld", pg.locator('[data-test=merkstrip] img').count()==1)
     # berichtenkaart met 4 knoppen (vraag/bezoek/probleem/retour)
     ck("berichtenkaart met 4 soorten", pg.locator('[data-test=berichtkaart]').count()==1 and pg.locator('[data-test^=ber-soort-]').count()==4)
     # bezoek aanvragen (datum)

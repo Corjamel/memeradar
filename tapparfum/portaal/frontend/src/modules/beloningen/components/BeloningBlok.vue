@@ -171,6 +171,7 @@ watch(() => props.tappunt, keurUit)
     <div class="cadeaus">
       <div v-for="k in kaarten" :key="k.rw.key" class="cadeau"
            :class="{ unlocked: k.unlocked, next: k.rw.key === volgendeKey }" :data-test="'rew-' + k.rw.key">
+        <img v-if="k.rw.foto" class="cfoto" :src="k.rw.foto" :alt="k.rw.r" loading="lazy" :data-test="'rew-foto-' + k.rw.key">
         <div class="ckop">
           <span class="ic" aria-hidden="true">{{ k.rw.ic }}</span>
           <span class="chip">{{ k.rw.chip }}</span>
@@ -240,7 +241,9 @@ h2{margin:0;font-size:16px;flex:1}
 .vul{height:100%;background:var(--coral)}
 .viering{background:var(--green-soft);border:1px solid #bcd9a0;color:#2c5a12;border-radius:12px;padding:10px 14px;margin-top:12px;font-size:13.5px}
 .cadeaus{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:14px}
-.cadeau{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.cadeau{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:#fff;overflow:hidden}
+/* Productfoto van het cadeau — bovenaan de kaart, van rand tot rand */
+.cfoto{width:calc(100% + 28px);margin:-14px -14px 0;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--cream)}
 .cadeau.next{border-color:var(--coral);box-shadow:0 0 0 3px var(--soft)}
 .cadeau.unlocked{border-color:#bcd9a0;background:linear-gradient(180deg,#fbfdf8,#fff)}
 .ckop{display:flex;align-items:center;gap:8px}

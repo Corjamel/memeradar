@@ -1,9 +1,11 @@
 <script setup>
-// Merk & Assets (v71 VIEWS.merk) — de merkwereld, de downloadbare materialen en
-// de korte merkregels. Downloads komen zodra de portal online staat (net als v71,
-// dat toont daar een toast).
+// Merk & Assets (v71 VIEWS.merk) — bewust geordend in twee lagen:
+//   1. HET CONCEPT  — merkvideo's die vertellen waar TapParfum voor staat
+//      (hervullen, geurbeleving, de winkelvloer), plus de merkwereld-tegels.
+//   2. DE PRODUCTEN — kale productfotografie uit de sell-sheets, met download.
+// Daaronder de downloadbare materialen en de korte merkregels (v71).
 import { ref } from 'vue'
-import { MERKWERELD, MERK_ASSETS, MERKREGELS } from '../data.js'
+import { MERKWERELD, MERK_ASSETS, MERKREGELS, CONCEPT_VIDEOS, PRODUCT_FOTOS } from '../data.js'
 const melding = ref('')
 function download() {
   melding.value = 'Download volgt zodra de portal online staat.'
@@ -16,12 +18,39 @@ function download() {
     <h1>🎨 Merk &amp; Assets</h1>
     <p class="sub">Officiële logo’s, kleuren en materialen — alles om TapParfum consistent neer te zetten.</p>
 
+    <!-- Laag 1: het concept — de beleving, niet het artikel -->
+    <div class="blk-t">Het concept — dit is TapParfum</div>
+    <p class="uitleg">Video's die het verhaal vertellen: hervullen in plaats van weggooien, geur als beleving en de sfeer op de winkelvloer. Gebruik ze op je socials of laat ze in de winkel zien.</p>
+    <div class="concept">
+      <figure v-for="v in CONCEPT_VIDEOS" :key="v.src" class="vcard" data-test="concept-video">
+        <video :src="v.src" controls preload="metadata" playsinline></video>
+        <figcaption>
+          <div class="mlab">{{ v.t }}<small>{{ v.cat }}</small></div>
+          <p class="vsub">{{ v.sub }}</p>
+          <a class="btn ghost dl" :href="v.src" download>Download</a>
+        </figcaption>
+      </figure>
+    </div>
+
     <div class="blk-t">De merkwereld van TapParfum</div>
     <div class="wereld">
       <div v-for="m in MERKWERELD" :key="m.t" class="mcard" :style="{ background: m.bg }" data-test="merkwereld-kaart">
         <span class="mic">{{ m.ic }}</span>
         <div class="mlab">{{ m.t }}<small>{{ m.cat }}</small></div>
       </div>
+    </div>
+
+    <!-- Laag 2: de producten — gewoon het artikel laten zien -->
+    <div class="blk-t">De producten in beeld</div>
+    <p class="uitleg">Officiële productfotografie uit de sell-sheets — voor je eigen posts, schapkaartjes of etalage. Klik op Download voor het originele bestand.</p>
+    <div class="prods">
+      <figure v-for="p in PRODUCT_FOTOS" :key="p.src" class="pcard" data-test="merk-product">
+        <img :src="p.src" :alt="p.t" loading="lazy">
+        <figcaption>
+          <div class="mlab">{{ p.t }}<small>{{ p.sub }}</small></div>
+          <a class="btn ghost dl" :href="p.src" download>Download</a>
+        </figcaption>
+      </figure>
     </div>
 
     <div class="blk-t">Materialen</div>
@@ -48,6 +77,24 @@ function download() {
 h1{margin:0 0 4px;font-size:22px}
 .sub{color:var(--grey);margin:0 0 16px;font-size:13.5px}
 .blk-t{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--coral-d);margin:18px 0 10px}
+.uitleg{color:var(--grey);font-size:12.5px;margin:-4px 0 12px;line-height:1.5}
+/* Concept: staande merkvideo's (9:16) in een rustige rij */
+.concept{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.concept{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.concept{grid-template-columns:1fr}}
+.vcard{margin:0;background:#fff;border:1px solid var(--line);display:flex;flex-direction:column}
+.vcard video{width:100%;aspect-ratio:9/16;max-height:360px;object-fit:cover;background:#1c1512;display:block}
+.vcard figcaption{padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.vsub{margin:0;color:var(--grey);font-size:12px;line-height:1.45;flex:1}
+/* Producten: kale productfoto's, beeld eerst */
+.prods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.prods{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.prods{grid-template-columns:1fr}}
+.pcard{margin:0;background:#fff;border:1px solid var(--line);display:flex;flex-direction:column}
+.pcard img{width:100%;aspect-ratio:5/7;object-fit:cover;display:block;background:var(--cream)}
+.pcard figcaption{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dl{align-self:flex-start;text-decoration:none;display:inline-block}
+.pcard .dl{align-self:center;flex-shrink:0}
 .wereld{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 @media(max-width:760px){.wereld{grid-template-columns:repeat(2,1fr)}}
 .mcard{border:1px solid var(--line);padding:16px;min-height:104px;display:flex;flex-direction:column;justify-content:space-between}

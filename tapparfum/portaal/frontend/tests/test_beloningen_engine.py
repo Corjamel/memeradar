@@ -65,6 +65,7 @@ with sync_playwright() as p:
     # Beloningen-pagina partner: eigen engine, geen winkellijst
     pg.click('nav >> text=Beloningen'); pg.wait_for_timeout(700)
     ck("beloningen-pagina: 5 spaarcadeaus", all(pg.locator(f'[data-test=rew-{k}]').count()==1 for k in ['vials','home','kaarsen','bodymist','promodag']))
+    ck("productfoto op bodymist/vials/promodag-kaart", all(pg.locator(f'[data-test=rew-foto-{k}]').count()==1 for k in ['bodymist','vials','promodag']))
     ck("beloningen-pagina: geen winkel-overzicht voor partner", pg.locator('[data-test=winkel-niveau]').count()==0)
     uitloggen(pg)
 

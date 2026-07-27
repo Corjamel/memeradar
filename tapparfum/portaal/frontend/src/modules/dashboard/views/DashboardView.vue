@@ -502,6 +502,16 @@ const meterLabel = computed(() => {
     <!-- Partner: documenten -->
     <DocumentenBlok v-if="alsPartner && eigen" :snelstart="eigen.snelstart" />
 
+    <!-- Partner: merkstrip — écht campagnebeeld + de kern van het concept -->
+    <router-link v-if="alsPartner && eigen" class="merkstrip" :to="{ name: 'merk' }" data-test="merkstrip">
+      <img src="/assets/bodymist.jpg" alt="TapParfum campagnebeeld" loading="lazy">
+      <div class="mstxt">
+        <span class="mslbl">De merkwereld</span>
+        <b>Verkoop de beleving, niet het flesje</b>
+        <span class="mssub">Video's, productfoto's en materialen voor je winkel en socials →</span>
+      </div>
+    </router-link>
+
     <!-- Partner: geur van de week -->
     <div v-if="alsPartner && eigen" class="kaart spotlight" data-test="spotlight">
       <div class="spkop"><span class="splbl">Geur van de week</span><b>{{ SPOTLIGHT.code }}</b></div>
@@ -598,6 +608,15 @@ h2{margin:0 0 10px;font-size:15px}
 .link-knop{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:9px 15px;font-weight:800;cursor:pointer;font-size:13px}
 .link-knop:disabled{opacity:.5}
 .spotlight{border-left:4px solid var(--coral)}
+/* Merkstrip: campagnebeeld + concept-boodschap, klikt door naar Merk & Assets */
+.merkstrip{display:flex;align-items:stretch;gap:0;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:14px;text-decoration:none;color:inherit}
+.merkstrip:hover{border-color:var(--coral)}
+.merkstrip img{width:180px;min-height:112px;object-fit:cover;object-position:center 30%;flex-shrink:0;background:var(--cream)}
+@media(max-width:560px){.merkstrip img{width:110px}}
+.mstxt{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:14px 18px}
+.mslbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--coral-d)}
+.mstxt b{font-size:15px}
+.mssub{color:var(--grey);font-size:12.5px}
 .spkop{display:flex;align-items:baseline;gap:10px}
 .splbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--coral-d)}
 .spkop b{font-size:18px}

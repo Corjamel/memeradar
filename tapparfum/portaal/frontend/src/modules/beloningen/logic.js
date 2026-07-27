@@ -77,12 +77,14 @@ export const EIS = {
   })
 }
 
+/* foto: échte productfotografie uit de sell-sheets (public/assets/) — laat
+   zien wat je wint. Kaarsen en homegeuren volgen zodra kantoor die aanlevert. */
 export const REWARDS = [
-  { key: 'vials', r: 'Gratis promopakket: 200 vials + 2 topgeuren', ic: '🧪', chip: '70 basispunten', sub: 'Álle basispunten binnen — de perfecte winkel.', eisen: [EIS.basis(BASIS_MAX)], cursus: 'onboarding' },
+  { key: 'vials', r: 'Gratis promopakket: 200 vials + 2 topgeuren', ic: '🧪', chip: '70 basispunten', sub: 'Álle basispunten binnen — de perfecte winkel.', eisen: [EIS.basis(BASIS_MAX)], cursus: 'onboarding', foto: '/assets/giftset-30ml-3vials.jpg' },
   { key: 'home', r: 'Gratis promopakket homegeuren', ic: '🏠', chip: '€5.000 + groei', sub: 'Je eerste grote mijlpaal — verkoop de beleving en laat de omzet het bewijzen.', eisen: [EIS.omzetMin(5000), EIS.groei50()], cursus: 'tapbar' },
   { key: 'kaarsen', r: 'Gratis promopakket kaarsen', ic: '🕯️', chip: '€10.000 + groei', sub: 'Bovengemiddeld draaien én blijven groeien.', eisen: [EIS.omzetMin(10000), EIS.groei50()], cursus: 'funnel' },
-  { key: 'bodymist', r: 'Gratis promopakket bodymist', ic: '💨', chip: '€15.000 + groei', sub: 'Voor de winkels die het concept écht laten werken.', eisen: [EIS.omzetMin(15000), EIS.groei50()], cursus: 'aanspreken' },
-  { key: 'promodag', r: 'Gratis promotiedag (t.w.v. €500)', ic: '📣', chip: '105 totaalpunten', sub: 'Voor de meest actieve tappunten.', eisen: [EIS.totaal(105)], cursus: 'alle' }
+  { key: 'bodymist', r: 'Gratis promopakket bodymist', ic: '💨', chip: '€15.000 + groei', sub: 'Voor de winkels die het concept écht laten werken.', eisen: [EIS.omzetMin(15000), EIS.groei50()], cursus: 'aanspreken', foto: '/assets/bodymist.jpg' },
+  { key: 'promodag', r: 'Gratis promotiedag (t.w.v. €500)', ic: '📣', chip: '105 totaalpunten', sub: 'Voor de meest actieve tappunten.', eisen: [EIS.totaal(105)], cursus: 'alle', foto: '/assets/giftset-algemeen.jpg' }
 ]
 
 export const inTraject = (t) => !t || t.traject !== false

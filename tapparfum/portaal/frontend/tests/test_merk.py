@@ -16,6 +16,12 @@ with sync_playwright() as p:
     pg.click('nav >> text=Merk & Assets'); pg.wait_for_timeout(500)
     ck("merkwereld: 8 kaarten", pg.locator('[data-test=merkwereld-kaart]').count()==8)
     ck("materialen: 4 assets", pg.locator('[data-test=merk-asset]').count()==4)
+    # Beeldlaag: concept (video's) vs product (foto's) — echte assets meegebundeld
+    ck("concept: 6 merkvideo's", pg.locator('[data-test=concept-video] video').count()==6)
+    ck("producten: 5 foto's", pg.locator('[data-test=merk-product] img').count()==5)
+    ck("productfoto laadt echt", pg.evaluate("fetch('/assets/bodymist.jpg').then(r=>r.ok)"))
+    ck("conceptvideo bestaat echt", pg.evaluate("fetch('/assets/video/refill.mp4',{method:'HEAD'}).then(r=>r.ok)"))
+    ck("download-links op producten", pg.locator('[data-test=merk-product] a[download]').count()==5)
     ck("brandbook aanwezig", 'Brandbook 2026' in (pg.text_content('body') or ''))
     ck("merkregels-tekst aanwezig", 'nooit onder de adviesprijs' in (pg.text_content('body') or ''))
     pg.locator('[data-test=merk-asset] button').first.click(); pg.wait_for_timeout(200)
