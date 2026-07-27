@@ -466,6 +466,15 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
       </div>
     </div>
 
+    <!-- Beveiligingsstatus — eerlijk overzicht (v71). Anders dan v71 (dat een
+         schermslot op het apparaat was) is de beveiliging hier écht: Supabase
+         Row Level Security dwingt op de server af wie welke rij ziet/wijzigt. -->
+    <div class="veiligblok" data-test="beheer-veilig">
+      <div class="vh"><Icoon naam="slot" /> Beveiligingsstatus — eerlijk overzicht</div>
+      <p><b>Echt beveiligd (server, niet weg te klikken):</b> Postgres Row Level Security bepaalt per rij wie leest en schrijft — een AM ziet alleen zijn eigen winkels, een partner alleen zijn eigen winkel, kantoor alles. Wachtwoorden staan versleuteld bij Supabase Auth; wachtwoord-reset loopt via e-mail. Beschermde velden (geblokkeerd · snelstart · am_id · auth_user_id) zijn voor niet-staff nooit te wijzigen.</p>
+      <p class="mo"><b>Dit paneel is de bediening, niet de grens:</b> wat je hier ziet stuurt de UX; de echte grens ligt bij RLS. Deel nooit de service-role-sleutel — die omzeilt RLS. Zet het Supabase-project op <b>je eigen account</b>, dan raak je dit nooit kwijt.</p>
+    </div>
+
     <div class="tabs" role="tablist">
       <button v-for="[k, lbl, ic] in TABS" :key="k" type="button" role="tab"
               :class="{ aan: tab === k }" :aria-selected="tab === k"
@@ -828,6 +837,14 @@ input:focus,select:focus{border-color:var(--coral)}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 .kpi b{display:block;font-size:17px}
 .kpi span{color:var(--grey);font-size:11.5px}
+/* Beveiligingsstatus — eerlijk overzicht (v71), amber-accent links */
+.veiligblok{background:#fff;border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:12px;padding:12px 16px;margin-bottom:14px}
+.veiligblok .vh{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;color:var(--amber);margin-bottom:6px}
+.veiligblok .vh :deep(svg){width:16px;height:16px}
+.veiligblok p{margin:0 0 6px;font-size:12.5px;line-height:1.55;color:var(--ink)}
+.veiligblok p:last-child{margin-bottom:0}
+.veiligblok p.mo{color:var(--grey)}
+.veiligblok b{color:var(--ink)}
 /* CSV-koppelscherm */
 .koppels{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 14px;margin:10px 0}
 .koppel{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:700;color:var(--grey)}
