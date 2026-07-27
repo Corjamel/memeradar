@@ -71,11 +71,15 @@ onMounted(async () => {
 })
 
 function info(t) {
+  const jo = jaaromzet(t)
+  const L = levelOf(jo, marge.value)
+  // Voortgang binnen het huidige niveau, richting de volgende drempel.
+  let pct = 100
+  if (L.nextMin) pct = Math.max(0, Math.min(100, Math.round((jo * marge.value - L.min) / (L.nextMin - L.min) * 100)))
   return {
     status: statusKey(t, marge.value),
-    lv: levelOf(jaaromzet(t), marge.value).k,
-    jo: jaaromzet(t),
-    g: omzetGroei(t)
+    lv: L.k, next: L.next || null, gap: L.gap || 0, pct,
+    jo, g: omzetGroei(t)
   }
 }
 function nextStep(t) {
@@ -126,12 +130,15 @@ function open(t) { router.push({ name: 'winkel', params: { code: t.snelstart } }
 
 <template>
   <div>
-    <div class="kop">
-      <h1>Winkels</h1>
+    <header class="held">
+      <div class="heldtxt">
+        <p class="eyebrow">{{ auth.isKantoor ? 'Het hele netwerk' : 'Jouw portefeuille' }}</p>
+        <h1>Winkels</h1>
+      </div>
       <input v-model="zoek" class="zoek" type="search" placeholder="Zoek op naam, code of plaats…" data-test="winkel-zoek" />
       <button v-if="!auth.isPartner" class="nieuwknop" type="button" data-test="winkel-nieuw-knop"
               @click="nieuwOpen = !nieuwOpen">{{ nieuwOpen ? '× Sluiten' : '+ Nieuwe winkel' }}</button>
-    </div>
+    </header>
 
     <!-- Nieuwe winkel (kantoor + AM). Een AM voegt toe in zijn eigen portefeuille. -->
     <form v-if="!auth.isPartner && nieuwOpen" class="nieuwvorm" data-test="winkel-nieuw-vorm" @submit.prevent="winkelToevoegen">
@@ -167,7 +174,8 @@ function open(t) { router.push({ name: 'winkel', params: { code: t.snelstart } }
       <!-- Gegroepeerd op status -->
       <section v-for="g in perStatus" :key="g.k" class="groep">
         <h2 :data-test="'groep-' + g.k"><span class="stip" :style="{ background: STATUS[g.k].bg }"></span>{{ g.lbl }} <span class="mo">· {{ g.items.length }}</span></h2>
-        <button v-for="t in g.items" :key="t.snelstart" class="kaart" data-test="tappunt-rij" @click="open(t)">
+        <button v-for="t in g.items" :key="t.snelstart" class="kaart" data-test="tappunt-rij"
+                :style="{ borderLeft: '4px solid ' + STATUS[info(t).status].bg }" @click="open(t)">
           <span class="niveau">{{ info(t).lv }}</span>
           <div class="mid">
             <div class="rij1"><b class="nm">{{ t.name }}</b>
@@ -177,6 +185,10 @@ function open(t) { router.push({ name: 'winkel', params: { code: t.snelstart } }
             <div class="rij2 mo">{{ t.snelstart }}<template v-if="t.plaats"> · {{ t.plaats }}</template> · {{ eur0(info(t).jo) }}<template v-if="info(t).g != null"> · groei <b class="coral">{{ groeiTxt(info(t).g) }}</b></template></div>
             <div class="ns">→ {{ nextStep(t) }}</div>
           </div>
+          <div class="lvlkol" aria-hidden="true">
+            <div class="lvlbalk"><i :style="{ width: info(t).pct + '%' }"></i></div>
+            <span class="lvltxt">{{ info(t).next ? 'nog ' + eur0(info(t).gap) + ' → ' + info(t).next : '🏆 hoogste niveau' }}</span>
+          </div>
         </button>
       </section>
     </template>
@@ -184,7 +196,9 @@ function open(t) { router.push({ name: 'winkel', params: { code: t.snelstart } }
 </template>
 
 <style scoped>
-.kop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.held{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(120deg,var(--soft),#fff 70%);border:1px solid var(--line);border-radius:18px;padding:16px 20px;margin-bottom:14px}
+.heldtxt{margin-right:auto}
+.eyebrow{margin:0 0 2px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--coral-d)}
 .nieuwknop{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:9px 15px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap}
 .nieuwknop:hover{background:var(--coral-d)}
 .nieuwvorm{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
@@ -221,6 +235,12 @@ h2{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter
 .mo{color:var(--grey);font-size:12.5px}
 .coral{color:var(--coral)}
 .ns{margin-top:3px;font-size:12px;color:var(--coral-d);font-weight:600}
+/* Niveau-voortgang rechts op de kaart */
+.lvlkol{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;width:150px}
+@media(max-width:640px){.lvlkol{display:none}}
+.lvlbalk{width:100%;height:7px;border-radius:6px;background:#f0ebe3;overflow:hidden}
+.lvlbalk i{display:block;height:100%;background:linear-gradient(90deg,var(--peach),var(--coral))}
+.lvltxt{font-size:10.5px;color:var(--grey);font-weight:700;white-space:nowrap}
 .fout{color:#b3261e}
 .stil{color:var(--grey)}
 </style>

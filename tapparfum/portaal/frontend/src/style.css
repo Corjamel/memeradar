@@ -71,6 +71,52 @@ input[type=month], input[type=number], input[type=search], textarea, select {
   font-weight: 800;
 }
 
+/* ------------------------------------------------------------------
+   Diepte & leven — de visuele lat van de Calculator, portaal-breed.
+   Alleen eigenschappen die de modulecomponenten zelf NIET zetten
+   (schaduw, beweging, kop-typografie), zodat niets lokaal breekt.
+   ------------------------------------------------------------------ */
+
+/* Koppen dragen het display-lettertype (v71: Gravesend Sans / Jost). */
+h1 { font-family: var(--font-display); font-weight: 600; letter-spacing: .3px; }
+
+/* Kaarten en tegels krijgen een warme, zachte schaduw. */
+.kaart, .blok, .card, .paneel, .tegel, .kpi, .pstat,
+.cursus, .cadeau, .gcard, .asset, .pcard, .vcard, .usp, .merkstrip {
+  box-shadow: 0 1px 2px rgba(42, 33, 28, .03), 0 8px 22px -14px rgba(42, 33, 28, .18);
+}
+
+/* Klikbare kaarten komen bij hover iets omhoog. */
+button.kaart, a.kaart, .kaart.klik, .tegel.klik, .merkstrip, .trof, .cursus, .mcard {
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+}
+button.kaart:hover, a.kaart:hover, .kaart.klik:hover, .tegel.klik:hover, .merkstrip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(42, 33, 28, .04), 0 14px 30px -14px rgba(42, 33, 28, .26);
+}
+
+/* Knoppen: subtiele lift + koraalgloed bij hover. */
+.btn, .knop, .nieuwknop, .csvknop, .klaar {
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
+}
+.btn:hover, .knop:hover, .nieuwknop:hover, .csvknop:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -6px rgba(238, 100, 77, .55);
+}
+.btn:active, .knop:active { transform: translateY(0); box-shadow: none; }
+
+/* Invoer: zachte koraal-gloed bij focus (bovenop de lokale randkleur). */
+input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px var(--soft); }
+
+/* Filterchips en tabs bewegen mee. */
+.chip, .tabs button, .seg button { transition: background .12s ease, color .12s ease, border-color .12s ease; }
+
+/* Rustige, warme schuifbalk. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 5px; border: 2px solid var(--pagebg); }
+::-webkit-scrollbar-thumb:hover { background: var(--peach); }
+::-webkit-scrollbar-track { background: transparent; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
