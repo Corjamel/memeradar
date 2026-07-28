@@ -70,6 +70,7 @@ async function vastleggen() {
 
 <template>
   <div>
+    <p class="eyebrow">Hulpmiddel</p>
     <h1>Calculator</h1>
     <p class="sub">Twee hulpmiddelen voor het verkoopgesprek. We rekenen altijd met de omzet excl. btw per fles.</p>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
@@ -119,6 +120,11 @@ async function vastleggen() {
 
         <!-- Rechts: het verhaal -->
         <div class="kaart" data-test="res-terug">
+          <div class="rzu"><span class="rzu-ic" aria-hidden="true"></span><b>Reken het zelf uit</b></div>
+          <div class="herostat" data-test="calc-hero">
+            <b>{{ weken }}<small>{{ weken === 1 ? ' week' : ' weken' }}</small></b>
+            <span>Terugverdiend na — bij {{ be.perWk }} flessen per week</span>
+          </div>
           <p class="story">Het tappunt investeert <b>{{ eur0(be.inv) }}</b>. De voorraad is daarmee al betaald, dus elke verkochte fles ({{ lijnLabel }}) brengt <b>{{ eur(be.rev) }}</b> omzet (excl. btw) binnen. Na <b>{{ be.bottles.toLocaleString('nl-NL') }} flessen</b> is de investering terugverdiend — bij <b>{{ be.perWk }} flessen per week</b> is dat na <b>{{ weken }} {{ weken === 1 ? 'week' : 'weken' }}</b> (≈ {{ be.days }} dagen / {{ maanden }} maanden).</p>
           <div class="calckpis">
             <div class="ckpi"><b>{{ eur0(be.inv) }}</b><span>Investering</span></div>
@@ -217,6 +223,13 @@ async function vastleggen() {
 <style scoped>
 h1{margin:0 0 4px;font-size:22px}
 .sub{color:var(--grey);margin:0 0 14px;font-size:13.5px}
+/* Landingspagina-band + hero-stat (zoals "Reken het zelf uit" met "8 weken") */
+.rzu{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;margin-bottom:12px}
+.rzu-ic{width:22px;height:22px;border-radius:7px;background:var(--coral);flex-shrink:0}
+.herostat{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.herostat b{display:block;font-family:var(--font-display);font-weight:600;font-size:40px;line-height:1;letter-spacing:.01em;color:var(--ink);font-variant-numeric:tabular-nums}
+.herostat b small{font-size:20px;font-weight:600;color:var(--coral-d)}
+.herostat span{display:block;margin-top:5px;font-size:12.5px;font-weight:700;color:var(--grey)}
 .tabs{display:flex;gap:0;margin-bottom:14px;max-width:420px;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
 .tabs button{flex:1;background:#fff;border:0;padding:10px 16px;font-weight:800;font-size:13.5px;color:var(--grey);cursor:pointer}
 .tabs button.aan{background:var(--coral);color:#fff}
