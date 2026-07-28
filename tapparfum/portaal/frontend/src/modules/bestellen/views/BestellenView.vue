@@ -11,6 +11,21 @@ import { PAKKETTEN, BIJPRODUCTEN, PAK_BOM, pakSamenstelling, pakBtw } from '../d
 
 const shopUrl = ref('')
 const open = ref(null)          // pakketnaam waarvan de stuklijst open staat
+const fotoFout = ref({})        // producten waarvan de foto niet laadt -> merkvlak
+
+// Echte productfoto's hergebruiken waar ze eerlijk passen (bijproducten met een
+// eigen productlijn). De geuren-startpakketten krijgen een merkvlak met het
+// geuren-aantal groot in beeld — de landingspagina-look, zonder misleidende foto.
+const FOTO = {
+  'Bodyspray — 10 geuren': '/assets/bodymist.jpg',
+  'Bodyspray — 20 geuren': '/assets/bodymist.jpg',
+  'Candle — 12 geuren (6 st.)': '/assets/kaarsen-selflove.jpg',
+  'Candle — 12 geuren (2 st.)': '/assets/kaarsen-selflove.jpg',
+  'Home — Reed & Homespray': '/assets/home-selflove.jpg',
+  'Home — Reed Diffuser': '/assets/home-selflove.jpg',
+  'Home — Homespray': '/assets/home-selflove.jpg'
+}
+const foto = (naam) => (!fotoFout.value[naam] && FOTO[naam]) || ''
 
 onMounted(async () => {
   try { shopUrl.value = String(await haalCentral('shopUrl') || '') } catch { /* knop blijft weg */ }
@@ -40,6 +55,11 @@ function samenvatting(naam, prijs) {
       <h2 :data-test="'seg-' + seg.seg">{{ seg.seg }}</h2>
       <div class="grid">
         <div v-for="[naam, prijs] in seg.items" :key="naam" class="pak" :data-test="'pak-' + naam">
+          <img v-if="foto(naam)" class="pfoto" :src="foto(naam)" :alt="naam" loading="lazy" @error="fotoFout[naam] = true">
+          <div v-else class="pfoto pfoto-ph" aria-hidden="true">
+            <b v-if="samenvatting(naam, prijs).tot">{{ samenvatting(naam, prijs).tot }}</b>
+            <span>{{ samenvatting(naam, prijs).tot ? 'geuren' : naam }}</span>
+          </div>
           <div class="pkop">
             <b>{{ naam }}</b>
             <span class="prijs">{{ eur(prijs) }}</span>
@@ -73,6 +93,11 @@ function samenvatting(naam, prijs) {
     <h2>Uitbreidingen & modules</h2>
     <div class="grid">
       <div v-for="[naam, prijs] in BIJPRODUCTEN" :key="naam" class="pak" data-test="bijproduct">
+        <img v-if="foto(naam)" class="pfoto" :src="foto(naam)" :alt="naam" loading="lazy" @error="fotoFout[naam] = true">
+        <div v-else class="pfoto pfoto-ph" aria-hidden="true">
+          <b v-if="samenvatting(naam, prijs).tot">{{ samenvatting(naam, prijs).tot }}</b>
+          <span>{{ samenvatting(naam, prijs).tot ? 'geuren' : naam }}</span>
+        </div>
         <div class="pkop">
           <b>{{ naam }}</b>
           <span class="prijs">{{ eur(prijs) }}</span>
@@ -110,7 +135,14 @@ h3.gratis{color:#2c5a12}
 .btn.portaal{display:inline-block;background:var(--coral);color:#fff;border-radius:10px;padding:10px 18px;font-weight:800;text-decoration:none;margin-bottom:6px}
 .mo{color:var(--grey);font-size:12.5px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.pak{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.pak{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+/* Beeld-/merkvlak bovenaan de kaart, van rand tot rand (landingspagina-look) */
+.pfoto{width:calc(100% + 28px);margin:-14px -14px 0;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--cream)}
+.pfoto-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  background:radial-gradient(120% 130% at 28% 18%, var(--soft) 0%, var(--cream) 62%, var(--sand) 100%);
+  border-bottom:1px solid var(--line);color:var(--coral-d);text-align:center;padding:6px}
+.pfoto-ph b{font-family:var(--font-display);font-weight:500;font-size:38px;line-height:1;letter-spacing:.02em}
+.pfoto-ph span{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);margin-top:3px;max-width:90%}
 .pkop{display:flex;align-items:baseline;gap:10px}
 .pkop b{flex:1;font-size:13.5px;line-height:1.35}
 .prijs{font-weight:800;color:var(--coral-d);font-variant-numeric:tabular-nums;white-space:nowrap}
