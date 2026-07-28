@@ -78,7 +78,7 @@ with sync_playwright() as p:
     pg.evaluate("""window.__MOCK.signin={data:{user:{id:'u-staff',email:'k@tp.nl',app_metadata:{role:'staff'}}},error:null};""")
     login(pg,"kantoor@tp.nl")
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(500)
-    pg.click('[data-test=tab-instellingen]'); pg.wait_for_timeout(300)
+    pg.click('[data-test=tab-systeem]'); pg.wait_for_timeout(300)
     pg.fill('[data-test=inst-prijs-2]','31')     # 50ml: 29.5 -> 31
     pg.fill('[data-test=inst-marge]','2')
     pg.fill('[data-test=inst-shopurl]','https://bestel.tapparfum.nl')

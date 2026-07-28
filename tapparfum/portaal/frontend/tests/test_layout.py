@@ -17,7 +17,7 @@ with sync_playwright() as p:
     ck("content standaard niet gecentreerd", not pg.locator('.content').evaluate("el=>el.classList.contains('mid')"))
 
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(400)
-    pg.click('[data-test=tab-instellingen]'); pg.wait_for_timeout(300)
+    pg.click('[data-test=tab-regie]'); pg.wait_for_timeout(300)
     ck("layout-keuze voor kantoor aanwezig", pg.locator('[data-test=align-kantoor]').count()==1)
 
     pg.select_option('[data-test=align-kantoor]','midden')

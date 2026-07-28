@@ -13,7 +13,7 @@ with sync_playwright() as p:
       window.__MOCK.signin={data:{user:{id:'u-staff',email:'k@tp.nl',app_metadata:{role:'staff'}}},error:null};""")
     pg.fill('input[type=email]','k@tp.nl'); pg.fill('input[type=password]','x'); pg.click('button[type=submit]'); pg.wait_for_timeout(800)
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(400)
-    pg.click('[data-test=tab-instellingen]'); pg.wait_for_timeout(300)
+    pg.click('[data-test=tab-systeem]'); pg.wait_for_timeout(300)
     # B2B-koppeling opslaan
     pg.fill('[data-test=inst-b2b-url]','https://b2b.test'); pg.check('[data-test=inst-b2b-actief]')
     pg.click('[data-test=inst-opslaan]'); pg.wait_for_timeout(500)

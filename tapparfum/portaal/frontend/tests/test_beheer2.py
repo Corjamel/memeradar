@@ -29,7 +29,7 @@ with sync_playwright() as p:
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(500)
 
     # tabs
-    ck("7 tabbladen zichtbaar", pg.locator('.tabs button').count()==7)
+    ck("10 tabbladen zichtbaar (v71-split)", pg.locator('.tabs button').count()==10)
     ck("Mensen-tab is standaard actief", pg.locator('[data-test=am-naam]').count()==1)
 
     # winkel blokkeren via Winkels-tab
@@ -62,7 +62,7 @@ with sync_playwright() as p:
     ck("back-up downloadt JSON", dl2.value.suggested_filename.startswith('TapParfum_backup_'))
 
     # modules: kassa uitzetten
-    pg.click('[data-test=tab-instellingen]'); pg.wait_for_timeout(300)
+    pg.click('[data-test=tab-modules]'); pg.wait_for_timeout(300)
     pg.uncheck('[data-test=mod-kassa]')
     pg.click('[data-test=inst-opslaan]'); pg.wait_for_timeout(500)
     ck("modules opgeslagen met kassa=false", pg.evaluate("window.__UPSERTS.some(u=>u[0]==='central'&&u[1].ns==='modules'&&u[1].data.kassa===false)"))

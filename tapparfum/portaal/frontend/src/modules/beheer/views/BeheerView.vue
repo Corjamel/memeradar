@@ -20,10 +20,15 @@ const auth = useAuth()
 const toast = useToast()
 const st = useTappunten()
 const tab = ref('mensen')
+// Tabs 1-op-1 in v71-lijn: Instellingen is opgesplitst in Merk & design,
+// Modules, Regie en Systeem (i.p.v. één gebundelde Instellingen-tab).
 const TABS = [
   ['mensen', 'Mensen', 'users'],
   ['winkels', 'Winkels', 'tappunten'],
-  ['instellingen', 'Instellingen', 'gear'],
+  ['merk', 'Merk & design', 'merk'],
+  ['modules', 'Modules', 'gear'],
+  ['regie', 'Regie', 'doc'],
+  ['systeem', 'Systeem', 'gear'],
   ['regels', 'Regels', 'proces'],
   ['teksten', 'Teksten', 'pen'],
   ['avg', 'AVG & back-up', 'slot'],
@@ -615,8 +620,76 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
       </div>
     </template>
 
-    <!-- ===== INSTELLINGEN ===== -->
-    <template v-else-if="tab === 'instellingen'">
+    <!-- ===== MERK & DESIGN (v71-tab) — huisstijl: merkkleuren + logotekst ===== -->
+    <template v-else-if="tab === 'merk'">
+      <div class="kaart">
+        <h2>🎨 Huisstijl</h2>
+        <p class="note">Merkkleuren en logotekst voor het hele netwerk. Contrastbewaking maakt een te lichte tekstkleur automatisch leesbaar. Leeg = standaard TapParfum-huisstijl.</p>
+        <div class="rij vorm">
+          <label>Logotekst<input v-model="brand.logoTekst" maxlength="20" placeholder="TAPPARFUM" data-test="brand-logo" /></label>
+          <label>Accent (koraal)<input v-model="brand.coral" type="color" data-test="brand-coral" /></label>
+          <label>Accent donker (tekst)<input v-model="brand.corald" type="color" data-test="brand-corald" /></label>
+          <label>Groen (succes)<input v-model="brand.green" type="color" data-test="brand-green" /></label>
+          <label>Amber (aandacht)<input v-model="brand.amber" type="color" data-test="brand-amber" /></label>
+        </div>
+        <div class="rij">
+          <span class="brandvoor" :style="{ background: brand.coral, color: '#fff' }" data-test="brand-preview">Voorbeeld-accent</span>
+          <button class="knop ghost" type="button" data-test="brand-reset" @click="brandReset">Terug naar standaard</button>
+        </div>
+      </div>
+      <div class="rij">
+        <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>
+      </div>
+    </template>
+
+    <!-- ===== MODULES (v71-tab) — netwerkbreed aan/uit ===== -->
+    <template v-else-if="tab === 'modules'">
+      <div class="kaart">
+        <h2>Modules aan/uit</h2>
+        <p class="note">Uitzetten verbergt de module in het hele netwerk — data blijft bewaard.</p>
+        <div class="rij">
+          <label class="schakel"><input v-model="mod.kassa" type="checkbox" data-test="mod-kassa" /> 🧾 Kassa</label>
+          <label class="schakel"><input v-model="mod.game" type="checkbox" data-test="mod-game" /> 🏆 Sales Game</label>
+          <label class="schakel"><input v-model="mod.producten" type="checkbox" data-test="mod-producten" /> 🧴 Producten</label>
+        </div>
+      </div>
+      <div class="rij">
+        <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>
+      </div>
+    </template>
+
+    <!-- ===== REGIE (v71-tab) — volgorde & uitlijning ===== -->
+    <template v-else-if="tab === 'regie'">
+      <div class="kaart">
+        <h2>📐 Layout</h2>
+        <p class="note">Standaard staat de inhoud links (breed werkscherm). Gecentreerd geeft een smallere, gecentreerde kolom — rustiger voor lees-schermen. Per rol in te stellen.</p>
+        <div class="rij vorm">
+          <label v-for="[z, lbl] in ZONES" :key="z">{{ lbl }}
+            <select v-model="align[z]" :data-test="'align-' + z">
+              <option value="">Links (standaard)</option>
+              <option value="midden">Gecentreerd</option>
+            </select>
+          </label>
+        </div>
+        <h3 class="subkop">Blokvolgorde partner-dashboard</h3>
+        <p class="note">De volgorde van de drie hoofdblokken op het partner-dashboard. Bovenaan verschijnt bovenaan.</p>
+        <ol class="blokorder">
+          <li v-for="(k, i) in blokVolgorde" :key="k" :data-test="'blok-' + k">
+            <span class="bl">{{ BLOK_LABEL[k] }}</span>
+            <span class="pijlen">
+              <button type="button" class="mini" :disabled="i === 0" :data-test="'blok-op-' + k" aria-label="Omhoog" @click="blokVerplaats(i, -1)">▲</button>
+              <button type="button" class="mini" :disabled="i === blokVolgorde.length - 1" :data-test="'blok-neer-' + k" aria-label="Omlaag" @click="blokVerplaats(i, 1)">▼</button>
+            </span>
+          </li>
+        </ol>
+      </div>
+      <div class="rij">
+        <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>
+      </div>
+    </template>
+
+    <!-- ===== SYSTEEM (v71-tab) — prijzen, netwerk & koppelingen ===== -->
+    <template v-else-if="tab === 'systeem'">
       <div class="kaart">
         <h2>Kassaprijzen</h2>
         <div class="rij vorm">
@@ -645,56 +718,6 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
           </label>
           <label class="schakel b2b"><input v-model="inst.b2bActief" type="checkbox" data-test="inst-b2b-actief" /> Koppeling actief</label>
         </div>
-      </div>
-      <div class="kaart">
-        <h2>Modules aan/uit</h2>
-        <p class="note">Uitzetten verbergt de module in het hele netwerk — data blijft bewaard.</p>
-        <div class="rij">
-          <label class="schakel"><input v-model="mod.kassa" type="checkbox" data-test="mod-kassa" /> 🧾 Kassa</label>
-          <label class="schakel"><input v-model="mod.game" type="checkbox" data-test="mod-game" /> 🏆 Sales Game</label>
-          <label class="schakel"><input v-model="mod.producten" type="checkbox" data-test="mod-producten" /> 🧴 Producten</label>
-        </div>
-      </div>
-      <!-- Huisstijl (v71 thema): merkkleuren + logotekst, netwerkbreed -->
-      <div class="kaart">
-        <h2>🎨 Huisstijl</h2>
-        <p class="note">Merkkleuren en logotekst voor het hele netwerk. Contrastbewaking maakt een te lichte tekstkleur automatisch leesbaar. Leeg = standaard TapParfum-huisstijl.</p>
-        <div class="rij vorm">
-          <label>Logotekst<input v-model="brand.logoTekst" maxlength="20" placeholder="TAPPARFUM" data-test="brand-logo" /></label>
-          <label>Accent (koraal)<input v-model="brand.coral" type="color" data-test="brand-coral" /></label>
-          <label>Accent donker (tekst)<input v-model="brand.corald" type="color" data-test="brand-corald" /></label>
-          <label>Groen (succes)<input v-model="brand.green" type="color" data-test="brand-green" /></label>
-          <label>Amber (aandacht)<input v-model="brand.amber" type="color" data-test="brand-amber" /></label>
-        </div>
-        <div class="rij">
-          <span class="brandvoor" :style="{ background: brand.coral, color: '#fff' }" data-test="brand-preview">Voorbeeld-accent</span>
-          <button class="knop ghost" type="button" data-test="brand-reset" @click="brandReset">Terug naar standaard</button>
-        </div>
-      </div>
-
-      <!-- Layout/regie (v71): content-uitlijning per rol -->
-      <div class="kaart">
-        <h2>📐 Layout</h2>
-        <p class="note">Standaard staat de inhoud links (breed werkscherm). Gecentreerd geeft een smallere, gecentreerde kolom — rustiger voor lees-schermen. Per rol in te stellen.</p>
-        <div class="rij vorm">
-          <label v-for="[z, lbl] in ZONES" :key="z">{{ lbl }}
-            <select v-model="align[z]" :data-test="'align-' + z">
-              <option value="">Links (standaard)</option>
-              <option value="midden">Gecentreerd</option>
-            </select>
-          </label>
-        </div>
-        <h3 class="subkop">Blokvolgorde partner-dashboard</h3>
-        <p class="note">De volgorde van de drie hoofdblokken op het partner-dashboard. Bovenaan verschijnt bovenaan.</p>
-        <ol class="blokorder">
-          <li v-for="(k, i) in blokVolgorde" :key="k" :data-test="'blok-' + k">
-            <span class="bl">{{ BLOK_LABEL[k] }}</span>
-            <span class="pijlen">
-              <button type="button" class="mini" :disabled="i === 0" :data-test="'blok-op-' + k" aria-label="Omhoog" @click="blokVerplaats(i, -1)">▲</button>
-              <button type="button" class="mini" :disabled="i === blokVolgorde.length - 1" :data-test="'blok-neer-' + k" aria-label="Omlaag" @click="blokVerplaats(i, 1)">▼</button>
-            </span>
-          </li>
-        </ol>
       </div>
       <div class="rij">
         <button class="knop" type="button" data-test="inst-opslaan" @click="instellingenOpslaan">Instellingen opslaan</button>

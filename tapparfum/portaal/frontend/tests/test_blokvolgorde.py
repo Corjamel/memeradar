@@ -15,7 +15,7 @@ with sync_playwright() as p:
       window.__MOCK.signin={data:{user:{id:'u-staff',email:'k@tp.nl',app_metadata:{role:'staff'}}},error:null};""")
     login(pg,"k@tp.nl")
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(400)
-    pg.click('[data-test=tab-instellingen]'); pg.wait_for_timeout(300)
+    pg.click('[data-test=tab-regie]'); pg.wait_for_timeout(300)
     ck("blokvolgorde-lijst aanwezig (3 blokken)", pg.locator('.blokorder li').count()==3)
     ck("standaardvolgorde: fase bovenaan", 'fase' in (pg.locator('.blokorder li').first.get_attribute('data-test') or ''))
     # 'trofee' twee keer omhoog -> naar boven

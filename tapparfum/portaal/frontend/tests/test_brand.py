@@ -19,7 +19,7 @@ with sync_playwright() as p:
     ck("standaard-logo TAPPARFUM", (pg.text_content('.logo b') or '').strip()=='TAPPARFUM')
 
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(400)
-    pg.click('[data-test=tab-instellingen]'); pg.wait_for_timeout(300)
+    pg.click('[data-test=tab-merk]'); pg.wait_for_timeout(300)
     ck("huisstijl-velden aanwezig", pg.locator('[data-test=brand-logo]').count()==1 and pg.locator('[data-test=brand-coral]').count()==1)
 
     pg.fill('[data-test=brand-logo]','MerkX')
