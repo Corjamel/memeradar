@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
-import { haalDeals, nieuweDeal, zetFase, FASEN } from '../api.js'
+import { haalDeals, nieuweDeal, zetFase, FASEN, KANS, OPEN_FASEN } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
 
 const st = useTappunten()
@@ -19,6 +19,22 @@ const perFase = computed(() => {
     f.deals.push(d); f.totaal += Number(d.waarde) || 0
   }
   return m
+})
+const kans = (fase) => KANS[fase] || 0
+const gewogenVan = (d) => Math.round((Number(d.waarde) || 0) * kans(d.fase))
+
+// Forecast-strook: open pijplijn, gewogen forecast (waarde × fase-kans),
+// gewonnen dit jaar en win-rate (gewonnen ÷ afgesloten).
+const forecast = computed(() => {
+  let open = 0, openN = 0, gewogen = 0, won = 0, wonN = 0, lostN = 0
+  for (const d of deals.value) {
+    const w = Number(d.waarde) || 0
+    if (OPEN_FASEN.includes(d.fase)) { open += w; openN++; gewogen += w * kans(d.fase) }
+    else if (d.fase === 'gewonnen') { won += w; wonN++ }
+    else if (d.fase === 'verloren') { lostN++ }
+  }
+  const afgesloten = wonN + lostN
+  return { open, openN, gewogen: Math.round(gewogen), won, wonN, winRate: afgesloten ? Math.round(wonN / afgesloten * 100) : null }
 })
 
 async function laad() {
@@ -51,9 +67,18 @@ async function fase(d, ev) {
 
 <template>
   <div>
+    <p class="eyebrow">Pijplijn</p>
     <h1>Deals</h1>
     <p class="sub">Verkoopkansen door de pijplijn — van lead tot gewonnen. Winkels zien dit niet.</p>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
+
+    <!-- Forecast-strook: gewogen pijplijn op één rij -->
+    <div class="kpis" data-test="deal-forecast">
+      <div class="kpi"><b>{{ eur0(forecast.open) }}</b><span>Open pijplijn · {{ forecast.openN }} deals</span></div>
+      <div class="kpi"><b class="coral" data-test="forecast-gewogen">{{ eur0(forecast.gewogen) }}</b><span>Gewogen forecast</span></div>
+      <div class="kpi"><b data-test="forecast-won">{{ eur0(forecast.won) }}</b><span>Gewonnen · {{ forecast.wonN }}</span></div>
+      <div class="kpi"><b data-test="forecast-winrate">{{ forecast.winRate == null ? '—' : forecast.winRate + '%' }}</b><span>Win-rate</span></div>
+    </div>
 
     <form class="kaart nieuw" @submit.prevent="toevoegen">
       <div class="rij">
@@ -73,13 +98,14 @@ async function fase(d, ev) {
     <div class="pijplijn">
       <div v-for="[k, lbl] in FASEN" :key="k" class="kolom" :class="k" :data-test="'kolom-' + k">
         <div class="kolomkop">
-          <b>{{ lbl }}</b>
-          <span class="totaal" :data-test="'totaal-' + k">{{ eur0(perFase[k].totaal) }}</span>
+          <b>{{ lbl }} <span class="n" :data-test="'aantal-' + k">{{ perFase[k].deals.length }}</span></b>
+          <span class="totaal" :data-test="'totaal-' + k">{{ eur0(perFase[k].totaal) }}<template v-if="kans(k) > 0 && kans(k) < 1"> · {{ Math.round(kans(k) * 100) }}%</template></span>
         </div>
         <div v-for="d in perFase[k].deals" :key="d.id" class="dealkaart" data-test="deal-kaart">
           <b class="dt">{{ d.titel }}</b>
           <span class="mo">{{ WINKEL[d.tappunt_snelstart] || d.tappunt_snelstart }}</span>
           <span class="mo">{{ eur0(d.waarde) }}<template v-if="d.verwacht"> · {{ d.verwacht }}</template></span>
+          <span v-if="kans(d.fase) > 0 && kans(d.fase) < 1" class="mo gewogen">gewogen {{ eur0(gewogenVan(d)) }}</span>
           <select class="fasesel" :value="d.fase" :aria-label="'Fase van deal ' + d.titel" data-test="deal-fase" @change="fase(d, $event)">
             <option v-for="[fk, flbl] in FASEN" :key="fk" :value="fk">{{ flbl }}</option>
           </select>
@@ -107,7 +133,15 @@ select:focus,input:focus{border-color:var(--coral)}
 .kolom.verloren{opacity:.7}
 .kolomkop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
 .kolomkop b{font-size:13px}
+.kolomkop .n{display:inline-block;min-width:18px;text-align:center;background:var(--soft);color:var(--coral-d);font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 6px;margin-left:2px}
 .totaal{font-size:11.5px;font-weight:800;color:var(--coral-d)}
+.gewogen{color:var(--coral-d);font-weight:700;font-size:11px}
+/* Forecast-strook */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.kpi b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+.kpi b.coral{color:var(--coral-d)}
+.kpi span{color:var(--grey);font-size:11.5px;font-weight:700}
 .dealkaart{display:flex;flex-direction:column;gap:3px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:#faf7f2}
 .dt{font-size:13.5px}
 .mo{color:var(--grey);font-size:12px}

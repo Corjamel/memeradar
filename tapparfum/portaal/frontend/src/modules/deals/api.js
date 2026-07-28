@@ -10,6 +10,12 @@ export const FASEN = [
   ['verloren', 'Verloren']
 ]
 
+// Win-kans per fase (voor de gewogen forecast). Afgeleid van de fase, dus geen
+// extra kolom nodig — een standaard stage-weighted pijplijn. Kantoor kan dit
+// later fijnregelen; deze waarden zijn een gangbaar uitgangspunt.
+export const KANS = { lead: 0.10, voorstel: 0.30, onderhandeling: 0.60, gewonnen: 1, verloren: 0 }
+export const OPEN_FASEN = ['lead', 'voorstel', 'onderhandeling']
+
 export async function haalDeals() {
   const { data, error } = await sb.from('deals')
     .select('*').order('created_at', { ascending: false })
