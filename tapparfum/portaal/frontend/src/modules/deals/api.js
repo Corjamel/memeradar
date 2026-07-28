@@ -35,3 +35,9 @@ export async function zetFase(id, fase) {
   const { error } = await sb.from('deals').update({ fase }).eq('id', id)
   if (error) throw new Error(error.message)
 }
+
+// Won/lost-reden vastleggen bij een afgesloten deal (kolom 'reden', migratie 016).
+export async function zetReden(id, reden) {
+  const { error } = await sb.from('deals').update({ reden: reden || null }).eq('id', id)
+  if (error) throw new Error(error.message)
+}

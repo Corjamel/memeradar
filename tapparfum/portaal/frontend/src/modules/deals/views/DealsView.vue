@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useTappunten } from '../../tappunten/store.js'
-import { haalDeals, nieuweDeal, zetFase, FASEN, KANS, OPEN_FASEN } from '../api.js'
+import { haalDeals, nieuweDeal, zetFase, zetReden, FASEN, KANS, OPEN_FASEN } from '../api.js'
 import { eur0 } from '../../../lib/format.js'
 
 const st = useTappunten()
@@ -63,6 +63,14 @@ async function fase(d, ev) {
   try { await zetFase(d.id, ev.target.value); await laad() }
   catch (e) { fout.value = 'Fase wijzigen mislukt: ' + e.message }
 }
+
+// Won/lost-reden opslaan op een afgesloten deal (blur/enter).
+async function reden(d, ev) {
+  const v = (ev.target.value || '').trim()
+  if (v === (d.reden || '')) return
+  try { await zetReden(d.id, v); await laad() }
+  catch (e) { fout.value = 'Reden opslaan mislukt: ' + e.message }
+}
 </script>
 
 <template>
@@ -109,6 +117,10 @@ async function fase(d, ev) {
           <select class="fasesel" :value="d.fase" :aria-label="'Fase van deal ' + d.titel" data-test="deal-fase" @change="fase(d, $event)">
             <option v-for="[fk, flbl] in FASEN" :key="fk" :value="fk">{{ flbl }}</option>
           </select>
+          <input v-if="d.fase === 'gewonnen' || d.fase === 'verloren'" class="reden"
+                 :value="d.reden || ''" :data-test="'deal-reden-' + d.id"
+                 :placeholder="d.fase === 'gewonnen' ? 'Waarom gewonnen?' : 'Waarom verloren?'"
+                 :aria-label="'Reden voor ' + d.titel" @change="reden(d, $event)" />
         </div>
         <p v-if="!perFase[k].deals.length" class="leeg">—</p>
       </div>
@@ -146,6 +158,8 @@ select:focus,input:focus{border-color:var(--coral)}
 .dt{font-size:13.5px}
 .mo{color:var(--grey);font-size:12px}
 .fasesel{margin-top:6px;font-size:12px;padding:5px 8px}
+.reden{margin-top:6px;font-size:12px;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;width:100%}
+.reden:focus{border-color:var(--coral);outline:none}
 .leeg{color:var(--line);text-align:center;margin:8px 0}
 .fout{color:#b3261e}
 </style>

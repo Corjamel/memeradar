@@ -1179,6 +1179,13 @@ create trigger tp_guard_tappunt_insert
   for each row execute function public.tp_guard_tappunt_insert();
 
 -- ============================================================================
+-- TapParfum Portaal — Deals: won/lost-reden (CRM-verdieping, migratie 016)
+-- Vrije-tekst reden bij afsluiten (gewonnen/verloren) — basis voor win/loss.
+-- Idempotent; valt onder het bestaande rij-niveau RLS-beleid van deals.
+-- ============================================================================
+alter table public.deals add column if not exists reden text;
+
+-- ============================================================================
 -- KLAAR. Een AM kan nu winkels toevoegen — uitsluitend in de eigen portefeuille;
 -- am_id wordt server-side afgedwongen (geen kruis-toevoegingen, geen spoofing).
 -- ============================================================================

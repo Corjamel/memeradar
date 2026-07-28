@@ -91,6 +91,15 @@ with sync_playwright() as p:
     ck("fase-wijziging -> update + verschuift naar Voorstel",
        pg.locator('[data-test=kolom-voorstel] >> [data-test=deal-kaart]').count()==1 and
        pg.locator('[data-test=kolom-lead] >> [data-test=deal-kaart]').count()==0)
+    # gewogen forecast: 1.500 in voorstel (30%) -> € 450
+    ck("gewogen forecast = € 450 (1.500 × 30%)", '450' in (pg.text_content('[data-test=forecast-gewogen]') or ''))
+    # won/lost-reden: deal afsluiten en de reden vastleggen (CRM)
+    pg.select_option('[data-test=deal-fase]','verloren'); pg.wait_for_timeout(500)
+    ck("verloren-deal toont reden-veld", pg.locator('[data-test^=deal-reden-]').count()==1)
+    ck("win-rate 0% (1 verloren, 0 gewonnen)", '0%' in (pg.text_content('[data-test=forecast-winrate]') or ''))
+    pg.fill('[data-test^=deal-reden-]','Te duur gevonden'); pg.locator('[data-test^=deal-reden-]').blur(); pg.wait_for_timeout(500)
+    upd=pg.evaluate("window.__UPDATES")
+    ck("reden -> update deals.reden", any(u[0]=='deals' and u[1].get('reden')=='Te duur gevonden' for u in upd))
 
     # Taken
     pg.click('nav >> text=Taken'); pg.wait_for_timeout(500)
