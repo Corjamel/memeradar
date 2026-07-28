@@ -4,6 +4,7 @@ import { useTappunten } from '../store.js'
 import { useAuth } from '../../../stores/auth.js'
 import DocumentenBlok from '../../documenten/components/DocumentenBlok.vue'
 import ContactenBlok from '../../contacten/components/ContactenBlok.vue'
+import HubSpotPaneel from '../../hubspot/components/HubSpotPaneel.vue'
 import KassaBlok from '../../kassa/components/KassaBlok.vue'
 import SetupBlok from '../../setup/components/SetupBlok.vue'
 import PuntenBlok from '../../punten/components/PuntenBlok.vue'
@@ -170,6 +171,7 @@ async function wisselBlokkade() {
     <LogboekBlok :tappunt="bron" @bijgewerkt="bron = $event" />
     <ContactenBlok :snelstart="bron.snelstart" />
     <DocumentenBlok :snelstart="bron.snelstart" />
+    <HubSpotPaneel v-if="!auth.isPartner" :tappunt="bron" />
   </div>
 </template>
 
