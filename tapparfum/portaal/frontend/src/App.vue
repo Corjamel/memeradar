@@ -46,7 +46,11 @@ async function laadBadges() {
   if (!auth.ingelogd) { openVragen.value = 0; openTaken.value = 0; return }
   try {
     const v = await haalWinkelvragen()
-    openVragen.value = (v || []).filter(x => x.status === 'open').length
+    // Partner: badge = nieuwe ANTWOORDEN om te lezen (v71 nieuwVoorP), niet de
+    // eigen open meldingen. AM/kantoor: open meldingen die nog beantwoord moeten.
+    openVragen.value = auth.role === 'partner'
+      ? (v || []).filter(x => x.status === 'beantwoord' && x.nieuw_voor_partner).length
+      : (v || []).filter(x => x.status === 'open').length
   } catch { openVragen.value = 0 }
   if (auth.role !== 'partner') {
     try {

@@ -3,7 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { haalBerichten, haalAccountmanagers, stuurBericht, beantwoord } from '../api.js'
-import { haalWinkelvragen, stuurWinkelvraag, beantwoordWinkelvraag, fotoLink } from '../../winkelvragen/api.js'
+import { haalWinkelvragen, stuurWinkelvraag, beantwoordWinkelvraag, fotoLink, markeerVragenGezien } from '../../winkelvragen/api.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -17,8 +17,9 @@ const vraagAntwoorden = reactive({})// vraag-id -> concept (AM/kantoor)
 const nieuw = reactive({ aan_am: '', type: 'vraag', txt: '' })
 const nieuweVraag = reactive({ type: 'vraag', txt: '' })
 const nieuweFoto = ref(null)          // bewijsfoto bij retour/probleem
+const nieuwSet = ref(new Set())       // partner: winkelvragen met een vers antwoord (dit bezoek gemarkeerd)
 
-const TYPE_LABEL = { vraag: '❓ Vraag', probleem: '⚠️ Probleem', retour: '↩️ Retour' }
+const TYPE_LABEL = { vraag: '❓ Vraag', probleem: '⚠️ Probleem', retour: '↩️ Retour', bezoek: '📅 Bezoek', mijlpaal: '🎉 Mijlpaal' }
 const AM_NAAM = () => Object.fromEntries(ams.value.map(a => [a.id, a.naam]))
 const WINKEL = () => Object.fromEntries(st.items.map(t => [t.snelstart, t.name]))
 
@@ -29,6 +30,12 @@ async function laad() {
     vragen.value = await haalWinkelvragen()
     if (auth.isKantoor) ams.value = await haalAccountmanagers()
     if (!st.items.length) await st.laad()
+    // Partner: leg de verse antwoorden vast vóór we ze als gezien markeren, zodat
+    // de "nieuw"-markering dit bezoek zichtbaar blijft maar de badge daarna zakt.
+    if (auth.isPartner) {
+      nieuwSet.value = new Set(vragen.value.filter(v => v.status === 'beantwoord' && v.nieuw_voor_partner).map(v => v.id))
+      if (nieuwSet.value.size) await markeerVragenGezien()
+    }
   } catch (e) { fout.value = 'Kon berichten niet laden: ' + e.message }
 }
 onMounted(laad)
@@ -92,6 +99,9 @@ async function beantwoordVraagItem(v) {
       </div>
     </header>
     <p v-if="fout" class="fout" role="alert">{{ fout }}</p>
+    <p v-if="auth.isPartner && nieuwSet.size" class="banner" role="status" data-test="nieuw-antwoord-banner">
+      🎉 Je hebt {{ nieuwSet.size }} nieuw{{ nieuwSet.size === 1 ? '' : 'e' }} antwoord{{ nieuwSet.size === 1 ? '' : 'en' }} van je accountmanager.
+    </p>
 
     <!-- ===== PARTNER: melden ===== -->
     <form v-if="auth.isPartner" class="kaart nieuw" @submit.prevent="meldVraag">
@@ -99,15 +109,16 @@ async function beantwoordVraagItem(v) {
         <label>Soort
           <select v-model="nieuweVraag.type" data-test="vraag-type">
             <option value="vraag">Vraag</option>
+            <option value="bezoek">Bezoek aanvragen</option>
             <option value="probleem">Probleem</option>
             <option value="retour">Retour</option>
           </select>
         </label>
       </div>
       <label>Bericht
-        <textarea v-model="nieuweVraag.txt" rows="3" required placeholder="Beschrijf je vraag, probleem of retour…" data-test="vraag-txt"></textarea>
+        <textarea v-model="nieuweVraag.txt" rows="3" required :placeholder="nieuweVraag.type === 'bezoek' ? 'Waarvoor wil je je accountmanager op bezoek? (bijv. hulp bij de tapbar)' : 'Beschrijf je vraag, probleem of retour…'" data-test="vraag-txt"></textarea>
       </label>
-      <label v-if="nieuweVraag.type !== 'vraag'">Bewijsfoto (aangeraden bij retour)
+      <label v-if="['probleem', 'retour'].includes(nieuweVraag.type)">Bewijsfoto (aangeraden bij retour)
         <input type="file" accept="image/*" data-test="vraag-foto"
                @change="nieuweFoto = $event.target.files[0] || null" />
       </label>
@@ -142,13 +153,15 @@ async function beantwoordVraagItem(v) {
     <div v-for="v in vragen" :key="v.id" class="kaart item" :class="{ klaar: v.status === 'beantwoord' }" data-test="winkelvraag">
       <div class="itemkop">
         <span class="type">{{ TYPE_LABEL[v.type] || v.type }}</span>
+        <span v-if="auth.isPartner && nieuwSet.has(v.id)" class="nieuwbadge" data-test="vraag-nieuw">nieuw antwoord</span>
         <span class="meta" v-if="!auth.isPartner">van {{ WINKEL()[v.tappunt_snelstart] || v.tappunt_snelstart }}</span>
         <span class="status" :class="v.status">{{ v.status === 'beantwoord' ? '✓ beantwoord' : 'open' }}</span>
       </div>
       <p class="txt">{{ v.txt }}</p>
       <button v-if="v.foto_pad" class="fotoknop" type="button" data-test="vraag-foto-knop" @click="openFoto(v)">📷 Bekijk bewijsfoto</button>
       <p v-if="v.antwoord" class="antwoord" data-test="vraag-antwoord">↳ {{ v.antwoord }}<span v-if="v.antwoord_door" class="meta"> — {{ v.antwoord_door }}</span></p>
-      <div v-if="!auth.isPartner && v.status === 'open'" class="beantwoord">
+      <!-- 'mijlpaal' is een automatische melding (beloning vrijgespeeld) — informatief, geen antwoord nodig. -->
+      <div v-if="!auth.isPartner && v.status === 'open' && v.type !== 'mijlpaal'" class="beantwoord">
         <textarea v-model="vraagAntwoorden[v.id]" rows="2" placeholder="Typ je antwoord aan de winkel…" data-test="vraag-antwoord-veld"></textarea>
         <button class="btn" type="button" data-test="vraag-antwoord-knop" @click="beantwoordVraagItem(v)">Beantwoord</button>
       </div>
@@ -200,6 +213,8 @@ select:focus,textarea:focus{border-color:var(--coral)}
 .fotoknop{align-self:flex-start;background:none;border:1.5px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12.5px;font-weight:700;color:var(--grey);cursor:pointer;margin-top:8px}
 .fotoknop:hover{border-color:var(--coral);color:var(--coral-d)}
 input[type=file]{padding:7px;border:1.5px dashed var(--line);border-radius:10px;font-size:13px}
+.banner{background:var(--green-soft,#eef6e4);border:1px solid #bcd9a0;color:#2c5a12;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-size:13.5px;font-weight:700}
+.nieuwbadge{font-size:10.5px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;background:var(--coral);color:#fff;border-radius:6px;padding:2px 8px}
 .fout{color:#b3261e}
 .stil{color:var(--grey)}
 </style>

@@ -32,10 +32,21 @@ export async function fotoLink(foto_pad) {
   return data.signedUrl
 }
 
-// AM/kantoor: beantwoorden.
+// AM/kantoor: beantwoorden. Zet meteen nieuw_voor_partner=true zodat de partner
+// een "nieuw antwoord"-signaal krijgt (badge + banner), net als v71 nieuwVoorP.
 export async function beantwoordWinkelvraag(id, antwoord, door) {
   const { error } = await sb.from('winkelvragen')
-    .update({ status: 'beantwoord', antwoord, antwoord_door: door || null, antwoord_at: new Date().toISOString() })
+    .update({ status: 'beantwoord', antwoord, antwoord_door: door || null, antwoord_at: new Date().toISOString(), nieuw_voor_partner: true })
     .eq('id', id)
   if (error) throw new Error(error.message)
+}
+
+// Partner: de antwoorden van de eigen winkel als gezien markeren (wist de
+// badge/banner). Loopt via een security-definer-RPC omdat de partner geen
+// directe update mag. Best-effort: het signaal is een extraatje, nooit blokkerend.
+export async function markeerVragenGezien() {
+  try {
+    if (typeof sb.rpc !== 'function') return
+    await sb.rpc('tp_winkelvraag_gezien')
+  } catch { /* stil — de badge zakt dan bij de volgende sync */ }
 }

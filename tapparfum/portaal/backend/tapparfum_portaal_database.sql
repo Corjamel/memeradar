@@ -574,10 +574,26 @@ create table if not exists public.winkelvragen (
   antwoord          text,
   antwoord_door     text,
   antwoord_at       timestamptz,
+  nieuw_voor_partner boolean not null default false,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
 create index if not exists winkelvragen_tappunt_idx on public.winkelvragen(tappunt_snelstart);
+
+-- Partner markeert de antwoorden van de eigen winkel als gezien (018). Security
+-- definer: de partner mag winkelvragen niet direct updaten; de WHERE bindt hard
+-- aan auth.uid() en raakt alleen nieuw_voor_partner.
+create or replace function public.tp_winkelvraag_gezien()
+returns void language sql security definer set search_path = public as $$
+  update public.winkelvragen w
+     set nieuw_voor_partner = false
+   where w.nieuw_voor_partner
+     and w.tappunt_snelstart in (
+       select tp.snelstart from public.tappunten tp
+        where tp.auth_user_id = auth.uid());
+$$;
+revoke all on function public.tp_winkelvraag_gezien() from public;
+grant execute on function public.tp_winkelvraag_gezien() to authenticated;
 
 alter table public.winkelvragen enable row level security;
 

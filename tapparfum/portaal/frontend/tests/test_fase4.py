@@ -43,6 +43,9 @@ function _q(table){
   return api;
 }
 window.__TP_SUPABASE_MOCK = {
+  rpc:function(naam){window.__RPCS=window.__RPCS||[];window.__RPCS.push(naam);
+    if(naam==='tp_winkelvraag_gezien')(window.__DB.winkelvragen||[]).forEach(function(r){r.nieuw_voor_partner=false;});
+    return Promise.resolve({data:null,error:null});},
   from:_q,
   storage:{ from:function(){ return { list:function(){return Promise.resolve({data:[],error:null});},
     upload:function(){return Promise.resolve({error:null});},
