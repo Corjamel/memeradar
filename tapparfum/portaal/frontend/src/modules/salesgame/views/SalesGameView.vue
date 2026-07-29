@@ -8,7 +8,9 @@ import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { eur0 } from '../../../lib/format.js'
 import { haalCentral, bewaarCentral } from '../../beheer/api.js'
+import { jaaromzet } from '../../rekenhart/logic.js'
 import { gameKlassement, gamePositie, gameDagen, gameScoreVan } from '../logic.js'
+import { haalGameBoard } from '../api.js'
 
 const auth = useAuth()
 const st = useTappunten()
@@ -18,25 +20,57 @@ const melding = ref('')
 const bezig = ref(false)
 const vorm = reactive({ actief: false, titel: '', prijs: '', waarde: '', eind: '', minPunten: 0, minBasis: 0, regels: '' })
 
+const board = ref(null)   // landelijk klassement (RPC) of null bij terugval
+
 onMounted(async () => {
   try {
     if (!st.items.length) await st.laad()
     sg.value = (await haalCentral('salesgame')) || null
     if (sg.value) Object.assign(vorm, { ...vorm, ...sg.value })
+    // Landelijk aggregaat ophalen zodra de game actief is; faalt dit (nog niet
+    // gedeployed), dan blijft board null en rekent de view lokaal verder.
+    if (sg.value && sg.value.actief) {
+      try { board.value = await haalGameBoard({ minPunten: sg.value.minPunten, minBasis: sg.value.minBasis }) }
+      catch { board.value = null }
+    }
   } catch (e) { fout.value = 'Kon de Sales Game niet laden: ' + e.message }
 })
 
-const k = computed(() => gameKlassement(sg.value, st.items))
 const dagen = computed(() => gameDagen(sg.value))
 const eigen = computed(() => auth.isPartner ? (st.items[0] || null) : null)
-const mijnPositie = computed(() => eigen.value && k.value ? gamePositie(k.value, eigen.value.snelstart) : null)
 const mijnScore = computed(() => eigen.value ? gameScoreVan(eigen.value) : null)
-const podium = computed(() => {
-  if (!k.value) return []
-  const bron = k.value.groei.length ? k.value.groei : k.value.nieuw
-  return bron.slice(0, 3)
+
+// Eén genormaliseerd klassement — landelijk (RPC) heeft voorrang, anders lokaal.
+const klas = computed(() => {
+  if (board.value) {
+    const m = r => ({ naam: r.naam, score: r.score, groeiPct: r.groei_pct == null ? null : Number(r.groei_pct), jo: Number(r.jo), isZelf: r.is_zelf })
+    const groei = board.value.filter(r => r.klasse === 'groei').sort((a, b) => a.rang - b.rang).map(m)
+    const nieuw = board.value.filter(r => r.klasse === 'nieuw').sort((a, b) => a.rang - b.rang).map(m)
+    return { groei, nieuw, landelijk: true, zelf: board.value.find(r => r.is_zelf) || null }
+  }
+  const k = gameKlassement(sg.value, st.items)
+  if (!k) return null
+  const m = x => ({ naam: x.t.name, score: x.sc.score, groeiPct: x.sc.groeiPct, jo: x.jo != null ? x.jo : jaaromzet(x.t), isZelf: false })
+  return { groei: k.groei.map(m), nieuw: k.nieuw.map(m), landelijk: false, _k: k }
 })
-const podiumIsGroei = computed(() => !!(k.value && k.value.groei.length))
+
+const podium = computed(() => {
+  if (!klas.value) return []
+  return (klas.value.groei.length ? klas.value.groei : klas.value.nieuw).slice(0, 3)
+})
+const podiumIsGroei = computed(() => !!(klas.value && klas.value.groei.length))
+
+const mijnPositie = computed(() => {
+  if (!klas.value) return null
+  if (klas.value.landelijk) {
+    const z = klas.value.zelf
+    if (!z) return null
+    if (z.klasse === 'nietq') return { kl: 'nietq', reden: z.reden, tekort: Number(z.tekort) || 0 }
+    const van = z.klasse === 'groei' ? klas.value.groei.length : klas.value.nieuw.length
+    return { kl: z.klasse, pos: Number(z.rang), van }
+  }
+  return eigen.value ? gamePositie(klas.value._k, eigen.value.snelstart) : null
+})
 
 async function opslaan() {
   if (bezig.value) return
@@ -94,14 +128,14 @@ async function opslaan() {
 
         <!-- Podium -->
         <div v-if="podium.length" class="podium">
-          <div v-for="(x, i) in podium" :key="x.t.snelstart" class="plek" :class="'p' + i" :data-test="'podium-' + i">
+          <div v-for="(x, i) in podium" :key="i" class="plek" :class="'p' + i" :data-test="'podium-' + i">
             <div class="medal">{{ ['🥇','🥈','🥉'][i] }}</div>
-            <div class="pnaam">{{ x.t.name }}</div>
-            <div class="pscore">{{ podiumIsGroei ? x.sc.score + ' ptn' + (x.sc.groeiPct != null ? ' · +' + x.sc.groeiPct + '%' : '') : eur0(x.jo) + ' omzet' }}</div>
+            <div class="pnaam">{{ x.naam }}</div>
+            <div class="pscore">{{ podiumIsGroei ? x.score + ' ptn' + (x.groeiPct != null ? ' · +' + x.groeiPct + '%' : '') : eur0(x.jo) + ' omzet' }}</div>
             <div class="staaf" :style="{ height: [58, 42, 30][i] + 'px' }">{{ i + 1 }}</div>
           </div>
         </div>
-        <p class="klas-lbl">{{ podiumIsGroei ? 'Groei-klassement' : '🌱 Nieuwkomers van het jaar' }}</p>
+        <p class="klas-lbl">{{ podiumIsGroei ? 'Groei-klassement' : '🌱 Nieuwkomers van het jaar' }}<template v-if="klas && klas.landelijk"> · landelijk</template></p>
       </div>
 
       <!-- Partner: eigen positie -->
@@ -117,18 +151,18 @@ async function opslaan() {
         </p>
       </div>
 
-      <!-- AM/kantoor: volledig klassement -->
-      <div v-if="!auth.isPartner && k" class="kaart">
-        <h2>Groei-klassement</h2>
-        <div v-for="(x, i) in k.groei" :key="x.t.snelstart" class="rijk" data-test="klas-groei">
-          <span class="pos">{{ i + 1 }}</span><b>{{ x.t.name }}</b>
-          <span class="mo">{{ x.sc.score }} ptn<template v-if="x.sc.groeiPct != null"> · +{{ x.sc.groeiPct }}%</template></span>
+      <!-- AM/kantoor: volledig klassement (landelijk indien beschikbaar) -->
+      <div v-if="!auth.isPartner && klas" class="kaart">
+        <h2>Groei-klassement<span v-if="klas.landelijk" class="landelijk"> · landelijk</span></h2>
+        <div v-for="(x, i) in klas.groei" :key="i" class="rijk" :class="{ zelf: x.isZelf }" data-test="klas-groei">
+          <span class="pos">{{ i + 1 }}</span><b>{{ x.naam }}</b>
+          <span class="mo">{{ x.score }} ptn<template v-if="x.groeiPct != null"> · +{{ x.groeiPct }}%</template></span>
         </div>
-        <p v-if="!k.groei.length" class="stil">Nog geen gekwalificeerde winkels.</p>
-        <template v-if="k.nieuw.length">
+        <p v-if="!klas.groei.length" class="stil">Nog geen gekwalificeerde winkels.</p>
+        <template v-if="klas.nieuw.length">
           <h2 style="margin-top:16px">🌱 Nieuwkomers</h2>
-          <div v-for="(x, i) in k.nieuw" :key="x.t.snelstart" class="rijk" data-test="klas-nieuw">
-            <span class="pos">{{ i + 1 }}</span><b>{{ x.t.name }}</b><span class="mo">{{ eur0(x.jo) }} omzet</span>
+          <div v-for="(x, i) in klas.nieuw" :key="i" class="rijk" :class="{ zelf: x.isZelf }" data-test="klas-nieuw">
+            <span class="pos">{{ i + 1 }}</span><b>{{ x.naam }}</b><span class="mo">{{ eur0(x.jo) }} omzet</span>
           </div>
         </template>
       </div>
@@ -171,6 +205,8 @@ input:focus,textarea:focus{border-color:var(--coral)}
 .regel.amber{color:#8a6210;font-weight:700}
 .rijk{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
 .rijk:last-child{border-bottom:0}
+.rijk.zelf{background:var(--soft);border-radius:8px;padding-left:6px;padding-right:6px}
+.landelijk{font-size:11px;font-weight:800;color:var(--coral-d);letter-spacing:.04em}
 .pos{width:26px;height:26px;flex-shrink:0;border-radius:8px;background:var(--soft);color:var(--coral-d);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
 .mo{margin-left:auto;color:var(--grey);font-size:13px}
 .fout{color:#b3261e}
