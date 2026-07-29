@@ -14,7 +14,7 @@ import { STANDAARD_MATEN } from '../../kassa/api.js'
 import { parseRuwCSV, raadKoppeling, rijViaKoppeling, rijNaarTappuntGekoppeld, CSV_DOELVELDEN } from '../csv.js'
 import { BRAND_STD, applyBrand } from '../../../lib/brand.js'
 import { eur0 } from '../../../lib/format.js'
-import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels } from '../../rekenhart/logic.js'
+import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels, winkelOmzet, jaaromzet } from '../../rekenhart/logic.js'
 
 const auth = useAuth()
 const toast = useToast()
@@ -322,13 +322,39 @@ const kpis = computed(() => {
 
 // ---- Regels-editor ----------------------------------------------------
 const wegingTotaal = computed(() => Object.values(regels.weging).reduce((a, v) => a + (Number(v) || 0), 0))
+// v71 (bhRegelsImpact): live veiligheidsnet — hoeveel winkels wisselen van niveau
+// bij de nu ingevoerde drempels t.o.v. de actieve? Rekent op WINKELOMZET
+// (inkoop × marge), net als levelOf, zodat kantoor niet blind drempels instelt
+// die netwerkbreed direct doorwerken.
+const niveauWissel = computed(() => {
+  const oud = LEVELS.map(l => l.min)
+  const nieuw = regels.drempels.map((v, i) => i === 0 ? 0 : Math.max(0, Number(v) || 0))
+  if (oud.every((v, i) => v === nieuw[i])) return { veranderd: false, n: 0, vb: [] }
+  const idx = (wo, mins) => { let i = 0; for (let j = 0; j < mins.length; j++) if (wo >= mins[j]) i = j; return i }
+  const vb = []
+  let n = 0
+  st.items.forEach(t => {
+    const wo = winkelOmzet(t, inst.marge)
+    const a = idx(wo, oud), b = idx(wo, nieuw)
+    if (a !== b) { n++; if (vb.length < 6) vb.push(`${t.name || t.snelstart} (${LEVELS[a].k}→${LEVELS[b].k})`) }
+  })
+  return { veranderd: true, n, vb }
+})
 async function regelsOpslaan() {
   fout.value = ''
   // D=0 vast; drempels moeten oplopend zijn.
   const d = regels.drempels.map((v, i) => i === 0 ? 0 : Math.max(0, Number(v) || 0))
   for (let i = 1; i < d.length; i++) if (d[i] < d[i - 1]) { fout.value = `Drempel ${NIVEAU_LABELS[i]} moet ≥ ${NIVEAU_LABELS[i - 1]} zijn.`; return }
+  // v71 (bhRegelsSave): de AM-score-weging moet samen 100 zijn, anders draait de
+  // ranking op een niet-genormaliseerde weging.
+  if (wegingTotaal.value !== 100) { fout.value = `De AM-score-weging moet samen 100 zijn (nu ${wegingTotaal.value}).`; return }
   try {
-    const cfg = { drempels: d, weging: { ...regels.weging } }
+    const weging = { ...regels.weging }
+    // Merge i.p.v. overschrijven: central 'regels' kan (uit v71-migratie) óók
+    // rewards-/actDagen-overrides bevatten — die mogen niet gewist worden door
+    // het opslaan van drempels/weging.
+    const bestaand = (await haalCentral('regels')) || {}
+    const cfg = { ...bestaand, drempels: d, weging }
     await bewaarCentral('regels', cfg)
     setNiveauDrempels(d)              // direct actief in deze sessie
     auth.regels = cfg                 // AM-score-weging meteen live
@@ -408,9 +434,13 @@ async function backupHerstel(ev) {
 // ---- Instellingen -----------------------------------------------------
 async function instellingenOpslaan() {
   fout.value = ''
+  // v71 (kSetMarge): de marge-factor moet groter dan 0 zijn — een 0/negatieve
+  // waarde zou een corrupte config wegschrijven (niveaus vallen stil terug op ×1).
+  const m = Number(inst.marge)
+  if (!(m > 0)) { fout.value = 'Marge-factor moet groter dan 0 zijn (bijv. 2).'; return }
   try {
     await bewaarCentral('flesMaten', inst.maten.map(x => ({ m: x.m, p: Number(x.p) || 0 })))
-    await bewaarCentral('margeFactor', Number(inst.marge) || 1)
+    await bewaarCentral('margeFactor', m)
     await bewaarCentral('shopUrl', inst.shopUrl.trim())
     await bewaarCentral('b2bApi', { url: inst.b2bUrl.trim(), actief: !!inst.b2bActief })
     await bewaarCentral('modules', { game: !!mod.game, kassa: !!mod.kassa, producten: !!mod.producten })
@@ -735,6 +765,12 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
             <input v-else v-model="regels.drempels[i]" type="number" min="0" step="500" :data-test="'regel-drempel-' + k" />
           </label>
         </div>
+        <!-- Live impact-preview (v71 bhRegelsImpact): hoeveel winkels wisselen van
+             niveau bij deze drempels, vóór opslaan (dat direct netwerkbreed live gaat). -->
+        <p v-if="niveauWissel.veranderd" class="impact" data-test="regel-impact">
+          <template v-if="niveauWissel.n === 0">Geen enkele winkel wisselt van niveau bij deze drempels.</template>
+          <template v-else><b>{{ niveauWissel.n }}</b> winkel{{ niveauWissel.n === 1 ? '' : 's' }} wisselt van niveau — o.a. {{ niveauWissel.vb.join(' · ') }}{{ niveauWissel.n > niveauWissel.vb.length ? ' …' : '' }}</template>
+        </p>
       </div>
       <div class="kaart">
         <h2>AM-score-weging</h2>
@@ -836,6 +872,7 @@ input:focus,select:focus{border-color:var(--coral)}
 .knop:disabled{opacity:.6}
 .note{font-size:12.5px;color:var(--grey);background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 10px}
 .note code{background:#fff;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.impact{font-size:12.5px;color:var(--coral-d);background:var(--soft);border:1px solid var(--peach);border-radius:10px;padding:9px 12px;margin:10px 0 0}
 .item{padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
 .item:last-of-type{border-bottom:0}
 .mo{color:var(--grey);font-size:12.5px}

@@ -15,7 +15,9 @@ with sync_playwright() as p:
     login(pg,"k@tp.nl")
     pg.click('nav >> text=Beheer'); pg.wait_for_timeout(400)
     pg.click('[data-test=tab-regels]'); pg.wait_for_timeout(300)
-    pg.fill('[data-test=regel-drempel-C]','5000'); pg.fill('[data-test=regel-weging-groei]','40')
+    pg.fill('[data-test=regel-drempel-C]','5000')
+    # weging moet samen 100 zijn (v71-guard): groei 35->40, data 20->15
+    pg.fill('[data-test=regel-weging-groei]','40'); pg.fill('[data-test=regel-weging-data]','15')
     pg.click('[data-test=regels-opslaan]'); pg.wait_for_timeout(500)
     up=pg.evaluate("window.__UPSERTS.filter(u=>u[0]==='central' && u[1]['ns']==='regels').slice(-1)[0][1]['data']")
     ck("editor slaat drempels op (C=5000)", up['drempels'][1]==5000)

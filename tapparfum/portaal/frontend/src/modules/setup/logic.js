@@ -17,6 +17,9 @@ export function setupDone(t, si, ai) {
 }
 
 export function setupCount(t) {
+  // v71 (setupDoneCount): een overgeslagen checklist telt als volledig af, zodat
+  // de voortgangsbalk vol staat naast de "✓ overgeslagen"-badge i.p.v. 0/19.
+  if (t && t.setup && t.setup.skipped) return SETUP_TOTAL
   let n = 0
   SETUP.forEach((s, si) => s.acties.forEach((_, ai) => { if (setupDone(t, si, ai)) n++ }))
   return n

@@ -70,11 +70,19 @@ const items = computed(() => {
   // 4. Open afspraken → week
   cl.forEach(t => afsprakenOpen(t).forEach(a => uit.push({ b: 'week', p: 20, ic: '📌', kind: 'afspraak', t, a, lbl: 'Open afspraak · ' + a.at })))
 
-  // 5. Geplande bezoeken + punten-controle-bezoeken → week
+  // 5. Geplande bezoeken + punten-controle-bezoeken. v71-cadans: vandaag/te laat
+  //    → Nu, binnen 7 dagen → Deze week, verder dan 7 dagen → (nog) niet tonen.
   cl.forEach(t => {
     const n = visitOpenClaims(t)
     if (t.bezoekGepland) {
-      uit.push({ b: 'week', p: 15 + (dagenTot(t.bezoekGepland) || 0), ic: '🗓️', kind: 'gepland', t, lbl: 'Gepland bezoek · ' + t.bezoekGepland + (n ? ` · ${n} punt(en) controleren` : '') })
+      const diff = dagenTot(t.bezoekGepland)
+      const extra = n ? ` · ${n} punt(en) controleren` : ''
+      const basis = 'Gepland bezoek · ' + t.bezoekGepland
+      if (diff == null) return
+      if (diff < 0) uit.push({ b: 'nu', p: diff / 1000, ic: '🗓️', kind: 'gepland', t, lbl: `${basis} · ${Math.abs(diff)} dgn te laat${extra}`, laat: true })
+      else if (diff === 0) uit.push({ b: 'nu', p: 1.5, ic: '🗓️', kind: 'gepland', t, lbl: `${basis} · vandaag${extra}` })
+      else if (diff <= 7) uit.push({ b: 'week', p: 15 + diff, ic: '🗓️', kind: 'gepland', t, lbl: basis + extra })
+      // diff > 7: nog niet urgent — v71 toont 'm dan (nog) niet op Vandaag.
     } else if (n) {
       uit.push({ b: 'week', p: 18, ic: '✋', kind: 'controle', t, lbl: `${n} geclaimd(e) punt(en) controleren — nog geen bezoek gepland` })
     }

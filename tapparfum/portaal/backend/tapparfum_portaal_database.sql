@@ -568,7 +568,7 @@ create trigger tp_guard_agenda
 create table if not exists public.winkelvragen (
   id                uuid primary key default gen_random_uuid(),
   tappunt_snelstart text not null references public.tappunten(snelstart) on delete cascade,
-  type              text not null default 'vraag' check (type in ('vraag','probleem','retour')),
+  type              text not null default 'vraag' check (type in ('vraag','probleem','retour','bezoek','mijlpaal')),
   txt               text not null,
   status            text not null default 'open' check (status in ('open','beantwoord')),
   antwoord          text,

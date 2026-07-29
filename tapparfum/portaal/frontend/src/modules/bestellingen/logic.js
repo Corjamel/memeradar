@@ -22,7 +22,11 @@ export function dagenSindsBestelling(t) {
   if (!d) return null
   const dt = new Date(d)
   if (isNaN(dt)) return null
-  return Math.round((Date.now() - dt) / 864e5)
+  // v71 rekent in kalenderdagen (t.o.v. middernacht) — niet t.o.v. het huidige
+  // tijdstip; anders schuift de "60 dagen stil"-grens in de loop van de dag op.
+  dt.setHours(0, 0, 0, 0)
+  const nu = new Date(); nu.setHours(0, 0, 0, 0)
+  return Math.round((nu - dt) / 864e5)
 }
 
 // v71-drempel: 60 dagen zonder bestelling = stil.
