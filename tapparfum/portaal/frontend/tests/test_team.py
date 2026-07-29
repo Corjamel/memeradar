@@ -32,6 +32,11 @@ with sync_playwright() as p:
     # drilldown openen
     pg.locator('[data-test=team-am]', has_text='Marian').locator('.amkop').click(); pg.wait_for_timeout(300)
     ck("drilldown: 2 winkels van Marian", pg.locator('[data-test=team-winkel]').count()>=2)
+    # v71 AM-score: genormaliseerd 0-100 + de vijf componenten zichtbaar
+    import re as _re
+    _m=_re.search(r'(\d+)', pg.locator('[data-test=am-score]').first.text_content() or '')
+    ck("AM-score genormaliseerd binnen 0-100", bool(_m) and 0<=int(_m.group(1))<=100)
+    ck("5 score-componenten zichtbaar (groei/act/uitv/stil/data)", pg.locator('[data-test=am-score-comp] .compchip').count()==5)
     # opdracht sturen over Deventer
     pg.click('[data-test=opdracht-kl-2]'); pg.wait_for_timeout(200)
     pg.fill('[data-test=opdracht-txt]','Bel Deventer over de stilstand')

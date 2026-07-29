@@ -15,6 +15,7 @@ import { parseRuwCSV, raadKoppeling, rijViaKoppeling, rijNaarTappuntGekoppeld, C
 import { BRAND_STD, applyBrand } from '../../../lib/brand.js'
 import { eur0 } from '../../../lib/format.js'
 import { LEVELS, NIVEAU_DREMPELS_STANDAARD, setNiveauDrempels, winkelOmzet, jaaromzet } from '../../rekenhart/logic.js'
+import { WEGING_STANDAARD, WEGING_LABELS } from '../../team/logic.js'
 
 const auth = useAuth()
 const toast = useToast()
@@ -41,8 +42,7 @@ const TEKST_SCHERMEN = [
   ['game', 'Sales Game'], ['producten', 'Producten'], ['geuren', 'Geurbibliotheek'], ['community', 'Community'],
   ['academy', 'Academy'], ['kennisbank', 'Kennisbank'], ['analyse', 'Analyse'], ['team', 'Accountmanagers']
 ]
-// Regels-editor: ABCD-drempels (D=0 vast) + AM-score-weging.
-const WEGING_STANDAARD = { groei: 35, activatie: 25, retentie: 20, data: 20 }
+// Regels-editor: ABCD-drempels (D=0 vast) + AM-score-weging (v71: 5 componenten).
 const regels = reactive({ drempels: [...NIVEAU_DREMPELS_STANDAARD], weging: { ...WEGING_STANDAARD } })
 const NIVEAU_LABELS = LEVELS.map(l => l.k)
 
@@ -107,7 +107,9 @@ async function laad() {
     const rg = (await haalCentral('regels')) || {}
     regels.drempels = Array.isArray(rg.drempels) && rg.drempels.length === NIVEAU_DREMPELS_STANDAARD.length
       ? rg.drempels.map(Number) : [...NIVEAU_DREMPELS_STANDAARD]
-    regels.weging = { ...WEGING_STANDAARD, ...(rg.weging || {}) }
+    // alleen de vijf bekende componenten overnemen (geen oude 4-key-restanten)
+    regels.weging = Object.fromEntries(WEGING_LABELS.map(([k]) =>
+      [k, (rg.weging && rg.weging[k] != null) ? Number(rg.weging[k]) : WEGING_STANDAARD[k]]))
     const br = (await haalCentral('brand')) || {}
     brand.logoTekst = String(br.logoTekst || '')
     brand.coral = br.coral || BRAND_STD.coral; brand.corald = br.corald || BRAND_STD.corald
@@ -777,10 +779,9 @@ function tijd(x) { return x && x.at ? String(x.at).slice(0, 16).replace('T', ' '
         <p class="note">Hoe zwaar elk onderdeel meetelt in de accountmanager-score. Richtlijn: samen 100.
           <b :class="{ amber: wegingTotaal !== 100 }">nu {{ wegingTotaal }}</b>.</p>
         <div class="rij vorm">
-          <label>Groei<input v-model="regels.weging.groei" type="number" min="0" data-test="regel-weging-groei" /></label>
-          <label>Activaties<input v-model="regels.weging.activatie" type="number" min="0" data-test="regel-weging-activatie" /></label>
-          <label>Retentie (bezoekritme)<input v-model="regels.weging.retentie" type="number" min="0" data-test="regel-weging-retentie" /></label>
-          <label>Datakwaliteit<input v-model="regels.weging.data" type="number" min="0" data-test="regel-weging-data" /></label>
+          <label v-for="[k, lab] in WEGING_LABELS" :key="k">{{ lab }}
+            <input v-model="regels.weging[k]" type="number" min="0" :data-test="'regel-weging-' + k" />
+          </label>
         </div>
       </div>
       <div class="rij">

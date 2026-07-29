@@ -16,12 +16,16 @@ import { omzetGroei } from '../../punten/logic.js'
 import { doetMee, heeftRes } from '../../acties/logic.js'
 import { dagenSindsBezoek, afsprakenOpen, LOG_TYPES } from '../../logboek/logic.js'
 import { haalRekenConfig } from '../../beloningen/api.js'
+import { haalCentral } from '../../beheer/api.js'
+import { amScore } from '../logic.js'
 
 const auth = useAuth()
 const toast = useToast()
 const st = useTappunten()
 const ams = ref([])
 const marge = ref(1)
+const acties = ref([])           // niet-gearchiveerde campagnes (voor de uitvoering-component)
+const actDagen = ref(90)         // activatievenster (v71 regels.actDagen)
 const fout = ref('')
 const melding = ref('')
 const open = ref(null)
@@ -33,23 +37,18 @@ onMounted(async () => {
     if (!st.items.length) await st.laad()
     if (auth.isKantoor) ams.value = await haalAms()
     marge.value = (await haalRekenConfig()).marge
+    try { acties.value = (await haalCentral('acties')) || [] } catch { acties.value = [] }
+    const ad = parseInt(auth.regels && auth.regels.actDagen, 10)
+    if (ad > 0 && ad <= 365) actDagen.value = ad
   } catch (e) { fout.value = 'Kon het team niet laden: ' + e.message }
 })
 
-// AM-score (v71-weging) — de wegingen komen uit central 'regels' (kantoor kan ze
-// in de Regels-editor bijstellen); zonder config gelden de standaardwegingen
-// 35% groei + 25% activaties + 20% retentie + 20% datakwaliteit-proxy.
-const WEGING_STANDAARD = { groei: 35, activatie: 25, retentie: 20, data: 20 }
-const weging = computed(() => ({ ...WEGING_STANDAARD, ...((auth.regels && auth.regels.weging) || {}) }))
-function amScore(winkels) {
-  if (!winkels.length) return 0
-  const w = weging.value
-  const groei = winkels.map(t => omzetGroei(t)).filter(g => g != null)
-  const gAvg = groei.length ? groei.reduce((a, g) => a + g, 0) / groei.length : 0
-  const actief = winkels.filter(t => Object.values(t.actieDeelname || {}).some(v => v && v.res)).length / winkels.length
-  const nietStil = winkels.filter(t => { const d = dagenSindsBezoek(t); return d != null && d <= 90 }).length / winkels.length
-  return Math.round((Math.max(0, gAvg) * w.groei + actief * w.activatie + nietStil * w.retentie + 0.2 * w.data) * 10) / 10
-}
+// AM-score: exact het v71-model (5 genormaliseerde componenten, gewogen). De
+// weging komt uit central 'regels' (kantoor stelt 'm in de Regels-editor bij).
+const scoreOpts = computed(() => ({
+  weging: (auth.regels && auth.regels.weging) || null,
+  acties: acties.value, actDagen: actDagen.value
+}))
 
 const perAm = computed(() => {
   const naam = Object.fromEntries(ams.value.map(a => [a.id, a.naam]))
@@ -63,7 +62,8 @@ const perAm = computed(() => {
     const omzet = g.winkels.reduce((s, t) => s + jaaromzet(t), 0)
     const cnt = { nieuw: 0, groeit: 0, stagneert: 0, top: 0 }
     g.winkels.forEach(t => cnt[statusKey(t, marge.value)]++)
-    return { ...g, omzet, cnt, score: amScore(g.winkels), winkels: [...g.winkels].sort((a, b) => jaaromzet(b) - jaaromzet(a)) }
+    const sc = amScore(g.winkels, scoreOpts.value)
+    return { ...g, omzet, cnt, score: sc.score, scoreComp: sc.comp, winkels: [...g.winkels].sort((a, b) => jaaromzet(b) - jaaromzet(a)) }
   }).sort((a, b) => b.score - a.score)
 })
 
@@ -109,6 +109,9 @@ function grow(t) { const g = omzetGroei(t); return g == null ? '—' : (g >= 0 ?
         </div>
       </button>
       <div v-if="open === g.id" class="drill">
+        <div class="compstrip" data-test="am-score-comp">
+          <span v-for="[lab, val] in g.scoreComp" :key="lab" class="compchip"><span class="cl">{{ lab }}</span> <b>{{ val }}</b></span>
+        </div>
         <div v-for="t in g.winkels" :key="t.snelstart" class="wrij" data-test="team-winkel">
           <span class="niveau">{{ levelOf(jaaromzet(t), marge).k }}</span>
           <router-link class="wnaam" :to="{ name: 'winkel', params: { code: t.snelstart } }">{{ t.name }}</router-link>
@@ -153,6 +156,10 @@ h2{margin:0 0 10px;font-size:15px}
 .badge.amber{background:var(--amber);color:#412402}
 .badge.coral{background:var(--soft);color:var(--coral-d)}
 .drill{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.compstrip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.compchip{background:var(--cream);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11.5px;color:var(--grey)}
+.compchip .cl{font-weight:700}
+.compchip b{color:var(--ink)}
 .wrij{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;flex-wrap:wrap}
 .wrij:last-child{border-bottom:0}
 .niveau{width:28px;height:28px;flex-shrink:0;border-radius:8px;background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
