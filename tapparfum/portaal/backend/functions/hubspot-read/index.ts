@@ -64,11 +64,30 @@ Deno.serve(async (req: Request) => {
   const { winkelnaam = '', email = '', snelstart = '' } = await req.json().catch(() => ({}))
   const snelProp = Deno.env.get('HUBSPOT_SNELSTART_PROP') || ''
 
+  // --- 2b. Autorisatie OP WINKELNIVEAU (AM-isolatie) --------------------------
+  // Een AM mag alleen HubSpot-data ophalen voor een tappunt uit de EIGEN
+  // portefeuille. We vertrouwen de winkelnaam/e-mail uit de request-body NIET,
+  // maar resolven het tappunt onder de RLS-context van de caller: alleen een
+  // teruggegeven rij (= eigen winkel) is toegestaan, en we zoeken HubSpot met
+  // de vertrouwde DB-waarden. Staff (kantoor) mag alles en houdt de body-waarden.
+  let qWinkelnaam = winkelnaam
+  let qEmail = email
+  let qSnelstart = snelstart
+  if (!isStaff) {
+    if (!snelstart) return json({ error: 'Snelstartcode ontbreekt.' }, 400)
+    const { data: eigen } = await supa.from('tappunten')
+      .select('name,email,snelstart').eq('snelstart', snelstart).limit(1)
+    if (!eigen || !eigen.length) return json({ error: 'Geen toegang tot dit tappunt.' }, 403)
+    qWinkelnaam = eigen[0].name || ''
+    qEmail = eigen[0].email || ''
+    qSnelstart = eigen[0].snelstart || ''
+  }
+
   try {
     // --- 3a. Bedrijven zoeken (op snelstart-prop indien geconfigureerd, anders naam) ---
     const bedrijfGroepen: unknown[] = []
-    if (snelProp && snelstart) bedrijfGroepen.push({ filters: [{ propertyName: snelProp, operator: 'EQ', value: snelstart }] })
-    if (winkelnaam) bedrijfGroepen.push({ filters: [{ propertyName: 'name', operator: 'CONTAINS_TOKEN', value: winkelnaam }] })
+    if (snelProp && qSnelstart) bedrijfGroepen.push({ filters: [{ propertyName: snelProp, operator: 'EQ', value: qSnelstart }] })
+    if (qWinkelnaam) bedrijfGroepen.push({ filters: [{ propertyName: 'name', operator: 'CONTAINS_TOKEN', value: qWinkelnaam }] })
     let companies: Record<string, unknown>[] = []
     if (bedrijfGroepen.length) {
       const cRes = await hs(token, '/crm/v3/objects/companies/search', {

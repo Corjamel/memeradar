@@ -58,4 +58,9 @@ is nog niet gedeployed."* — geen foutscherm.
   niets in HubSpot wijzigen.
 - **Alleen kantoor/AM**: de functie weigert (403) iedereen die geen staf is en
   niet in `accountmanagers` staat — partners zien niets.
+- **AM-isolatie op winkelniveau**: een AM krijgt alleen HubSpot-data voor een
+  tappunt uit de eigen portefeuille. De functie vertrouwt de winkelnaam/e-mail
+  uit de aanvraag niet, maar resolvet het tappunt onder de RLS-context van de
+  caller (op snelstartcode) en zoekt HubSpot met de vertrouwde DB-waarden. Staf
+  (kantoor) heeft wél netwerkbrede toegang.
 - **Token blijft geheim**: het staat als Supabase-secret, nooit in client-code.
