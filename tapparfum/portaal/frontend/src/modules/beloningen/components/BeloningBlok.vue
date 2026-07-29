@@ -8,7 +8,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
 import { eur0 } from '../../../lib/format.js'
-import { levelOf, statusKey, STATUS, winkelOmzetInfo, jaaromzet, LEVELS } from '../../rekenhart/logic.js'
+import { levelOf, statusKey, STATUS, winkelOmzetInfo, winkelOmzet, jaaromzet, LEVELS } from '../../rekenhart/logic.js'
 import { REWARDS, rewUnlocked, rewPct, academyDone, academyPct, cursusNaam, checkBeloningen, inTraject } from '../logic.js'
 import { basisScore, totaalScore, BASIS_MAX } from '../../punten/logic.js'
 import { haalRekenConfig } from '../api.js'
@@ -41,48 +41,55 @@ const kaarten = computed(() => REWARDS.map(rw => ({
   cursusNaam: rw.cursus ? cursusNaam(rw.cursus) : '',
   cursusPct: rw.cursus ? academyPct(t.value, rw.cursus) : 100
 })))
-// De eerstvolgende (nog niet vrijgespeelde) beloning krijgt de gloed.
+// De eerstvolgende (nog niet vrijgespeelde) beloning krijgt de gloed — v71: de
+// EERSTE nog niet vrijgespeelde in lijstvolgorde (niet de hoogste voortgang).
 const volgendeKey = computed(() => {
-  const open = kaarten.value.filter(k => !k.unlocked)
-  if (!open.length) return null
-  return open.reduce((a, b) => (b.pct > a.pct ? b : a)).rw.key
+  const eerste = kaarten.value.find(k => !k.unlocked)
+  return eerste ? eerste.rw.key : null
 })
 
 // --- v71-beloningsladder: hero, puntentellers, niveau-pad, topbeloningen ---
-const jo = computed(() => jaaromzet(t.value))
+// BELANGRIJK: de niveaus (D→A++) én de niveau-beloningen zijn gekalibreerd op
+// WINKELOMZET (inkoop × marge) — net als de niveau-badge en de uitkeer-engine
+// (checkBeloningen). We rekenen hier dus óók met winkelomzet, anders spreekt de
+// pagina zichzelf tegen zodra kantoor een marge-factor > 1 instelt (badge A+,
+// maar pad op A; kaart "vrijgespeeld" met tóch een halve balk, enz.).
 const bs = computed(() => basisScore(t.value))
 const ts = computed(() => totaalScore(t.value))
 const belLevels = LEVELS.filter(L => L.bel)        // A+ en A++ (met korting)
 const beloond = computed(() => t.value.beloond || {})
+const nivoOmzet = computed(() => winkelOmzet(t.value, marge.value))
 const vrijN = computed(() =>
   kaarten.value.filter(k => k.unlocked).length +
-  belLevels.filter(L => beloond.value['lvl-' + L.k] || jo.value >= L.min).length)
+  belLevels.filter(L => beloond.value['lvl-' + L.k] || nivoOmzet.value >= L.min).length)
 const totN = REWARDS.length + belLevels.length
 const heroPct = computed(() => totN ? Math.round(vrijN.value / totN * 100) : 0)
 // Niveau-pad: 6 nodes gelijk verdeeld; de vulling loopt door tot in het
-// huidige segment naar rato van de omzet (v71 r.3505).
+// huidige segment naar rato van de winkelomzet (v71 r.3505).
 const padNodes = computed(() => LEVELS.map((L, i) => ({
-  k: L.k, min: L.min, left: i * (100 / (LEVELS.length - 1)), done: jo.value >= L.min
+  k: L.k, min: L.min, left: i * (100 / (LEVELS.length - 1)), done: nivoOmzet.value >= L.min
 })))
 const padFill = computed(() => {
   let idx = 0
-  LEVELS.forEach((L, i) => { if (jo.value >= L.min) idx = i })
+  LEVELS.forEach((L, i) => { if (nivoOmzet.value >= L.min) idx = i })
   const L = LEVELS[idx], next = LEVELS[idx + 1]
-  const segPct = next ? Math.min((jo.value - L.min) / (next.min - L.min), 1) : 1
+  const segPct = next ? Math.min((nivoOmzet.value - L.min) / (next.min - L.min), 1) : 1
   return Math.min((idx + segPct) / (LEVELS.length - 1) * 100, 100)
 })
 const groeiKaarten = computed(() => belLevels.map(L => ({
   L,
-  unlocked: !!beloond.value['lvl-' + L.k] || jo.value >= L.min,
-  pct: Math.min(Math.round(jo.value / L.min * 100), 100),
-  rest: Math.max(L.min - jo.value, 0)
+  unlocked: !!beloond.value['lvl-' + L.k] || nivoOmzet.value >= L.min,
+  pct: Math.min(Math.round(nivoOmzet.value / L.min * 100), 100),
+  rest: Math.max(L.min - nivoOmzet.value, 0)
 })))
 
-// Voortgang niveau-balk: hoe ver zit de winkelomzet tussen huidige en volgende drempel?
+// Voortgang niveau-balk: hoe ver zit de winkelomzet tussen huidige en volgende
+// drempel? Op dezelfde basis (inkoop × marge) als de niveau-badge, lv.gap en het
+// niveau-pad — zo blijft de balk gelijk aan de "nog €X tot niveau"-tekst eronder.
 const nivoPct = computed(() => {
   if (!lv.value.nextMin) return 100
   const start = lv.value.min
-  return Math.max(0, Math.min(100, ((wo.value.bedrag - start) / (lv.value.nextMin - start)) * 100))
+  return Math.max(0, Math.min(100, ((nivoOmzet.value - start) / (lv.value.nextMin - start)) * 100))
 })
 
 /* Vangnet (v71 checkBeloningenAll): groei-eisen verschuiven met de tijd, dus we
@@ -131,7 +138,7 @@ watch(() => props.tappunt, keurUit)
       <div class="rewtxt">
         <div class="eyebrow">Beloningsprogramma</div>
         <h3>Verdien terwijl je groeit</h3>
-        <div class="herosub">Je hebt <b>{{ vrijN }} van de {{ totN }}</b> beloningen vrijgespeeld · niveau <b>{{ lv.k }}</b>: {{ lv.r }} · {{ eur0(jo) }} dit jaar</div>
+        <div class="herosub">Je hebt <b>{{ vrijN }} van de {{ totN }}</b> beloningen vrijgespeeld · niveau <b>{{ lv.k }}</b>: {{ lv.r }} · {{ eur0(nivoOmzet) }} dit jaar</div>
       </div>
       <div class="heroring" data-test="hero-pct">{{ heroPct }}%</div>
     </div>
@@ -226,8 +233,9 @@ watch(() => props.tappunt, keurUit)
         <div class="gkop"><span class="niveau sm">{{ g.L.k }}</span><b>{{ g.L.bel }}</b>
           <span v-if="g.unlocked" class="won">✓ VRIJGESPEELD</span></div>
         <div class="gsub">{{ g.L.k }} · {{ g.L.r }}</div>
-        <div v-if="!g.unlocked" class="geis">○ {{ eur0(g.L.min) }} jaaromzet <b>· nog {{ eur0(g.rest) }}</b></div>
-        <div class="voet"><div class="cbalk"><i :style="{ width: g.pct + '%' }"></i></div><span class="pct">{{ g.pct }}%</span></div>
+        <div v-if="!g.unlocked" class="geis">○ {{ eur0(g.L.min) }} winkelomzet <b>· nog {{ eur0(g.rest) }}</b></div>
+        <div v-if="g.unlocked" class="voet won-voet">Van jou!</div>
+        <div v-else class="voet"><div class="cbalk"><i :style="{ width: g.pct + '%' }"></i></div><span class="pct">{{ g.pct }}%</span></div>
       </div>
     </div>
     <p class="intro slot">Beloningen keert je accountmanager uit. Kortingen gelden op je bestellingen in de 3 maanden na het vrijspelen.</p>
