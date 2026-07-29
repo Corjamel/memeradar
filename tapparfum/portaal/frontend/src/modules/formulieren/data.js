@@ -41,3 +41,29 @@ export const FORMS=[
 ];
 
 export const SETUPFORM={"0-3":"vw_tappunt","2-2":"promodag","4-0":"demo","5-0":"actieplan"};
+// De drie voorwaarden-formulieren zijn onderling uitwisselbaar voor stap 0-3:
+// een winkel kwalificeert via tappunt-, tapbar- of winkelvoorwaarden (v71 VW_IDS).
+export const VW_IDS = ['vw_tappunt', 'vw_tapbar', 'vw_winkel']
+
+// Ja/nee-sleutels (yn) en keuzevraag-sleutels (op) van een formulier — v71 formYN.
+export function formYN(fid) {
+  const f = FORMS.find(x => x.id === fid)
+  const yn = [], op = []
+  if (f) {
+    f.secties.forEach(s => {
+      (s.yesno || []).forEach(x => { yn.push(x[0]) })
+      ;(s.opts || []).forEach(x => { op.push(x[0]) })
+    })
+  }
+  return { yn, op }
+}
+
+// Is een formulier "af"? v71 formStatus (r.2597): actieplan apart; anders alle
+// ja/nee + keuzevragen ingevuld, of (zonder zulke vragen) minstens 3 gevulde velden.
+export function formStatus(t, fid) {
+  const f = (t.forms && t.forms[fid]) || {}
+  if (fid === 'actieplan') return !!(f.a_doel && f.a_doel !== '' && (f.a_ok === 'Ja' || f.a_ok === 'Nee'))
+  const k = formYN(fid)
+  if (k.yn.length || k.op.length) return k.yn.every(x => f[x] === 'Ja' || f[x] === 'Nee') && k.op.every(x => !!f[x])
+  return Object.keys(f).filter(x => f[x] !== '' && f[x] != null && f[x] !== false).length >= 3
+}

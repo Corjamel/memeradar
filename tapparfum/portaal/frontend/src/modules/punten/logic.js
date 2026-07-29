@@ -34,6 +34,12 @@ export const BONUS_MANUAL = [
 ]
 export const BONUS_MAX = BONUS_MANUAL.reduce((a, x) => a + x[2], 0)   // 35
 
+// v71 (r.2667-2668): punten die je op afstand kunt controleren (social-bio-link,
+// vaste hashtags, wekelijkse post) mogen zonder winkelbezoek worden goedgekeurd.
+// Alle overige (on-site) punten vereisen eerst een geregistreerd bezoek.
+export const REMOTE_OK = ['link', 'hashtags', 'weekpost']
+export const visitGated = (key) => !REMOTE_OK.includes(key)
+
 export const basisScore = (t) => BASIS.reduce((a, [k, , p]) => a + ((t.bp || {})[k] ? p : 0), 0)
 export const bonusHandmatig = (t) => BONUS_MANUAL.reduce((a, [k, , p]) => a + ((t.bonus || {})[k] ? p : 0), 0)
 export const officieel = (t) => basisScore(t) >= OFFICIEEL

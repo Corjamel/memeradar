@@ -8,8 +8,9 @@ import { useTappunten } from '../../tappunten/store.js'
 import {
   BASIS, BASIS_MAX, OFFICIEEL, BONUS_MANUAL, BONUS_MAX,
   basisScore, bonusHandmatig, bonusAuto, actiePunten, totaalScore, officieel,
-  omzetGroeiPunten, jaardoelPunten, beOnTimePunten
+  omzetGroeiPunten, jaardoelPunten, beOnTimePunten, visitGated
 } from '../logic.js'
+import { dagenSindsBezoek } from '../../logboek/logic.js'
 
 const props = defineProps({ tappunt: { type: Object, required: true } })
 const emit = defineEmits(['bijgewerkt'])
@@ -19,6 +20,10 @@ const fout = ref('')
 const bezig = ref(false)
 
 const t = computed(() => props.tappunt)
+// v71-bezoekgating: on-site punten mag de AM pas goedkeuren als er een bezoek is
+// geregistreerd. REMOTE_OK-punten (link/hashtags/weekpost) mogen altijd.
+const heeftBezoek = computed(() => dagenSindsBezoek(t.value) != null)
+const bezoekVereist = (key) => visitGated(key) && !heeftBezoek.value
 const scores = computed(() => ({
   basis: basisScore(t.value), bonus: bonusHandmatig(t.value), auto: bonusAuto(t.value),
   acties: actiePunten(t.value), totaal: totaalScore(t.value), officieel: officieel(t.value)
@@ -52,6 +57,8 @@ async function claim(soort, key) {
 
 // AM/kantoor: goedkeuren (zet punt, wist claim) of punt weer uitzetten
 async function zet(soort, key, aan) {
+  // Een on-site punt goedkeuren kan niet zonder geregistreerd bezoek (v71).
+  if (aan && bezoekVereist(key)) { fout.value = 'Registreer eerst een winkelbezoek voordat je dit on-site punt goedkeurt.'; return }
   const [vk, ck] = velden(soort)
   const punten = { ...(t.value[vk] || {}) }
   const claims = { ...(t.value[ck] || {}) }
@@ -98,12 +105,14 @@ function rijStatus(soort, key) {
         </template>
         <!-- AM / kantoor -->
         <template v-else>
-          <button v-if="rijStatus(soort, key) === 'claim'" class="klein keur" type="button"
+          <span v-if="bezoekVereist(key) && rijStatus(soort, key) !== 'ok'" class="gate" :data-test="'gate-' + key">🔒 eerst bezoek</span>
+          <button v-if="rijStatus(soort, key) === 'claim'" class="klein keur" type="button" :disabled="bezoekVereist(key)"
                   :data-test="'keur-' + key" @click="zet(soort, key, true)">Keur goed ✓</button>
           <button v-if="rijStatus(soort, key) === 'claim'" class="klein" type="button"
                   :aria-label="'Claim afwijzen: ' + key" @click="zet(soort, key, false)">wijs af</button>
           <label v-else class="schakel">
-            <input type="checkbox" :checked="rijStatus(soort, key) === 'ok'" :disabled="bezig"
+            <input type="checkbox" :checked="rijStatus(soort, key) === 'ok'"
+                   :disabled="bezig || (bezoekVereist(key) && rijStatus(soort, key) !== 'ok')"
                    :data-test="'zet-' + key" @change="zet(soort, key, $event.target.checked)" />
           </label>
         </template>
@@ -136,6 +145,8 @@ h3{margin:16px 0 6px;font-size:12px;font-weight:800;letter-spacing:.1em;text-tra
 .klein.keur{border-color:var(--green);color:var(--green)}
 .klein.keur:hover{background:var(--green-soft)}
 .klein.wacht{border-color:var(--amber);color:#8a6210}
+.klein:disabled{opacity:.45;cursor:not-allowed;border-color:var(--line);color:var(--grey)}
+.gate{font-size:11px;font-weight:800;color:var(--amber);white-space:nowrap}
 .schakel input{width:17px;height:17px;accent-color:var(--coral)}
 .fout{color:#b3261e;font-size:13px}
 </style>

@@ -38,6 +38,9 @@ with sync_playwright() as p:
     pg.locator('details.fase').nth(2).click(); pg.wait_for_timeout(200)
     pg.check('[data-test=setup-2-0]'); pg.wait_for_timeout(400)
     ck("demodag gepland -> sloten weg", pg.locator('[data-test=setup-slot]').count()==0)
+    # v71 SETUPFORM: stap 0-3 (voorwaarden) is formuliergekoppeld — niet handmatig
+    # aan te vinken, met een link naar het formulier.
+    ck("stap 0-3 formuliergekoppeld (disabled + link)", pg.locator('[data-test=setup-0-3][disabled]').count()==1 and pg.locator('[data-test=setup-form-0-3]').count()==1)
 
     # ===== PARTNER: punten claimen =====
     ck("punten-chips zichtbaar, basis=64", '64' in (pg.text_content('[data-test=punt-basis]') or ''))
@@ -53,6 +56,7 @@ with sync_playwright() as p:
     # (mock-upserts muteren de nep-db niet; seed de claim expliciet zoals hij in Supabase zou staan)
     pg.evaluate("""window.__DB.accountmanagers=[{id:'am-1',naam:'Marian',auth_user_id:'u-am'}];
       window.__DB.tappunten[0].data.bpClaim={geuren:true};
+      window.__DB.tappunten[0].data.laatsteBezoek='2026-07-01';
       window.__MOCK.signin={data:{user:{id:'u-am',app_metadata:{}}},error:null};""")
     login(pg,"marian@tp.nl")
     pg.click('nav >> text=Winkels'); pg.wait_for_timeout(400)
@@ -74,6 +78,19 @@ with sync_playwright() as p:
     d=pg.evaluate("window.__UPSERTS.filter(u=>u[0]==='tappunten').slice(-1)[0][1]['data']")
     ck("AM slaat checklist over -> setup.skipped=true", d.get('setup',{}).get('skipped')==True)
     ck("checklist toont 'overgeslagen'", 'overgeslagen' in (pg.text_content('[data-test=setup-klaar]') or ''))
+
+    uitloggen(pg)
+
+    # ===== v71-bezoekgating: on-site punt niet goed te keuren zonder bezoek =====
+    pg.evaluate("""window.__DB.accountmanagers=[{id:'am-1',naam:'Marian',auth_user_id:'u-am'}];
+      window.__DB.tappunten=[{snelstart:'kl-9',name:'Nieuw',email:null,geblokkeerd:false,am_id:'am-1',
+        data:{snelstart:'kl-9',name:'Nieuw',bpClaim:{geuren:true,link:true}}}];
+      window.__MOCK.signin={data:{user:{id:'u-am',app_metadata:{}}},error:null};""")
+    login(pg,"marian@tp.nl")
+    pg.click('nav >> text=Winkels'); pg.wait_for_timeout(400)
+    pg.click('[data-test=tappunt-rij]'); pg.wait_for_timeout(600)
+    ck("on-site punt (geuren) geblokkeerd zonder bezoek", pg.locator('[data-test=gate-geuren]').count()==1 and pg.locator('[data-test=keur-geuren][disabled]').count()==1)
+    ck("remote punt (link) wél goed te keuren zonder bezoek", pg.locator('[data-test=gate-link]').count()==0 and pg.locator('[data-test=keur-link]:not([disabled])').count()==1)
 
     ck("geen pageerrors", len(errs)==0)
     for e in errs[:5]: print("   XX", e)

@@ -5,7 +5,7 @@
 import { computed, ref } from 'vue'
 import { useAuth } from '../../../stores/auth.js'
 import { useTappunten } from '../../tappunten/store.js'
-import { SETUP, SETUP_TOTAL, setupDone, setupCount, setupComplete, faseOpen } from '../logic.js'
+import { SETUP, SETUP_TOTAL, setupDone, setupCount, setupComplete, faseOpen, setupIsForm, setupFormNaam } from '../logic.js'
 
 const props = defineProps({ tappunt: { type: Object, required: true } })
 const emit = defineEmits(['bijgewerkt'])
@@ -27,6 +27,7 @@ async function bewaar(t2) {
 
 async function vink(si, ai, ev) {
   if (!auth.isPartner) { ev.preventDefault(); return }   // alleen de partner vinkt (v71)
+  if (setupIsForm(si, ai)) { ev.preventDefault(); return } // formuliergekoppeld — niet handmatig
   const t = props.tappunt
   const done = { ...((t.setup && t.setup.done) || {}) }
   const key = `${si}-${ai}`
@@ -63,9 +64,15 @@ async function skip() {
       </summary>
       <label v-for="(a, ai) in s.acties" :key="ai" class="stap" :class="{ dicht: !faseOpen(tappunt, si) }">
         <input type="checkbox" :checked="setupDone(tappunt, si, ai)"
-               :disabled="bezig || !auth.isPartner || !faseOpen(tappunt, si)"
+               :disabled="bezig || !auth.isPartner || !faseOpen(tappunt, si) || setupIsForm(si, ai)"
                :data-test="'setup-' + si + '-' + ai" @change="vink(si, ai, $event)" />
-        <span :class="{ door: setupDone(tappunt, si, ai) }">{{ a }}</span>
+        <span :class="{ door: setupDone(tappunt, si, ai) }">{{ a }}
+          <template v-if="setupIsForm(si, ai)">
+            <router-link class="viaform" :to="{ name: 'formulieren' }" :data-test="'setup-form-' + si + '-' + ai">
+              via formulier: {{ setupFormNaam(si, ai) }} →
+            </router-link>
+          </template>
+        </span>
       </label>
     </details>
   </section>
@@ -92,5 +99,7 @@ summary{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;l
 .stap.dicht{opacity:.5}
 .stap input{width:17px;height:17px;accent-color:var(--coral);flex-shrink:0;margin-top:1px}
 .door{color:var(--grey);text-decoration:line-through}
+.viaform{display:inline-block;margin-left:6px;font-size:11.5px;font-weight:800;color:var(--coral-d);text-decoration:none}
+.viaform:hover{text-decoration:underline}
 .fout{color:#b3261e;font-size:13px}
 </style>

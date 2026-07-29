@@ -1,6 +1,7 @@
 // Opstartchecklist — EXACT de v71-definitie (r.627-636).
 // Datamodel op het tappunt: t.setup = { done: { '0-0': true, ... }, skipped: bool }
 // (sleutel = faseIndex-actieIndex, identiek aan v71's SETUPFORM-notatie).
+import { FORMS, SETUPFORM, VW_IDS, formStatus } from '../formulieren/data.js'
 
 export const SETUP = [
   { nr: '1', titel: 'Order & voorbereiden', acties: ['Order binnen & bevestigd', 'Trainingsmoment gepland (wie is aanwezig)', 'Start-stappenplan & A4-missie gedeeld', 'Voorwaarden besproken & akkoord (tappunt / tapbar / winkel)'] },
@@ -12,7 +13,26 @@ export const SETUP = [
 ]
 export const SETUP_TOTAL = SETUP.reduce((a, s) => a + s.acties.length, 0)   // 19 (4+4+3+3+2+3, identiek aan v71's reduce)
 
+// Sommige stappen zijn gekoppeld aan een formulier (v71 SETUPFORM): die vink je
+// NIET handmatig af — ze zijn af zodra het formulier is ingevuld.
+export const setupFormId = (si, ai) => SETUPFORM[`${si}-${ai}`] || null
+export const setupIsForm = (si, ai) => !!SETUPFORM[`${si}-${ai}`]
+export function setupFormNaam(si, ai) {
+  const fid = SETUPFORM[`${si}-${ai}`]
+  if (!fid) return ''
+  const f = FORMS.find(x => x.id === fid)
+  return f ? f.naam : fid
+}
+
 export function setupDone(t, si, ai) {
+  // v71 setupActionDone: een formuliergekoppelde stap volgt de formulierstatus,
+  // niet een handmatig vinkje. Stap 0-3 (voorwaarden) telt als af zodra ÉÉN van
+  // de drie voorwaarden-formulieren (tappunt/tapbar/winkel) is ingevuld.
+  const fid = SETUPFORM[`${si}-${ai}`]
+  if (fid) {
+    if (VW_IDS.includes(fid)) return VW_IDS.some(id => formStatus(t, id))
+    return formStatus(t, fid)
+  }
   return !!(t.setup && t.setup.done && t.setup.done[`${si}-${ai}`])
 }
 
