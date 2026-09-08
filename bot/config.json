@@ -1,0 +1,54 @@
+{
+  "_uitleg": "Instellingen voor de MemeRadar-bot. mode 'paper' = oefenen met nepgeld (echte prijzen). Pas NA testen wijzigen naar 'live' — en zet dan ook ik_begrijp_het_risico op true.",
+  "mode": "paper",
+  "ik_begrijp_het_risico": false,
+
+  "tokens": [
+    "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm"
+  ],
+  "_tokens_uitleg": "Solana-mintadressen die de bot mag verhandelen (standaard: BONK en WIF). Voeg toe wat jij wilt volgen — adressen vind je in de app via Zoeken.",
+
+  "auto_scan": true,
+  "_auto_scan_uitleg": "true = ook zelf tokens zoeken die aan de strenge filters voldoen (alleen geverifieerd + gezonde organische score). Tijdens training aan, zodat er genoeg kansen zijn om van te leren.",
+
+  "training": {
+    "_uitleg": "5 strategieën handelen tegelijk, elk met eigen nepgeld. De ranglijst staat in de app (tabblad Bot). Zodra de beste strategie aan de slagingseisen voldoet, meldt het dashboard: training voltooid.",
+    "varianten": [
+      { "naam": "Jouw regel",   "koop_drempel_pct": 10, "stop_loss_pct": 10, "take_profit_pct": 25 },
+      { "naam": "Voorzichtig",  "koop_drempel_pct": 10, "stop_loss_pct": 5,  "take_profit_pct": 15 },
+      { "naam": "Streng",       "koop_drempel_pct": 20, "stop_loss_pct": 10, "take_profit_pct": 30 },
+      { "naam": "Gevoelig",     "koop_drempel_pct": 5,  "stop_loss_pct": 8,  "take_profit_pct": 20 },
+      { "naam": "Trailing",     "koop_drempel_pct": 10, "stop_loss_pct": 10, "trailing_pct": 10 }
+    ],
+    "slagingseisen": {
+      "min_trades": 20,
+      "min_dagen": 7,
+      "min_winrate_pct": 50
+    }
+  },
+
+  "koop_drempel_pct": 10,
+  "verkoop_drempel_pct": 10,
+  "stop_loss_pct": 10,
+  "take_profit_pct": 25,
+
+  "per_trade_sol": 0.05,
+  "max_posities": 3,
+  "max_dag_budget_sol": 0.25,
+  "cooldown_minuten": 20,
+
+  "alleen_geverifieerde_tokens": true,
+  "_verificatie_uitleg": "Tokens die bij Jupiter expliciet als niet-geverifieerd bekendstaan worden nooit gekocht. Auto-scan-tokens moeten geverifieerd zijn én een gezonde organische score hebben.",
+
+  "min_liquiditeit_usd": 100000,
+  "min_volume_24u_usd": 250000,
+  "min_leeftijd_dagen": 7,
+  "max_prijsimpact_pct": 2,
+  "slippage_bps": 200,
+
+  "interval_seconden": 30,
+  "snelle_uitgang_seconden": 4,
+  "_snelle_uitgang_uitleg": "Hoe vaak (seconden) open posities worden gecheckt op stop-loss/take-profit/trailing. Laag = sneller verkopen bij een omslag. Nieuwe kansen zoeken gebeurt op het tragere interval_seconden (rate-limits).",
+  "paper_start_sol": 1.0
+}
