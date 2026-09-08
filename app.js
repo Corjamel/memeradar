@@ -450,8 +450,9 @@ async function loadDexChain(dsChain) {
 
 async function loadGtTab(kind, pages = 1) {
   const nets = selectedNets();
-  // bij één gekozen chain veel dieper zoeken (meer munten in beeld)
-  const effPages = nets.length === 1 ? pages + 2 : pages;
+  // meer munten in beeld: bij één gekozen chain diep zoeken (veel pagina's),
+  // bij "Alle chains" iets minder per chain (anders knalt de gratis limiet)
+  const effPages = nets.length === 1 ? pages + 3 : pages;
   const jobs = [];
   for (const n of nets) {
     for (let p = 1; p <= effPages; p++) jobs.push(fetchGtList(kind, n, p));
@@ -505,8 +506,10 @@ async function withDexFallback(loader) {
 }
 
 // dex-only chain (robinhood) gekozen? → altijd via DexScreener, ongeacht tabblad
-const loadTrending = () => isDexOnly(state.chain) ? loadDexChain(state.chain) : withDexFallback(() => loadGtTab('trending_pools', 1));
-const loadNieuw = () => isDexOnly(state.chain) ? loadDexChain(state.chain) : withDexFallback(() => loadGtTab('new_pools', 1));
+const loadTrending = () => isDexOnly(state.chain) ? loadDexChain(state.chain) : withDexFallback(() => loadGtTab('trending_pools', 2));
+// Volume-tabblad: de diepste lijst — hoogste 24u-volume, veel munten.
+const loadVolume = () => isDexOnly(state.chain) ? loadDexChain(state.chain) : withDexFallback(() => loadGtTab('pools?sort=h24_volume_usd_desc', 3));
+const loadNieuw = () => isDexOnly(state.chain) ? loadDexChain(state.chain) : withDexFallback(() => loadGtTab('new_pools', 2));
 // Stijgers: scan de hoogste-volume-pools per chain en houd de plussen over.
 // Volume-eis voorkomt dat een +5000% zonder echte handel bovenaan staat.
 const loadStijgers = () => isDexOnly(state.chain)
@@ -587,6 +590,7 @@ function sortRows(rows) {
   if (by === 'mcap') {
     if (state.tab === 'nieuw') by = 'age';
     else if (state.tab === 'stijgers') by = 'change';
+    else if (state.tab === 'volume') by = 'volume';
   }
   return [...rows].sort((a, b) => {
     if (by === 'change') return (b.change24h ?? -Infinity) - (a.change24h ?? -Infinity);
@@ -709,7 +713,7 @@ async function refresh() {
     $('lastUpdate').textContent = `Bijgewerkt: ${new Date().toLocaleTimeString('nl-NL')}`;
     return;
   }
-  const loaders = { trending: loadTrending, stijgers: loadStijgers, nieuw: loadNieuw, top: loadTop, meme: loadMeme, search: loadSearch, watch: loadWatch };
+  const loaders = { trending: loadTrending, volume: loadVolume, stijgers: loadStijgers, nieuw: loadNieuw, top: loadTop, meme: loadMeme, search: loadSearch, watch: loadWatch };
   const seq = ++refreshSeq;
   $('errorBox').classList.add('hidden');
   $('loading').classList.remove('hidden');
@@ -1110,9 +1114,9 @@ function init() {
       sessionStorage.setItem('mr_healed', '1');
       Promise.allSettled([
         fetch(location.pathname, { cache: 'reload' }),
-        fetch('app.js?v=20', { cache: 'reload' }),
-        fetch('swap.js?v=20', { cache: 'reload' }),
-        fetch('style.css?v=20', { cache: 'reload' }),
+        fetch('app.js?v=23', { cache: 'reload' }),
+        fetch('swap.js?v=23', { cache: 'reload' }),
+        fetch('style.css?v=23', { cache: 'reload' }),
       ]).then(() => location.reload());
       return;
     }
@@ -1137,7 +1141,7 @@ function init() {
     state.chain = sel.value;
     saveSettings();
     // chain-keuze raakt alle on-chain tabbladen
-    if (['trending', 'stijgers', 'nieuw'].includes(state.tab)) refresh();
+    if (['trending', 'volume', 'stijgers', 'nieuw'].includes(state.tab)) refresh();
   });
   saveWatchlist(); // teller bijwerken
 
